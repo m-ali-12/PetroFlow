@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Settings | Khalid & Sons Petroleum</title>
+  <link rel="icon" type="image/png" href="assets/logo.jfif">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+
+<body data-page="settings">
+  <div id="navbar-placeholder"></div>
+
+  <div class="container py-4">
+    <h3 class="mb-4"><i class="bi bi-gear me-2"></i>Settings & Configuration</h3>
+
+    <!-- Fuel Prices -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-tag me-2"></i>Fuel Prices</h5>
+      </div>
+      <div class="card-body">
+        <p class="text-muted">Set current fuel prices per liter. Old transactions will keep their original prices.</p>
+        
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Petrol Price (per liter) *</label>
+            <div class="input-group">
+              <span class="input-group-text">Rs.</span>
+              <input id="petrol-price" class="form-control" type="number" step="0.01" required>
+            </div>
+            <small class="text-muted">Current: Rs. <span id="current-petrol-price">0</span></small>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Diesel Price (per liter) *</label>
+            <div class="input-group">
+              <span class="input-group-text">Rs.</span>
+              <input id="diesel-price" class="form-control" type="number" step="0.01" required>
+            </div>
+            <small class="text-muted">Current: Rs. <span id="current-diesel-price">0</span></small>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Effective Date *</label>
+            <input id="price-effective-date" class="form-control" type="date" required>
+            <small class="text-muted">Price applies from this date</small>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="saveFuelPricesWithHistory()">
+          <i class="bi bi-save me-1"></i> Save Fuel Prices
+        </button>
+        <small class="text-muted d-block mt-2">Last updated: <span id="fuel-price-update-time">Never</span></small>
+      </div>
+    </div>
+
+    <!-- Mobil Oil Prices -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-droplet-half me-2"></i>Mobil Oil Prices</h5>
+      </div>
+      <div class="card-body">
+        <p class="text-muted">Set current mobil oil prices per liter</p>
+        
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Car Mobil Price (per liter) *</label>
+            <div class="input-group">
+              <span class="input-group-text">Rs.</span>
+              <input id="car-mobil-price" class="form-control" type="number" step="0.01" required>
+            </div>
+            <small class="text-muted">Current: Rs. <span id="current-car-mobil-price">0</span></small>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Open Mobil Price (per liter) *</label>
+            <div class="input-group">
+              <span class="input-group-text">Rs.</span>
+              <input id="open-mobil-price" class="form-control" type="number" step="0.01" required>
+            </div>
+            <small class="text-muted">Current: Rs. <span id="current-open-mobil-price">0</span></small>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Effective Date *</label>
+            <input id="mobil-effective-date" class="form-control" type="date" required>
+            <small class="text-muted">Price applies from this date</small>
+          </div>
+        </div>
+
+        <button class="btn btn-success" onclick="saveMobilPricesWithHistory()">
+          <i class="bi bi-save me-1"></i> Save Mobil Prices
+        </button>
+        <small class="text-muted d-block mt-2">Last updated: <span id="mobil-price-update-time">Never</span></small>
+      </div>
+    </div>
+
+    <!-- Price History -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Price History</h5>
+      </div>
+      <div class="card-body">
+        <ul class="nav nav-tabs mb-3" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#fuel-history">Fuel Prices</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#mobil-history">Mobil Prices</a>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+          <!-- Fuel Price History -->
+          <div class="tab-pane fade show active" id="fuel-history">
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Petrol</th>
+                    <th>Diesel</th>
+                    <th>Updated By</th>
+                  </tr>
+                </thead>
+                <tbody id="fuel-history-table">
+                  <tr><td colspan="4" class="text-center text-muted">No history yet</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Mobil Price History -->
+          <div class="tab-pane fade" id="mobil-history">
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Car Mobil</th>
+                    <th>Open Mobil</th>
+                    <th>Updated By</th>
+                  </tr>
+                </thead>
+                <tbody id="mobil-history-table">
+                  <tr><td colspan="4" class="text-center text-muted">No history yet</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tank Capacity -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-warning">
+        <h5 class="mb-0"><i class="bi bi-droplet me-2"></i>Tank Capacity Settings</h5>
+      </div>
+      <div class="card-body">
+        <p class="text-muted">Configure tank capacities (one-time setup)</p>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Petrol Tank Capacity (liters)</label>
+            <input id="petrol-capacity-setting" class="form-control" type="number" step="0.01" placeholder="e.g., 25000">
+            <small class="text-muted">Current: <span id="current-petrol-capacity">Loading...</span> L</small>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Diesel Tank Capacity (liters)</label>
+            <input id="diesel-capacity-setting" class="form-control" type="number" step="0.01" placeholder="e.g., 25000">
+            <small class="text-muted">Current: <span id="current-diesel-capacity">Loading...</span> L</small>
+          </div>
+        </div>
+
+        <button class="btn btn-warning mt-3" onclick="updateTankCapacity()">
+          <i class="bi bi-check-circle me-1"></i> Update Capacity
+        </button>
+        <div class="alert alert-warning mt-3 mb-0">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <strong>Note:</strong> Changing capacity affects stock percentage. Update only when needed.
+        </div>
+      </div>
+    </div>
+
+    <!-- System Information -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>System Information</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <p><strong>Application:</strong> Khalid & Sons Petroleum</p>
+            <p><strong>Version:</strong> 1.0.0</p>
+            <p><strong>Database:</strong> Supabase (PostgreSQL)</p>
+          </div>
+          <div class="col-md-6">
+            <p><strong>Total Customers:</strong> <span id="total-customers-count">Loading...</span></p>
+            <p><strong>Total Transactions:</strong> <span id="total-transactions-count">Loading...</span></p>
+            <p><strong>Status:</strong> <span class="badge bg-success">Active</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Management -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="bi bi-database me-2"></i>Data Management</h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <button class="btn btn-outline-primary w-100" onclick="exportData()">
+              <i class="bi bi-download me-2"></i>Export All Data (JSON)
+            </button>
+            <small class="text-muted d-block mt-2">Complete system backup</small>
+          </div>
+          <div class="col-md-6">
+            <button class="btn btn-outline-danger w-100" onclick="clearOldData()">
+              <i class="bi bi-trash me-2"></i>Clear Old Transactions
+            </button>
+            <small class="text-muted d-block mt-2">Remove transactions older than 1 year</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+    <div id="liveToast" class="toast" role="alert">
+      <div class="toast-header">
+        <strong class="me-auto" id="toast-title">Info</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body" id="toast-message">...</div>
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>  
+  <script src="js/app.js"></script>
+  <script src="js/settings-page.js"></script>
+</body>
+</html>
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Settings | Khalid & Sons Petroleum</title>
+  <link rel="icon" type="image/png" href="assets/logo.jfif">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+
+<body data-page="settings">
+  <div id="navbar-placeholder"></div>
+
+  <div class="container py-4">
+    <h3 class="mb-4"><i class="bi bi-gear me-2"></i>Settings & Configuration</h3>
+
+      // Fuel Prices 
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-tag me-2"></i>Fuel Prices</h5>
+      </div>
+      <div class="card-body">
+        <p class="text-muted">Set current fuel prices per liter</p>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Petrol Price (per liter) *</label>
+            <div class="input-group">
+              <span class="input-group-text">Rs.</span>
+              <input id="petrol-price" class="form-control" type="number" step="0.01" required>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Diesel Price (per liter) *</label>
+            <div class="input-group">
+              <span class="input-group-text">Rs.</span>
+              <input id="diesel-price" class="form-control" type="number" step="0.01" required>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary mt-3" onclick="saveFuelPrices()">
+          <i class="bi bi-save me-1"></i> Save Prices
+        </button>
+        <small class="text-muted d-block mt-2">Last updated: <span id="price-update-time">Never</span></small>
+      </div>
+    </div>
+
+      // Tank Capacity 
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-droplet me-2"></i>Tank Capacity Settings</h5>
+      </div>
+      <div class="card-body">
+        <p class="text-muted">Configure tank capacities (one-time setup)</p>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Petrol Tank Capacity (liters)</label>
+            <input id="petrol-capacity-setting" class="form-control" type="number" step="0.01" placeholder="e.g., 25000">
+            <small class="text-muted">Current: <span id="current-petrol-capacity">Loading...</span> L</small>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Diesel Tank Capacity (liters)</label>
+            <input id="diesel-capacity-setting" class="form-control" type="number" step="0.01" placeholder="e.g., 25000">
+            <small class="text-muted">Current: <span id="current-diesel-capacity">Loading...</span> L</small>
+          </div>
+        </div>
+
+        <button class="btn btn-success mt-3" onclick="updateTankCapacity()">
+          <i class="bi bi-check-circle me-1"></i> Update Capacity
+        </button>
+        <div class="alert alert-warning mt-3 mb-0">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <strong>Warning:</strong> Changing tank capacity affects stock percentage calculations. Only update if necessary.
+        </div>
+      </div>
+    </div>
+
+      // System Information 
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>System Information</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <p><strong>Application Name:</strong> Khalid & Sons Petroleum</p>
+            <p><strong>Version:</strong> 1.0.0</p>
+            <p><strong>Database:</strong> Supabase (PostgreSQL)</p>
+          </div>
+          <div class="col-md-6">
+            <p><strong>Total Customers:</strong> <span id="total-customers-count">Loading...</span></p>
+            <p><strong>Total Transactions:</strong> <span id="total-transactions-count">Loading...</span></p>
+            <p><strong>System Status:</strong> <span class="badge bg-success">Active</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+      // Data Management 
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-warning">
+        <h5 class="mb-0"><i class="bi bi-database me-2"></i>Data Management</h5>
+      </div>
+      <div class="card-body">
+        <p class="text-muted">Backup and restore your data</p>
+        
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="d-grid">
+              <button class="btn btn-outline-primary" onclick="exportData()">
+                <i class="bi bi-download me-2"></i>Export Data (JSON)
+              </button>
+            </div>
+            <small class="text-muted d-block mt-2">Download all customers, transactions, and settings</small>
+          </div>
+          <div class="col-md-6">
+            <div class="d-grid">
+              <button class="btn btn-outline-secondary" onclick="generateBackupReport()">
+                <i class="bi bi-file-earmark-zip me-2"></i>Generate Backup
+              </button>
+            </div>
+            <small class="text-muted d-block mt-2">Create a complete system backup</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+        // Danger Zone 
+    <div class="card shadow-sm border-danger">
+      <div class="card-header bg-danger text-white">
+        <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Danger Zone</h5>
+      </div>
+      <div class="card-body">
+        <p class="text-danger"><strong>Warning:</strong> These actions are irreversible. Proceed with caution.</p>
+        
+        <div class="row g-3">
+          <div class="col-md-6">
+            <button class="btn btn-outline-danger" onclick="clearAllTransactions()">
+              <i class="bi bi-trash me-2"></i>Clear All Transactions
+            </button>
+            <small class="text-muted d-block mt-2">Remove all transaction history (keeps customers)</small>
+          </div>
+          <div class="col-md-6">
+            <button class="btn btn-danger" onclick="resetSystem()">
+              <i class="bi bi-arrow-clockwise me-2"></i>Reset System
+            </button>
+            <small class="text-muted d-block mt-2">Complete system reset (removes everything)</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+      // Toast 
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+    <div id="liveToast" class="toast" role="alert">
+      <div class="toast-header">
+        <strong class="me-auto" id="toast-title">Info</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body" id="toast-message">...</div>
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/settings-page.js"></script>
+</body>
+</html> -->
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Settings | Khalid & Sons Petroleum</title>
+  <link rel="icon" type="image/png" href="assets/logo.jfif">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+
+<body data-page="settings">
+  <div id="navbar-placeholder"></div>
+
+  <div class="container py-4">
+    <h3 class="mb-3">Settings</h3>
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="mb-3">Fuel Prices</h5>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Petrol Price (per liter)</label>
+            <input id="petrol-price" class="form-control" type="number" step="0.01">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Diesel Price (per liter)</label>
+            <input id="diesel-price" class="form-control" type="number" step="0.01">
+          </div>
+        </div>
+
+        <button class="btn btn-primary mt-3" onclick="saveFuelPrices()">
+          <i class="bi bi-save me-1"></i> Save Prices
+        </button>
+      </div>
+    </div>
+  </div>
+
+  // Toast 
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+    <div id="liveToast" class="toast" role="alert">
+      <div class="toast-header">
+        <strong class="me-auto" id="toast-title">Info</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body" id="toast-message">...</div>
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html> -->

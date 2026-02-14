@@ -1,0 +1,186 @@
+<!-- <style>
+.nav-link.active {
+    background: #ffffff !important;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    font-weight: 600;
+}
+</style>
+
+<nav class="navbar navbar-expand-lg sticky-top shadow-sm bg-white">
+    <div class="container-fluid">
+
+        <a class="navbar-brand fw-bold d-flex align-items-center" href="index.html">
+            <img src="assets/logo.jfif" height="35" class="me-2">
+            Khalid and Sons Petroleum
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+
+            <ul class="navbar-nav mx-auto">
+
+                <li class="nav-item">
+                    <a class="nav-link" href="index.html" data-page="index">Dashboard</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="customers.html" data-page="customers">Customers</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="transactions.html" data-page="transactions">Transactions</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="mobil.html" data-page="mobil">Mobil Oil</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="rent.html" data-page="rent">Rent</a>
+                </li>
+
+            </ul>
+
+        </div>
+    </div>
+</nav> -->
+
+
+<style>
+/* Navbar Custom Styles */
+.navbar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    padding: 0.8rem 0;
+    box-shadow: 0 2px 20px rgba(102, 126, 234, 0.3);
+}
+
+.navbar-brand {
+    color: white !important;
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.navbar-brand img {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.navbar-brand .brand-text {
+    color: white;
+}
+
+.navbar-toggler {
+    border-color: rgba(255,255,255,0.3);
+    padding: 0.5rem 0.75rem;
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+.navbar-nav {
+    gap: 0.5rem;
+}
+
+.navbar .nav-link {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-weight: 500;
+    padding: 0.6rem 1.2rem !important;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.navbar .nav-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white !important;
+    transform: translateY(-2px);
+}
+
+.navbar .nav-link.active {
+    background: white !important;
+    color: #667eea !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-weight: 600;
+}
+
+.navbar .nav-link i {
+    font-size: 1.1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991px) {
+    .navbar-nav {
+        padding: 1rem 0;
+    }
+    
+    .navbar .nav-link {
+        padding: 0.8rem 1rem !important;
+        margin: 0.2rem 0;
+    }
+}
+</style>
+
+<nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="index.html">
+            <img src="assets/logo.jfif" height="35" alt="Logo">
+            <span class="brand-text">پٹرول پمپ منیجمنٹ<br><small style="font-size: 0.65rem; opacity: 0.9;">Petrol Pump Management System</small></span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="index.html" data-page="index">
+                        <i class="bi bi-speedometer2">
+                        <i class="fa fa-home" aria-hidden="true">
+                        Dashboard
+                        </i>
+                        </i>
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="customers.html" data-page="customers">
+                        <i class="bi bi-people"></i>
+                        Customers
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="transactions.html" data-page="transactions">
+                        <i class="bi bi-receipt"></i>
+                        Transactions
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="reports.html" data-page="reports">
+                        <i class="bi bi-file-earmark-bar-graph"></i>
+                        Reports
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="settings.html" data-page="settings">
+                        <i class="bi bi-gear"></i>
+                        Settings
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

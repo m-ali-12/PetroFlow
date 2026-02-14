@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Dashboard | Khalid and Sons Petroleum</title>
+
+<meta name="description" content="Khalid and Sons Petroleum - Professional petrol pump management system in Pakistan. Real-time fuel tracking, mobil oil management, rent management and customer ledger system.">
+<meta name="keywords" content="Khalid and Sons Petroleum, Petrol Pump Pakistan, Fuel Management System, Petrol Software, Mobil Oil Pakistan">
+<meta name="author" content="Khalid and Sons Petroleum">
+<meta name="robots" content="index, follow">
+
+
+<link rel="canonical" href="https://petro-flow.vercel.app/">
+
+<!-- Open Graph -->
+<meta property="og:title" content="Khalid and Sons Petroleum">
+<meta property="og:description" content="Professional Petrol Pump Management System in Pakistan">
+<meta property="og:image" content="https://petro-flow.vercel.app/assets/logo.jfif">
+<meta property="og:type" content="website">
+
+<!-- Favicon -->
+<link rel="icon" type="image/jfif" href="assets/logo.jfif">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<link rel="stylesheet" href="assets/styles.css">
+
+
+<!-- Schema Markup -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "Khalid and Sons Petroleum",
+  "url": "https://petro-flow.vercel.app/",
+  "image": "https://petro-flow.vercel.app/assets/logo.jfif",
+  "address": {
+    "@type": "PostalAddress",
+    "addressCountry": "PK"
+  }
+}
+</script>
+
+</head>
+
+<body data-page="index">
+  <div id="navbar-placeholder"></div>
+
+  <div class="container-fluid main-wrapper pt-4">
+    <div class="container">
+
+      <!-- Welcome Section -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="welcome-card">
+            <h3><i class="bi bi-speedometer2 me-2"></i>Dashboard Overview</h3>
+            <p class="text-muted mb-0">Real-time insights into your petrol pump operations</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fuel Stock Cards -->
+      <div class="row g-4 mb-4">
+        <div class="col-md-6">
+          <div class="card stat-card petrol-card shadow-sm">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="text-muted mb-2">Petrol Stock</h6>
+                  <h2 class="mb-0 fw-bold" id="petrol-stock">0</h2>
+                  <small class="text-muted">Liters</small>
+                </div>
+                <div class="stat-icon petrol-icon"><i class="bi bi-droplet-fill"></i></div>
+              </div>
+              <div class="progress mt-3" style="height:8px;">
+                <div id="petrol-progress" class="progress-bar bg-success" style="width:0%"></div>
+              </div>
+              <small class="text-muted mt-2 d-block">Capacity: <span id="petrol-capacity">0</span> L</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card stat-card diesel-card shadow-sm">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="text-muted mb-2">Diesel Stock</h6>
+                  <h2 class="mb-0 fw-bold" id="diesel-stock">0</h2>
+                  <small class="text-muted">Liters</small>
+                </div>
+                <div class="stat-icon diesel-icon"><i class="bi bi-droplet-fill"></i></div>
+              </div>
+              <div class="progress mt-3" style="height:8px;">
+                <div id="diesel-progress" class="progress-bar bg-warning" style="width:0%"></div>
+              </div>
+              <small class="text-muted mt-2 d-block">Capacity: <span id="diesel-capacity">0</span> L</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Today's Summary -->
+      <div class="row g-3 mb-4">
+        <div class="col-12">
+          <h5 class="mb-3"><i class="bi bi-calendar-day me-2"></i>Today's Summary</h5>
+        </div>
+        
+        <div class="col-md-3">
+          <div class="card shadow-sm border-success">
+            <div class="card-body text-center">
+              <i class="bi bi-cash-stack text-success" style="font-size: 2rem;"></i>
+              <h6 class="mt-2 text-muted">Total Sales</h6>
+              <h4 id="today-sales">Rs. 0</h4>
+              <small class="text-muted" id="today-sales-count">0 transactions</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="card shadow-sm border-primary">
+            <div class="card-body text-center">
+              <i class="bi bi-wallet2 text-primary" style="font-size: 2rem;"></i>
+              <h6 class="mt-2 text-muted">Vasooli</h6>
+              <h4 id="today-vasooli">Rs. 0</h4>
+              <small class="text-muted">Collections</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="card shadow-sm border-danger">
+            <div class="card-body text-center">
+              <i class="bi bi-bag-x text-danger" style="font-size: 2rem;"></i>
+              <h6 class="mt-2 text-muted">Expenses</h6>
+              <h4 id="today-expenses">Rs. 0</h4>
+              <small class="text-muted">Today's costs</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="card shadow-sm border-info">
+            <div class="card-body text-center">
+              <i class="bi bi-graph-up text-info" style="font-size: 2rem;"></i>
+              <h6 class="mt-2 text-muted">Net Cash</h6>
+              <h4 id="today-net">Rs. 0</h4>
+              <small class="text-muted">Sales + Vasooli - Expenses</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="row g-3 mb-4">
+        <div class="col-12"><h5 class="mb-3"><i class="bi bi-lightning-charge me-2"></i>Quick Actions</h5></div>
+
+        <div class="col-md-3">
+          <a class="btn btn-primary w-100 py-3" href="transactions.html">
+            <i class="bi bi-plus-circle me-2"></i>New Sale
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a class="btn btn-success w-100 py-3" href="transactions.html">
+            <i class="bi bi-cash me-2"></i>Vasooli (Debit)
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a class="btn btn-warning w-100 py-3" href="transactions.html">
+            <i class="bi bi-wallet2 me-2"></i>Expense
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a class="btn btn-info w-100 py-3" href="customers.html">
+            <i class="bi bi-person-plus me-2"></i>Add Customer
+          </a>
+        </div>
+
+        <div class="col-md-6">
+          <a class="btn btn-outline-primary w-100 py-3" href="mobil.html">
+            <i class="bi bi-droplet-half me-2"></i>Mobil Oil Management
+          </a>
+        </div>
+        <div class="col-md-6">
+          <a class="btn btn-outline-success w-100 py-3" href="rent.html">
+            <i class="bi bi-shop me-2"></i>Shop Rent Management
+          </a>
+        </div>
+      </div>
+
+      <!-- Recent Transactions -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Transactions</h5>
+          <a href="transactions.html" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Time</th>
+                  <th>Customer</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Liters</th>
+                </tr>
+              </thead>
+              <tbody id="recent-transactions">
+                <tr><td colspan="5" class="text-center text-muted py-4">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Low Stock Alert -->
+      <div id="low-stock-alert" class="alert alert-warning d-none mb-4">
+        <h6 class="alert-heading"><i class="bi bi-exclamation-triangle me-2"></i>Low Stock Warning</h6>
+        <p class="mb-0" id="low-stock-message"></p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+    <div id="liveToast" class="toast" role="alert">
+      <div class="toast-header">
+        <strong class="me-auto" id="toast-title">Info</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body" id="toast-message">...</div>
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>  
+  <script src="js/app.js"></script>
+  <script src="js/dashboard.js"></script>
+
+  <style>
+    .welcome-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 2rem;
+      border-radius: 12px;
+      color: white;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .welcome-card h3 {
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-card {
+      border: none;
+      border-radius: 12px;
+      transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .stat-icon {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      font-size: 1.8rem;
+    }
+
+    .petrol-icon {
+      background: rgba(25, 135, 84, 0.1);
+      color: #198754;
+    }
+
+    .diesel-icon {
+      background: rgba(255, 193, 7, 0.1);
+      color: #ffc107;
+    }
+  </style>
+</body>
+</html>
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+
+
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Khalid and Sons Petroleum | Petrol Pump Management Pakistan</title>
+
+<meta name="description" content="Khalid and Sons Petroleum - Professional petrol pump management system in Pakistan. Real-time fuel tracking, mobil oil management, rent management and customer ledger system.">
+<meta name="keywords" content="Khalid and Sons Petroleum, Petrol Pump Pakistan, Fuel Management System, Petrol Software, Mobil Oil Pakistan">
+<meta name="author" content="Khalid and Sons Petroleum">
+<meta name="robots" content="index, follow">
+
+<link rel="canonical" href="https://petro-flow.vercel.app/">
+
+   //Open Graph 
+<meta property="og:title" content="Khalid and Sons Petroleum">
+<meta property="og:description" content="Professional Petrol Pump Management System in Pakistan">
+<meta property="og:image" content="https://petro-flow.vercel.app/assets/logo.jfif">
+<meta property="og:type" content="website">
+
+  Favicon 
+<link rel="icon" type="image/jfif" href="assets/logo.jfif">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<link rel="stylesheet" href="assets/styles.css">
+
+  // Schema Markup 
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "Khalid and Sons Petroleum",
+  "url": "https://petro-flow.vercel.app/",
+  "image": "https://petro-flow.vercel.app/assets/logo.jfif",
+  "address": {
+    "@type": "PostalAddress",
+    "addressCountry": "PK"
+  }
+}
+</script>
+
+</head>
+
+
+
+<body data-page="index">
+  <div id="navbar-placeholder"></div>
+
+  <div class="container-fluid main-wrapper pt-3">
+    <div class="container">
+
+      <div class="row g-4 mb-4">
+        <div class="col-md-6">
+          <div class="card stat-card petrol-card shadow-sm">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="text-muted mb-2">Petrol Stock</h6>
+                  <h2 class="mb-0 fw-bold" id="petrol-stock">0</h2>
+                  <small class="text-muted">Liters</small>
+                </div>
+                <div class="stat-icon petrol-icon"><i class="bi bi-droplet-fill"></i></div>
+              </div>
+              <div class="progress mt-3" style="height:8px;">
+                <div id="petrol-progress" class="progress-bar bg-success" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card stat-card diesel-card shadow-sm">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="text-muted mb-2">Diesel Stock</h6>
+                  <h2 class="mb-0 fw-bold" id="diesel-stock">0</h2>
+                  <small class="text-muted">Liters</small>
+                </div>
+                <div class="stat-icon diesel-icon"><i class="bi bi-droplet-fill"></i></div>
+              </div>
+              <div class="progress mt-3" style="height:8px;">
+                <div id="diesel-progress" class="progress-bar bg-warning" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+          // Quick Actions 
+      <div class="row g-3 mb-4">
+        <div class="col-12"><h5 class="mb-3">Quick Actions</h5></div>
+
+        <div class="col-md-3">
+          <a class="btn btn-primary w-100 py-3" href="transactions.html">
+            <i class="bi bi-plus-circle me-2"></i>New Sale
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a class="btn btn-success w-100 py-3" href="transactions.html">
+            <i class="bi bi-cash me-2"></i>Vasooli (Debit)
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a class="btn btn-warning w-100 py-3" href="transactions.html">
+            <i class="bi bi-wallet2 me-2"></i>Expense
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a class="btn btn-info w-100 py-3" href="customers.html">
+            <i class="bi bi-person-plus me-2"></i>Add Customer
+          </a>
+        </div>
+
+        <div class="col-md-6">
+          <a class="btn btn-outline-primary w-100 py-3" href="mobil.html">
+            <i class="bi bi-droplet-half me-2"></i>Mobil
+          </a>
+        </div>
+        <div class="col-md-6">
+          <a class="btn btn-outline-success w-100 py-3" href="rent.html">
+            <i class="bi bi-shop me-2"></i>Rent
+          </a>
+        </div>
+      </div>
+
+        // Recent Transactions 
+      <div class="card shadow-sm mb-5">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">Recent Transactions</h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Time</th>
+                  <th>Customer</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Liters</th>
+                </tr>
+              </thead>
+              <tbody id="recent-transactions">
+                <tr><td colspan="5" class="text-center text-muted py-4">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  // Toast 
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+    <div id="liveToast" class="toast" role="alert">
+      <div class="toast-header">
+        <strong class="me-auto" id="toast-title">Info</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body" id="toast-message">...</div>
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html> -->
+
+
+<!-- <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Khalid & Sons Petroleum</title>
+  <link rel="icon" type="image/png" href="assets/logo.png">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/styles.css">
+</head> -->

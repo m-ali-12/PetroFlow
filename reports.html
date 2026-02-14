@@ -1,0 +1,305 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reports | Khalid & Sons Petroleum</title>
+  <link rel="icon" type="image/png" href="assets/logo.jfif">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+
+<body data-page="reports">
+  <div id="navbar-placeholder"></div>
+
+  <div class="container py-4">
+    <h3 class="mb-3">Reports</h3>
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <label class="form-label">Select Date</label>
+        <input type="date" id="report-date" class="form-control" />
+
+        <div class="alert alert-info mt-3 mb-0">
+          Report module UI ready. (Agar tum chaaho to main tumhare existing report code ko bhi yahan fully migrate kar doon.)
+        </div>
+      </div>
+    </div>
+  </div>
+
+    // Toast 
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+    <div id="liveToast" class="toast" role="alert">
+      <div class="toast-header">
+        <strong class="me-auto" id="toast-title">Info</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body" id="toast-message">...</div>
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reports | Khalid & Sons Petroleum</title>
+  <link rel="icon" type="image/png" href="assets/logo.jfif">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+
+<body data-page="reports">
+  <div id="navbar-placeholder"></div>
+
+  <div class="container py-4">
+    <h3 class="mb-4"><i class="bi bi-file-earmark-bar-graph me-2"></i>Reports & Analytics</h3>
+
+    <!-- Report Type Selection -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-3">
+        <div class="card report-card shadow-sm" onclick="selectReportType('daily')">
+          <div class="card-body text-center">
+            <i class="bi bi-calendar-day text-primary" style="font-size: 2.5rem;"></i>
+            <h6 class="mt-2">Daily Report</h6>
+            <small class="text-muted">Day-wise summary</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card report-card shadow-sm" onclick="selectReportType('monthly')">
+          <div class="card-body text-center">
+            <i class="bi bi-calendar-month text-success" style="font-size: 2.5rem;"></i>
+            <h6 class="mt-2">Monthly Report</h6>
+            <small class="text-muted">Month-wise analysis</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card report-card shadow-sm" onclick="selectReportType('customer')">
+          <div class="card-body text-center">
+            <i class="bi bi-people text-info" style="font-size: 2.5rem;"></i>
+            <h6 class="mt-2">Customer Report</h6>
+            <small class="text-muted">Customer-wise detail</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card report-card shadow-sm" onclick="selectReportType('summary')">
+          <div class="card-body text-center">
+            <i class="bi bi-graph-up text-warning" style="font-size: 2.5rem;"></i>
+            <h6 class="mt-2">Summary Report</h6>
+            <small class="text-muted">Overall analysis</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Daily Report Section -->
+    <div id="daily-report-section" class="report-section" style="display: none;">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0"><i class="bi bi-calendar-day me-2"></i>Daily Report</h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Select Date *</label>
+              <input type="date" id="daily-date" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">&nbsp;</label>
+              <button class="btn btn-primary w-100" onclick="generateDailyReport()">
+                <i class="bi bi-file-earmark-text me-1"></i>Generate Report
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="daily-report-content"></div>
+    </div>
+
+    <!-- Monthly Report Section -->
+    <div id="monthly-report-section" class="report-section" style="display: none;">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0"><i class="bi bi-calendar-month me-2"></i>Monthly Report</h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Select Month *</label>
+              <select id="monthly-month" class="form-select">
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Select Year *</label>
+              <select id="monthly-year" class="form-select"></select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">&nbsp;</label>
+              <button class="btn btn-success w-100" onclick="generateMonthlyReport()">
+                <i class="bi bi-file-earmark-text me-1"></i>Generate Report
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="monthly-report-content"></div>
+    </div>
+
+    <!-- Customer Report Section -->
+    <div id="customer-report-section" class="report-section" style="display: none;">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0"><i class="bi bi-people me-2"></i>Customer Report</h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Select Customer *</label>
+              <select id="customer-select" class="form-select"></select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">From Date *</label>
+              <input type="date" id="customer-from-date" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">To Date *</label>
+              <input type="date" id="customer-to-date" class="form-control">
+            </div>
+            <div class="col-md-12">
+              <button class="btn btn-info" onclick="generateCustomerReport()">
+                <i class="bi bi-file-earmark-text me-1"></i>Generate Report
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="customer-report-content"></div>
+    </div>
+
+    <!-- Summary Report Section -->
+    <div id="summary-report-section" class="report-section" style="display: none;">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-warning">
+          <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Summary Report</h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">From Date *</label>
+              <input type="date" id="summary-from-date" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">To Date *</label>
+              <input type="date" id="summary-to-date" class="form-control">
+            </div>
+            <div class="col-md-12">
+              <button class="btn btn-warning" onclick="generateSummaryReport()">
+                <i class="bi bi-file-earmark-text me-1"></i>Generate Report
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="summary-report-content"></div>
+    </div>
+  </div>
+
+  <style>
+    .report-card {
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+
+    .report-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2) !important;
+      border-color: var(--bs-primary);
+    }
+
+    .report-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .report-header {
+      border-bottom: 3px solid #333;
+      padding-bottom: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-box {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 8px;
+      border-left: 4px solid;
+      margin-bottom: 1rem;
+    }
+
+    .stat-box.primary { border-left-color: var(--bs-primary); }
+    .stat-box.success { border-left-color: var(--bs-success); }
+    .stat-box.danger { border-left-color: var(--bs-danger); }
+    .stat-box.warning { border-left-color: var(--bs-warning); }
+    .stat-box.info { border-left-color: var(--bs-info); }
+
+    @media print {
+      .no-print { display: none !important; }
+      .report-content { box-shadow: none; }
+    }
+  </style>
+
+  <!-- Toast -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+    <div id="liveToast" class="toast" role="alert">
+      <div class="toast-header">
+        <strong class="me-auto" id="toast-title">Info</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body" id="toast-message">...</div>
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>  
+  <script src="js/app.js"></script>
+  <script src="js/reports.js"></script>
+</body>
+</html>

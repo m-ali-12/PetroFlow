@@ -1,0 +1,337 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Shop Rent | Khalid & Sons Petroleum</title>
+  <link rel="icon" type="image/png" href="assets/logo.jfif">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+
+<body data-page="rent">
+  <div id="navbar-placeholder"></div>
+
+  <div class="container py-4">
+    <h3 class="mb-4"><i class="bi bi-shop me-2"></i>Shop Rent Management</h3>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-3">
+        <div class="card shadow-sm border-primary">
+          <div class="card-body text-center">
+            <i class="bi bi-shop text-primary" style="font-size: 2rem;"></i>
+            <h6 class="mt-2 text-muted">Total Shops</h6>
+            <h3 id="total-shops">0</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm border-success">
+          <div class="card-body text-center">
+            <i class="bi bi-cash-stack text-success" style="font-size: 2rem;"></i>
+            <h6 class="mt-2 text-muted">This Month Rent</h6>
+            <h3 id="month-rent">Rs. 0</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm border-warning">
+          <div class="card-body text-center">
+            <i class="bi bi-clock-history text-warning" style="font-size: 2rem;"></i>
+            <h6 class="mt-2 text-muted">Pending Payments</h6>
+            <h3 id="pending-rent">0</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm border-info">
+          <div class="card-body text-center">
+            <i class="bi bi-check-circle text-info" style="font-size: 2rem;"></i>
+            <h6 class="mt-2 text-muted">Paid This Month</h6>
+            <h3 id="paid-rent">Rs. 0</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-3">
+        <button class="btn btn-primary w-100 py-3" data-bs-toggle="modal" data-bs-target="#addShopModal">
+          <i class="bi bi-plus-circle me-2"></i>
+          Add Shop
+        </button>
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-success w-100 py-3" data-bs-toggle="modal" data-bs-target="#recordPaymentModal">
+          <i class="bi bi-cash me-2"></i>
+          Record Payment
+        </button>
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-warning w-100 py-3" onclick="generateMonthlyRent()">
+          <i class="bi bi-calendar-check me-2"></i>
+          Generate Monthly
+        </button>
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-info w-100 py-3" onclick="viewRentHistory()">
+          <i class="bi bi-clock-history me-2"></i>
+          View History
+        </button>
+      </div>
+    </div>
+
+    <!-- Shops List -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">Registered Shops</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Shop Name</th>
+                <th>Tenant Name</th>
+                <th>Monthly Rent</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="shops-table">
+              <tr><td colspan="6" class="text-center text-muted py-4">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rent Payments (Current Month) -->
+    <div class="card shadow-sm">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Current Month Rent Status</h5>
+        <select id="month-filter" class="form-select form-select-sm" style="width: auto;">
+          <option value="current">Current Month</option>
+          <option value="1">January</option>
+          <option value="2">February</option>
+          <option value="3">March</option>
+          <option value="4">April</option>
+          <option value="5">May</option>
+          <option value="6">June</option>
+          <option value="7">July</option>
+          <option value="8">August</option>
+          <option value="9">September</option>
+          <option value="10">October</option>
+          <option value="11">November</option>
+          <option value="12">December</option>
+        </select>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Shop</th>
+                <th>Month/Year</th>
+                <th>Amount</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Paid Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="rent-payments-table">
+              <tr><td colspan="7" class="text-center text-muted py-4">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Shop Modal -->
+  <div class="modal fade" id="addShopModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="addShopForm" onsubmit="event.preventDefault(); addShop();">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title"><i class="bi bi-shop me-2"></i>Add New Shop</h5>
+            <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Shop Name *</label>
+              <input id="shop-name" class="form-control" type="text" required placeholder="e.g., Shop #1, Corner Shop">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Tenant Name *</label>
+              <input id="tenant-name" class="form-control" type="text" required placeholder="Tenant's full name">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Phone Number</label>
+              <input id="tenant-phone" class="form-control" type="tel" placeholder="03XX-XXXXXXX">
+            </div>
+
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label class="form-label">Monthly Rent *</label>
+                <input id="monthly-rent" class="form-control" type="number" step="0.01" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Rent Due Day</label>
+                <input id="due-day" class="form-control" type="number" min="1" max="31" value="1" required>
+                <small class="text-muted">Day of month for payment</small>
+              </div>
+            </div>
+
+            <div class="mb-3 mt-2">
+              <label class="form-label">Agreement Start Date *</label>
+              <input id="agreement-start" class="form-control" type="date" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Notes</label>
+              <textarea id="shop-notes" class="form-control" rows="2"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
+            <button class="btn btn-primary" type="submit">
+              <i class="bi bi-check-circle me-1"></i>Add Shop
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Record Payment Modal -->
+  <div class="modal fade" id="recordPaymentModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="recordPaymentForm" onsubmit="event.preventDefault(); recordPayment();">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title"><i class="bi bi-cash me-2"></i>Record Rent Payment</h5>
+            <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Select Rent Entry *</label>
+              <select id="rent-entry-select" class="form-select" required>
+                <option value="">Loading...</option>
+              </select>
+              <small class="text-muted">Only unpaid entries shown</small>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Payment Date *</label>
+              <input id="payment-date" class="form-control" type="date" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Amount Paid *</label>
+              <input id="payment-amount" class="form-control" type="number" step="0.01" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Payment Method</label>
+              <select id="payment-method" class="form-select">
+                <option value="Cash">Cash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Cheque">Cheque</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Notes</label>
+              <textarea id="payment-notes" class="form-control" rows="2"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
+            <button class="btn btn-success" type="submit">
+              <i class="bi bi-check-circle me-1"></i>Record Payment
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+    <div id="liveToast" class="toast" role="alert">
+      <div class="toast-header">
+        <strong class="me-auto" id="toast-title">Info</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body" id="toast-message">...</div>
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>  
+  <script src="js/app.js"></script>
+  <script src="js/rent-management.js"></script>
+</body>
+</html>
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rent | Khalid & Sons Petroleum</title>
+  <link rel="icon" type="image/png" href="assets/logo.jfif">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+
+<body data-page="rent">
+  <div id="navbar-placeholder"></div>
+
+  <div class="container py-4">
+    <h3 class="mb-3"><i class="bi bi-shop me-2"></i>Shop Rent</h3>
+
+    <div class="alert alert-info">
+      Rent module page ready. (Agar tum chaho to main tumhari rent.html ka full UI + DB integration yahan migrate kar dunga.)
+    </div>
+  </div>
+
+  //Toast
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+    <div id="liveToast" class="toast" role="alert">
+      <div class="toast-header">
+        <strong class="me-auto" id="toast-title">Info</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body" id="toast-message">...</div>
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html> -->

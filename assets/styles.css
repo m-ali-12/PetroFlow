@@ -1,0 +1,75 @@
+body {
+  font-family: 'Poppins', sans-serif;
+  background: #f8fafc;
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+.card {
+  border-radius: 15px;
+  transition: 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .card {
+    padding: 1rem !important;
+  }
+}
+
+/* ==============================
+   FORCE ANIMATED SCROLLBAR
+============================== */
+
+/* Apply to whole page */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Chrome / Edge / Brave */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 14px;
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+  background: #eef2f7;
+  border-radius: 10px;
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+  background: linear-gradient(270deg, #2563eb, #7c3aed, #2563eb);
+  background-size: 400% 400%;
+  border-radius: 10px;
+  animation: scrollbarFlow 5s linear infinite;
+  border: 3px solid #eef2f7;
+}
+
+/* Hover effect */
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover {
+  box-shadow: 0 0 12px #7c3aed;
+}
+
+/* Animation */
+@keyframes scrollbarFlow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 400% 50%; }
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #7c3aed #eef2f7;
+}

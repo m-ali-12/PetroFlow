@@ -1,0 +1,427 @@
+<!-- <nav class="navbar navbar-expand-lg navbar-dark bg-gradient sticky-top shadow-sm">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold d-flex align-items-center" href="index.html">
+      <img src="assets/logo.jfif" alt="Khalid & Sons Petroleum" height="38" class="me-2 rounded">
+      <div>
+        <div class="brand-title">Khalid & Sons</div>
+        <small class="brand-subtitle">Petroleum Management</small>
+      </div>
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto align-items-lg-center">
+        <li class="nav-item"><a class="nav-link" href="index.html" data-page="index">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="customers.html" data-page="customers">Customers</a></li>
+        <li class="nav-item"><a class="nav-link" href="transactions.html" data-page="transactions">Transactions</a></li>
+        <li class="nav-item"><a class="nav-link" href="reports.html" data-page="reports">Reports</a></li>
+        <li class="nav-item"><a class="nav-link" href="settings.html" data-page="settings">Settings</a></li>
+        <li class="nav-item"><a class="nav-link" href="mobil.html" data-page="mobil">Mobil</a></li>
+        <li class="nav-item"><a class="nav-link" href="rent.html" data-page="rent">Rent</a></li>
+      </ul>
+
+      <div class="navbar-user-info ms-lg-3 mt-3 mt-lg-0">
+        <span class="badge bg-light text-dark">
+          <i class="bi bi-calendar3"></i> <span id="current-date"></span>
+        </span>
+        <span class="badge bg-success ms-2">
+          <i class="bi bi-clock"></i> <span id="current-time"></span>
+        </span>
+      </div>
+    </div>
+  </div>
+</nav> -->
+<!-- 
+
+<style>
+    /* Navbar compact height aur transparency */
+    .navbar {
+        background: rgba(255, 255, 255, 0.9) !important;
+        backdrop-filter: blur(10px);
+        padding: 4px 15px !important;
+        min-height: 55px;
+        border-bottom: 1px solid #ddd !important;
+        margin-bottom: 0 !important; /* Gap khatam karne ke liye */
+    }
+
+    /* Text color ko forcefully black karne ke liye */
+    .navbar-brand, .brand-title, .nav-link, .nav-link span, .nav-link i {
+        color: #000000 !important; 
+    }
+
+    .brand-title { font-size: 1rem !important; margin: 0; line-height: 1.1; }
+    .brand-subtitle { font-size: 0.6rem !important; color: #555 !important; }
+
+    /* Dashboard Active Button Style */
+    .nav-link.active {
+        background: #ffffff !important;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 6px 15px !important;
+        font-weight: 600;
+    }
+
+    .nav-link {
+        font-size: 0.85rem !important;
+        margin: 0 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Right icons (Calendar & Clock) */
+    .status-circle {
+        width: 28px; height: 28px;
+        background: #198754;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Extra padding force remove karne ke liye */
+    .main-wrapper {
+        margin-top: 0 !important;
+        padding-top: 10px !important; 
+    }
+
+    .container-fluid {
+    background: var(--light-bg);
+    min-height: calc(17vh - 70px);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
+    }
+</style>
+
+<nav class="navbar navbar-expand-lg sticky-top shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center" href="#">
+            <i class="bi bi-fuel-pump-fill fs-4 me-2"></i>
+            <div class="d-flex flex-column">
+                <span class="brand-title fw-bold">پٹرول پمپ مینجمنٹ</span>
+                <span class="brand-subtitle">Petrol Pump Management System</span>
+            </div>
+        </a>
+
+        <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon" style="font-size: 0.8rem;"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav mx-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#" onclick="showSection('dashboard')">
+                        <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="showSection('customers')">
+                        <i class="bi bi-people"></i> <span>Customers</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="showSection('transactions')">
+                        <i class="bi bi-cash-stack"></i> <span>Transactions</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="showSection('reports')">
+                        <i class="bi bi-file-text"></i> <span>Reports</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="showSection('settings')">
+                        <i class="bi bi-gear"></i> <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="d-flex align-items-center ms-auto">
+                <i class="bi bi-calendar3 me-3 fs-6"></i>
+                <div class="status-circle">
+                    <i class="bi bi-clock" style="font-size: 0.8rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>  -->
+<!-- 
+<style>
+/* Navbar Styling - Matching First Image */
+.navbar.bg-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    box-shadow: 0 2px 20px rgba(102, 126, 234, 0.3) !important;
+}
+
+.navbar-brand {
+    color: white !important;
+}
+
+.brand-title {
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: white;
+}
+
+.brand-subtitle {
+    font-size: 0.7rem;
+    opacity: 0.9;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.navbar-brand img {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.navbar-toggler {
+    border-color: rgba(255,255,255,0.3);
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+.navbar .nav-link {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-weight: 500;
+    padding: 0.6rem 1rem !important;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    margin: 0 0.2rem;
+}
+
+.navbar .nav-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white !important;
+    transform: translateY(-2px);
+}
+
+.navbar .nav-link.active {
+    background: white !important;
+    color: #667eea !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-weight: 600;
+}
+
+.navbar-user-info .badge {
+    padding: 0.5rem 0.8rem;
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.navbar-user-info .bg-light {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.navbar-user-info .bg-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+}
+
+@media (max-width: 991px) {
+    .navbar-nav {
+        padding: 1rem 0;
+    }
+    
+    .navbar .nav-link {
+        padding: 0.8rem 1rem !important;
+        margin: 0.2rem 0;
+    }
+    
+    .navbar-user-info {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+}
+</style>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-gradient sticky-top shadow-sm">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold d-flex align-items-center" href="index.html">
+      <img src="assets/logo.jfif" alt="Khalid & Sons Petroleum" height="38" class="me-2 rounded">
+      <div>
+        <div class="brand-title">Khalid & Sons</div>
+        <small class="brand-subtitle">Petroleum Management</small>
+      </div>
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto align-items-lg-center">
+        <li class="nav-item"><a class="nav-link" href="index.html" data-page="index">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="customers.html" data-page="customers">Customers</a></li>
+        <li class="nav-item"><a class="nav-link" href="transactions.html" data-page="transactions">Transactions</a></li>
+        <li class="nav-item"><a class="nav-link" href="reports.html" data-page="reports">Reports</a></li>
+        <li class="nav-item"><a class="nav-link" href="settings.html" data-page="settings">Settings</a></li>
+        <li class="nav-item"><a class="nav-link" href="mobil.html" data-page="mobil">Mobil</a></li>
+        <li class="nav-item"><a class="nav-link" href="rent.html" data-page="rent">Rent</a></li>
+      </ul>
+
+      <div class="navbar-user-info ms-lg-3 mt-3 mt-lg-0">
+        <span class="badge bg-light text-dark">
+          <i class="bi bi-calendar3"></i> <span id="current-date"></span>
+        </span>
+        <span class="badge bg-success ms-2">
+          <i class="bi bi-clock"></i> <span id="current-time"></span>
+        </span>
+      </div>
+    </div>
+  </div>
+</nav> -->
+
+<style>
+/* Navbar Styling - Matching First Image */
+.navbar.bg-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    box-shadow: 0 2px 20px rgba(102, 126, 234, 0.3) !important;
+}
+
+.navbar-brand {
+    color: white !important;
+}
+
+.brand-title {
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: white;
+}
+
+.brand-subtitle {
+    font-size: 0.7rem;
+    opacity: 0.9;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.navbar-brand img {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.navbar-toggler {
+    border-color: rgba(255,255,255,0.3);
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+.navbar .nav-link {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-weight: 500;
+    padding: 0.6rem 1rem !important;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    margin: 0 0.2rem;
+}
+
+.navbar .nav-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white !important;
+    transform: translateY(-2px);
+}
+
+.navbar .nav-link.active {
+    background: white !important;
+    color: #667eea !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-weight: 600;
+}
+
+.navbar-user-info .badge {
+    padding: 0.5rem 0.8rem;
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.navbar-user-info .bg-light {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.navbar-user-info .bg-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+}
+
+@media (max-width: 991px) {
+    .navbar-nav {
+        padding: 1rem 0;
+    }
+    
+    .navbar .nav-link {
+        padding: 0.8rem 1rem !important;
+        margin: 0.2rem 0;
+    }
+    
+    .navbar-user-info {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+}
+</style>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-gradient sticky-top shadow-sm">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold d-flex align-items-center" href="index.html">
+      <img src="assets/logo.jfif" alt="Khalid & Sons Petroleum" height="38" class="me-2 rounded">
+      <div>
+        <div class="brand-title">Khalid & Sons</div>
+        <small class="brand-subtitle">Petroleum Management</small>
+      </div>
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto align-items-lg-center">
+        <li class="nav-item"><a class="nav-link" href="index.html" data-page="index">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="customers.html" data-page="customers">Customers</a></li>
+        <li class="nav-item"><a class="nav-link" href="transactions.html" data-page="transactions">Transactions</a></li>
+        <li class="nav-item"><a class="nav-link" href="reports.html" data-page="reports">Reports</a></li>
+        <li class="nav-item"><a class="nav-link" href="settings.html" data-page="settings">Settings</a></li>
+        <li class="nav-item"><a class="nav-link" href="mobil.html" data-page="mobil">Mobil</a></li>
+        <li class="nav-item"><a class="nav-link" href="rent.html" data-page="rent">Rent</a></li>
+        
+        <!-- User Dropdown -->
+        <li class="nav-item dropdown ms-2">
+          <a class="nav-link dropdown-toggle" href="#" id="userDropdown" 
+             data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-person-circle"></i> Account
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+            <li><h6 class="dropdown-header" id="user-email-display">User Email</h6></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="pump-profile.html">
+              <i class="bi bi-building me-2"></i>Pump Profile
+            </a></li>
+            <li><a class="dropdown-item" href="settings.html">
+              <i class="bi bi-gear me-2"></i>Settings
+            </a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="#" id="logout-btn">
+              <i class="bi bi-box-arrow-right me-2"></i>Logout
+            </a></li>
+          </ul>
+        </li>
+      </ul>
+
+      <div class="navbar-user-info ms-lg-3 mt-3 mt-lg-0">
+        <span class="badge bg-light text-dark">
+          <i class="bi bi-calendar3"></i> <span id="current-date"></span>
+        </span>
+        <span class="badge bg-success ms-2">
+          <i class="bi bi-clock"></i> <span id="current-time"></span>
+        </span>
+      </div>
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,442 @@
+<!-- <footer class="footer mt-5">
+  <div class="footer-top">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-lg-4 col-md-6">
+          <div class="footer-section">
+            <h5 class="footer-title">
+              <i class="bi bi-fuel-pump-fill me-2"></i>
+              Khalid & Sons Petroleum
+            </h5>
+            <p class="footer-text">
+              Real-time tracking, customer management, and reporting for petrol pump operations.
+            </p>
+          </div>
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+          <div class="footer-section">
+            <h6 class="footer-subtitle">Quick Links</h6>
+            <ul class="footer-links">
+              <li><a href="index.html">Dashboard</a></li>
+              <li><a href="customers.html">Customers</a></li>
+              <li><a href="transactions.html">Transactions</a></li>
+              <li><a href="reports.html">Reports</a></li>
+              <li><a href="settings.html">Settings</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+          <div class="footer-section">
+            <h6 class="footer-subtitle">Modules</h6>
+            <ul class="footer-links">
+              <li><a href="mobil.html">Mobil Oil</a></li>
+              <li><a href="rent.html">Shop Rent</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+          <div class="footer-section">
+            <h6 class="footer-subtitle">System Info</h6>
+            <ul class="footer-info">
+              <li><i class="bi bi-geo-alt-fill text-danger"></i> <div><strong>Location:</strong><span>Pakistan</span></div></li>
+              <li><i class="bi bi-code-square text-success"></i> <div><strong>Version:</strong><span>1.0.0</span></div></li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div class="container text-center">
+      <div class="footer-copyright">
+        © <span id="footer-year"></span> <strong>Khalid & Sons Petroleum</strong>
+      </div>
+    </div>
+  </div>
+</footer> -->
+<!-- <style>
+/* Footer Styling - Matching First Image Dark Theme */
+.footer {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    margin-top: 4rem;
+}
+
+.footer-top {
+    padding: 3rem 0 2rem;
+}
+
+.footer-section {
+    margin-bottom: 1.5rem;
+}
+
+.footer-title {
+    color: white;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.footer-title i {
+    color: #667eea;
+    font-size: 1.5rem;
+}
+
+.footer-text {
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.6;
+    font-size: 0.9rem;
+}
+
+.footer-subtitle {
+    color: white;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-links li {
+    margin-bottom: 0.6rem;
+}
+
+.footer-links a {
+    color: rgba(255, 255, 255, 0.75);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-block;
+    font-size: 0.9rem;
+}
+
+.footer-links a:hover {
+    color: #667eea;
+    padding-left: 0.5rem;
+}
+
+.footer-info {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-info li {
+    display: flex;
+    align-items: start;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.9rem;
+}
+
+.footer-info li i {
+    font-size: 1.2rem;
+    margin-top: 0.1rem;
+}
+
+.footer-info li div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.footer-info li strong {
+    color: white;
+    font-weight: 600;
+}
+
+.footer-info li span {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.5rem 0;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.footer-copyright {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.footer-copyright strong {
+    color: white;
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .footer-top {
+        padding: 2rem 0 1rem;
+    }
+    
+    .footer-section {
+        margin-bottom: 2rem;
+    }
+}
+</style> -->
+
+<style>
+/* ===========================
+   PREMIUM ANIMATED FOOTER
+=========================== */
+
+.footer {
+    position: relative;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    color: white;
+    margin-top: 5rem;
+    overflow: hidden;
+}
+
+/* Floating Background Glow */
+.footer::before,
+.footer::after {
+    content: "";
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(102,126,234,0.3), transparent 70%);
+    border-radius: 50%;
+    filter: blur(80px);
+    animation: floatGlow 10s infinite alternate ease-in-out;
+    z-index: 0;
+}
+
+.footer::before {
+    top: -150px;
+    left: -150px;
+}
+
+.footer::after {
+    bottom: -150px;
+    right: -150px;
+    animation-delay: 3s;
+}
+
+@keyframes floatGlow {
+    from { transform: translateY(0px) translateX(0px); }
+    to { transform: translateY(40px) translateX(40px); }
+}
+
+.footer-top {
+    padding: 4rem 0 3rem;
+    position: relative;
+    z-index: 2;
+}
+
+/* Fade-in Animation */
+.footer-section {
+    opacity: 0;
+    transform: translateY(40px);
+    animation: fadeUp 1s forwards;
+}
+
+.footer-section:nth-child(1) { animation-delay: 0.2s; }
+.footer-section:nth-child(2) { animation-delay: 0.4s; }
+.footer-section:nth-child(3) { animation-delay: 0.6s; }
+.footer-section:nth-child(4) { animation-delay: 0.8s; }
+
+@keyframes fadeUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.footer-title {
+    font-weight: 700;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+}
+
+.footer-title i {
+    color: #667eea;
+    font-size: 1.6rem;
+    animation: pulseIcon 2s infinite ease-in-out;
+}
+
+@keyframes pulseIcon {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+.footer-text {
+    color: rgba(255,255,255,0.8);
+    line-height: 1.7;
+    font-size: 0.95rem;
+}
+
+/* Subtitle */
+.footer-subtitle {
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+/* Links */
+.footer-links {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-links li {
+    margin-bottom: 0.6rem;
+}
+
+.footer-links a {
+    color: rgba(255,255,255,0.75);
+    text-decoration: none;
+    position: relative;
+    transition: 0.3s ease;
+}
+
+.footer-links a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -3px;
+    width: 0%;
+    height: 2px;
+    background: #667eea;
+    transition: width 0.3s ease;
+}
+
+.footer-links a:hover {
+    color: white;
+}
+
+.footer-links a:hover::after {
+    width: 100%;
+}
+
+/* Info */
+.footer-info {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-info li {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+    color: rgba(255,255,255,0.75);
+    font-size: 0.9rem;
+    transition: 0.3s ease;
+}
+
+.footer-info li:hover {
+    transform: translateX(6px);
+    color: white;
+}
+
+.footer-info li i {
+    font-size: 1.2rem;
+}
+
+/* Bottom */
+.footer-bottom {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding: 1.5rem 0;
+    background: rgba(255,255,255,0.02);
+    backdrop-filter: blur(6px);
+}
+
+.footer-copyright {
+    color: rgba(255,255,255,0.7);
+    font-size: 0.9rem;
+}
+
+.footer-copyright strong {
+    color: #667eea;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .footer-top {
+        padding: 3rem 0 2rem;
+    }
+}
+</style>
+
+<footer class="footer mt-5">
+  <div class="footer-top">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-lg-4 col-md-6">
+          <div class="footer-section">
+            <h5 class="footer-title">
+              <i class="bi bi-fuel-pump-fill me-2"></i>
+              Khalid & Sons Petroleum
+            </h5>
+            <p class="footer-text">
+              Real-time tracking, customer management, and reporting for petrol pump operations.
+            </p>
+          </div>
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+          <div class="footer-section">
+            <h6 class="footer-subtitle">Quick Links</h6>
+            <ul class="footer-links">
+              <li><a href="index.html">Dashboard</a></li>
+              <li><a href="customers.html">Customers</a></li>
+              <li><a href="transactions.html">Transactions</a></li>
+              <li><a href="reports.html">Reports</a></li>
+              <li><a href="settings.html">Settings</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+          <div class="footer-section">
+            <h6 class="footer-subtitle">Modules</h6>
+            <ul class="footer-links">
+              <li><a href="mobil.html">Mobil Oil</a></li>
+              <li><a href="rent.html">Shop Rent</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+          <div class="footer-section">
+            <h6 class="footer-subtitle">System Info</h6>
+            <ul class="footer-info">
+              <li><i class="bi bi-geo-alt-fill text-danger"></i> <div><strong>Location:</strong><span>Pakistan</span></div></li>
+              <li><i class="bi bi-code-square text-success"></i> <div><strong>Version:</strong><span>1.0.0</span></div></li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div class="container text-center">
+      <div class="footer-copyright">
+        © <span id="footer-year"></span> <strong>Khalid & Sons Petroleum</strong>
+      </div>
+    </div>
+  </div>
+</footer>

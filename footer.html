@@ -1,0 +1,273 @@
+<!-- <ul class="footer-nav-list">
+
+<li class="footer-nav-item">
+<a class="footer-link" href="index.html" data-page="index">
+Dashboard
+</a>
+</li>
+
+<li class="footer-nav-item">
+<a class="footer-link" href="customers.html" data-page="customers">
+Customers
+</a>
+</li>
+
+<li class="footer-nav-item">
+<a class="footer-link" href="transactions.html" data-page="transactions">
+Transactions
+</a>
+</li>
+
+<li class="footer-nav-item">
+<a class="footer-link" href="mobil.html" data-page="mobil">
+Mobil Oil
+</a>
+</li>
+
+<li class="footer-nav-item">
+<a class="footer-link" href="rent.html" data-page="rent">
+Rent
+</a>
+</li>
+
+</ul> -->
+
+<style>
+/* Footer Styles */
+.footer-section {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    padding: 3rem 0 1.5rem;
+    margin-top: 4rem;
+}
+
+.footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.footer-brand i {
+    font-size: 2.5rem;
+    color: #667eea;
+}
+
+.footer-brand h5 {
+    color: white;
+    margin: 0;
+    font-weight: 700;
+}
+
+.footer-description {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.footer-features {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-features li {
+    padding: 0.4rem 0;
+    color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.footer-features li i {
+    color: #667eea;
+}
+
+.footer-heading {
+    color: white;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-links li {
+    margin-bottom: 0.8rem;
+}
+
+.footer-links a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.footer-links a:hover {
+    color: #667eea;
+    padding-left: 0.5rem;
+}
+
+.footer-links a i {
+    font-size: 0.9rem;
+}
+
+.footer-info-item {
+    display: flex;
+    align-items: start;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.footer-info-item i {
+    color: #667eea;
+    font-size: 1.2rem;
+    margin-top: 0.2rem;
+}
+
+.footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    text-align: center;
+}
+
+.footer-bottom p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
+.developer-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+
+/* Mobile Footer Navigation */
+@media (max-width: 768px) {
+    .footer-section {
+        padding: 2rem 0 1rem;
+    }
+    
+    .footer-heading {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+}
+</style>
+
+<footer class="footer-section">
+    <div class="container">
+        <div class="row">
+            <!-- About Column -->
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="footer-brand">
+                    <i class="bi bi-fuel-pump-fill"></i>
+                    <h5>پٹرول پمپ سسٹم<br><small style="font-size: 0.7rem;">Khalid & Sons Petroleum</small></h5>
+                </div>
+                <p class="footer-description">
+                    A complete management system for petrol pumps with real-time tracking, Customer management, and comprehensive reporting.
+                </p>
+                <ul class="footer-features">
+                    <li><i class="bi bi-check-circle-fill"></i> Reliable & Secure</li>
+                    <li><i class="bi bi-check-circle-fill"></i> Fast & Efficient</li>
+                    <li><i class="bi bi-check-circle-fill"></i> Mobile Friendly</li>
+                </ul>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="col-lg-2 col-md-6 mb-4">
+                <h6 class="footer-heading">Quick Links</h6>
+                <ul class="footer-links">
+                    <li>
+                        <a href="index.html" data-page="index">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="customers.html" data-page="customers">
+                            <i class="bi bi-people"></i> Customers
+                        </a>
+                    </li>
+                    <li>
+                        <a href="transactions.html" data-page="transactions">
+                            <i class="bi bi-receipt"></i> Transactions
+                        </a>
+                    </li>
+                    <li>
+                        <a href="reports.html" data-page="reports">
+                            <i class="bi bi-file-earmark-bar-graph"></i> Reports
+                        </a>
+                    </li>
+                    <li>
+                        <a href="settings.html" data-page="settings">
+                            <i class="bi bi-gear"></i> Settings
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Features -->
+            <div class="col-lg-3 col-md-6 mb-4">
+                <h6 class="footer-heading">Features</h6>
+                <ul class="footer-links">
+                    <li><i class="bi bi-check2"></i> Real-time Stock Tracking</li>
+                    <li><i class="bi bi-check2"></i> Customer Management</li>
+                    <li><i class="bi bi-check2"></i> Udhaar/Vasooli System</li>
+                    <li><i class="bi bi-check2"></i> Daily Reports</li>
+                    <li><i class="bi bi-check2"></i> Expense Tracking</li>
+                    <li><i class="bi bi-check2"></i> Data Export</li>
+                </ul>
+            </div>
+
+            <!-- System Info -->
+            <div class="col-lg-3 col-md-6 mb-4">
+                <h6 class="footer-heading">System Info</h6>
+                <div class="footer-info-item">
+                    <i class="bi bi-geo-alt-fill"></i>
+                    <div>
+                        <strong>Location:</strong><br>
+                        Pakistan
+                    </div>
+                </div>
+                <div class="footer-info-item">
+                    <i class="bi bi-envelope-fill"></i>
+                    <div>
+                        <strong>Support:</strong><br>
+                        support@petrolpump.com
+                    </div>
+                </div>
+                <div class="footer-info-item">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <div>
+                        <strong>Version:</strong> 1.0.0<br>
+                        <strong>Database:</strong> PostgreSQL
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Bottom -->
+        <div class="footer-bottom">
+            <p>
+                &copy; <span id="footer-year">2026</span> <strong>PETRO-FLOW</strong> All Rights Reserved.
+                <br>
+                Developed with <i class="bi bi-heart-fill" style="color: #e74c3c;"></i> by 
+                <span class="developer-badge">Muhammad Ali</span>
+            </p>
+        </div>
+    </div>
+</footer>

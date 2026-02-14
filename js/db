@@ -1,0 +1,416 @@
+
+
+-- ==========================================
+-- DATABASE TABLES ONLY (NO SAMPLE DATA)
+-- Petrol Pump + Mobil Oil + Rent Management
+-- ==========================================
+
+-- ==========================================
+-- 1. TANKS TABLE (Petrol & Diesel Stock)
+-- ==========================================
+CREATE TABLE IF NOT EXISTS tanks (
+    id SERIAL PRIMARY KEY,
+    fuel_type TEXT NOT NULL,
+    capacity DECIMAL DEFAULT 25000,
+    current_stock DECIMAL DEFAULT 0,
+    last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ==========================================
+-- 2. CUSTOMERS TABLE (Fuel Customers)
+-- ==========================================
+CREATE TABLE IF NOT EXISTS customers (
+    id SERIAL PRIMARY KEY,
+    sr_no INTEGER UNIQUE,
+    name TEXT NOT NULL,
+    phone TEXT,
+    category TEXT DEFAULT 'Member',
+    balance DECIMAL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ==========================================
+-- 3. TRANSACTIONS TABLE (Fuel Sales)
+-- ==========================================
+CREATE TABLE IF NOT EXISTS transactions (
+    id SERIAL PRIMARY KEY,
+    customer_id INTEGER REFERENCES customers(id),
+    tank_id INTEGER REFERENCES tanks(id),
+    transaction_type TEXT NOT NULL,
+    amount DECIMAL NOT NULL,
+    liters DECIMAL DEFAULT 0,
+    unit_price DECIMAL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ==========================================
+-- 4. DAILY REPORTS TABLE (Fuel)
+-- ==========================================
+CREATE TABLE IF NOT EXISTS daily_reports (
+    id SERIAL PRIMARY KEY,
+    report_date DATE UNIQUE DEFAULT CURRENT_DATE,
+    total_sale_amount DECIMAL DEFAULT 0,
+    total_cash_collected DECIMAL DEFAULT 0,
+    total_credit_given DECIMAL DEFAULT 0,
+    total_expenses DECIMAL DEFAULT 0,
+    closing_petrol_stock DECIMAL,
+    closing_diesel_stock DECIMAL
+);
+
+-- ==========================================
+-- 5. MOBIL OIL CUSTOMERS TABLE
+-- ==========================================
+CREATE TABLE IF NOT EXISTS mobil_customers (
+    id SERIAL PRIMARY KEY,
+    customer_name TEXT NOT NULL,
+    phone TEXT,
+    address TEXT,
+    vehicle_type TEXT,
+    balance DECIMAL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_mobil_customers_name ON mobil_customers(customer_name);
+CREATE INDEX IF NOT EXISTS idx_mobil_customers_phone ON mobil_customers(phone);
+
+-- ==========================================
+-- 6. MOBIL OIL STOCK TABLE
+-- ==========================================
+CREATE TABLE IF NOT EXISTS mobil_stock (
+    id SERIAL PRIMARY KEY,
+    oil_type TEXT NOT NULL,
+    brand TEXT,
+    grade TEXT,
+    unit TEXT DEFAULT 'Liters',
+    current_stock DECIMAL DEFAULT 0,
+    unit_price DECIMAL,
+    last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ==========================================
+-- 7. MOBIL OIL TRANSACTIONS TABLE
+-- ==========================================
+CREATE TABLE IF NOT EXISTS mobil_transactions (
+    id SERIAL PRIMARY KEY,
+    customer_id INTEGER REFERENCES mobil_customers(id),
+    stock_id INTEGER REFERENCES mobil_stock(id),
+    transaction_type TEXT NOT NULL,
+    quantity DECIMAL DEFAULT 0,
+    unit_price DECIMAL,
+    total_amount DECIMAL NOT NULL,
+    payment_type TEXT DEFAULT 'Credit',
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_mobil_trans_customer ON mobil_transactions(customer_id);
+CREATE INDEX IF NOT EXISTS idx_mobil_trans_date ON mobil_transactions(created_at);
+
+-- ==========================================
+-- 8. SHOPS TABLE (Rent Management)
+-- ==========================================
+CREATE TABLE IF NOT EXISTS shops (
+    id SERIAL PRIMARY KEY,
+    shop_no TEXT UNIQUE NOT NULL,
+    shop_name TEXT NOT NULL,
+    owner_name TEXT NOT NULL,
+    owner_phone TEXT,
+    owner_cnic TEXT,
+    monthly_rent DECIMAL NOT NULL,
+    security_deposit DECIMAL DEFAULT 0,
+    electricity_meter TEXT,
+    gas_meter TEXT,
+    area_sqft DECIMAL,
+    floor_location TEXT,
+    status TEXT DEFAULT 'Occupied',
+    lease_start_date DATE,
+    lease_end_date DATE,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_shops_no ON shops(shop_no);
+CREATE INDEX IF NOT EXISTS idx_shops_name ON shops(shop_name);
+CREATE INDEX IF NOT EXISTS idx_shops_owner ON shops(owner_name);
+CREATE INDEX IF NOT EXISTS idx_shops_status ON shops(status);
+
+-- ==========================================
+-- 9. RENT PAYMENTS TABLE
+-- ==========================================
+CREATE TABLE IF NOT EXISTS rent_payments (
+    id SERIAL PRIMARY KEY,
+    shop_id INTEGER REFERENCES shops(id) ON DELETE CASCADE,
+    payment_month DATE NOT NULL,
+    rent_amount DECIMAL NOT NULL,
+    electricity_bill DECIMAL DEFAULT 0,
+    gas_bill DECIMAL DEFAULT 0,
+    water_charges DECIMAL DEFAULT 0,
+    maintenance_charges DECIMAL DEFAULT 0,
+    total_amount DECIMAL NOT NULL,
+    amount_paid DECIMAL DEFAULT 0,
+    balance DECIMAL DEFAULT 0,
+    payment_date DATE,
+    payment_method TEXT,
+    payment_status TEXT DEFAULT 'Pending',
+    due_date DATE,
+    receipt_number TEXT,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_rent_shop ON rent_payments(shop_id);
+CREATE INDEX IF NOT EXISTS idx_rent_month ON rent_payments(payment_month);
+CREATE INDEX IF NOT EXISTS idx_rent_status ON rent_payments(payment_status);
+
+-- ==========================================
+-- VIEWS FOR REPORTING
+-- ==========================================
+
+-- View: Current Mobil Oil Stock Summary
+CREATE OR REPLACE VIEW mobil_stock_summary AS
+SELECT 
+    oil_type,
+    SUM(current_stock) as total_stock,
+    AVG(unit_price) as avg_price,
+    SUM(current_stock * unit_price) as stock_value
+FROM mobil_stock
+GROUP BY oil_type;
+
+-- View: Mobil Customers with Balance
+CREATE OR REPLACE VIEW mobil_customers_balance AS
+SELECT 
+    mc.id,
+    mc.customer_name,
+    mc.phone,
+    mc.vehicle_type,
+    mc.balance,
+    COUNT(mt.id) as total_transactions,
+    SUM(CASE WHEN mt.payment_type = 'Credit' THEN mt.total_amount ELSE 0 END) as total_credit
+FROM mobil_customers mc
+LEFT JOIN mobil_transactions mt ON mc.id = mt.customer_id
+GROUP BY mc.id, mc.customer_name, mc.phone, mc.vehicle_type, mc.balance;
+
+-- View: Shops with Current Rent Status
+CREATE OR REPLACE VIEW shops_rent_summary AS
+SELECT 
+    s.id,
+    s.shop_no,
+    s.shop_name,
+    s.owner_name,
+    s.owner_phone,
+    s.monthly_rent,
+    s.status,
+    rp.payment_month,
+    rp.total_amount,
+    rp.amount_paid,
+    rp.balance,
+    rp.payment_status,
+    rp.due_date
+FROM shops s
+LEFT JOIN rent_payments rp ON s.id = rp.shop_id 
+    AND DATE_TRUNC('month', rp.payment_month) = DATE_TRUNC('month', CURRENT_DATE);
+
+-- View: Overdue Rents
+CREATE OR REPLACE VIEW overdue_rents AS
+SELECT 
+    s.shop_no,
+    s.shop_name,
+    s.owner_name,
+    s.owner_phone,
+    rp.payment_month,
+    rp.total_amount,
+    rp.balance,
+    rp.due_date,
+    CURRENT_DATE - rp.due_date AS days_overdue
+FROM shops s
+INNER JOIN rent_payments rp ON s.id = rp.shop_id
+WHERE rp.payment_status IN ('Pending', 'Partial')
+    AND rp.due_date < CURRENT_DATE
+ORDER BY days_overdue DESC;
+
+-- ==========================================
+-- SUCCESS MESSAGE
+-- ==========================================
+DO $$
+BEGIN
+    RAISE NOTICE '============================================';
+    RAISE NOTICE 'DATABASE TABLES CREATED SUCCESSFULLY!';
+    RAISE NOTICE '============================================';
+    RAISE NOTICE 'Total Tables: 9';
+    RAISE NOTICE '- Fuel Management: 4 tables';
+    RAISE NOTICE '- Mobil Oil: 3 tables';
+    RAISE NOTICE '- Rent Management: 2 tables';
+    RAISE NOTICE '--------------------------------------------';
+    RAISE NOTICE 'Views Created: 4';
+    RAISE NOTICE 'Indexes Created: Multiple for fast search';
+    RAISE NOTICE '============================================';
+    RAISE NOTICE 'Tables are empty - ready for data entry!';
+    RAISE NOTICE '============================================';
+END $$;
+
+-- recent changes
+alter table transactions add column if not exists payment_method text;
+alter table transactions add column if not exists entry_month text;
+
+
+-- in future additonal
+
+CREATE TABLE price_history (
+  id SERIAL PRIMARY KEY,
+  fuel_type VARCHAR(50),      -- 'Petrol', 'Diesel', 'Car Mobil', etc.
+  price DECIMAL(10,2),
+  effective_date DATE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_by VARCHAR(100)
+);
+
+
+
+-- sign in method db
+
+
+-- ===================================================================
+-- PETROL PUMP MANAGEMENT SYSTEM - SUPABASE SETUP
+-- Complete Database Schema with Multi-Tenant Support
+-- ===================================================================
+
+-- Step 1: Add user_id columns to existing tables
+-- (Run these one by one)
+
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
+ALTER TABLE tanks ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
+
+-- Step 2: Enable Row Level Security (RLS)
+-- This ensures users can only see their own data
+
+ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tanks ENABLE ROW LEVEL SECURITY;
+
+-- Step 3: Create RLS Policies for CUSTOMERS table
+
+-- Policy: Users can view their own customers
+CREATE POLICY "Users can view own customers" 
+ON customers FOR SELECT 
+USING (auth.uid() = user_id);
+
+-- Policy: Users can insert their own customers
+CREATE POLICY "Users can insert own customers" 
+ON customers FOR INSERT 
+WITH CHECK (auth.uid() = user_id);
+
+-- Policy: Users can update their own customers
+CREATE POLICY "Users can update own customers" 
+ON customers FOR UPDATE 
+USING (auth.uid() = user_id);
+
+-- Policy: Users can delete their own customers
+CREATE POLICY "Users can delete own customers" 
+ON customers FOR DELETE 
+USING (auth.uid() = user_id);
+
+-- Step 4: Create RLS Policies for TRANSACTIONS table
+
+CREATE POLICY "Users can view own transactions" 
+ON transactions FOR SELECT 
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own transactions" 
+ON transactions FOR INSERT 
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own transactions" 
+ON transactions FOR UPDATE 
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own transactions" 
+ON transactions FOR DELETE 
+USING (auth.uid() = user_id);
+
+-- Step 5: Create RLS Policies for TANKS table
+
+CREATE POLICY "Users can view own tanks" 
+ON tanks FOR SELECT 
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own tanks" 
+ON tanks FOR INSERT 
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own tanks" 
+ON tanks FOR UPDATE 
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own tanks" 
+ON tanks FOR DELETE 
+USING (auth.uid() = user_id);
+
+-- ===================================================================
+-- Step 6: Create function to initialize user data on signup
+-- This will auto-create tanks for new users
+-- ===================================================================
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Create default tanks for the new user
+  INSERT INTO public.tanks (user_id, name, fuel_type, capacity, current_stock)
+  VALUES
+    (NEW.id, 'Petrol Tank', 'Petrol', 25000, 0),
+    (NEW.id, 'Diesel Tank', 'Diesel', 25000, 0),
+    (NEW.id, 'Car Mobil', 'Car Mobil', 1000, 0),
+    (NEW.id, 'Open Mobil', 'Open Mobil', 1000, 0);
+
+  -- Create default owner customer account
+  INSERT INTO public.customers (user_id, sr_no, name, category, balance)
+  VALUES (NEW.id, 0, 'Owner', 'Owner', 0);
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Step 7: Create trigger to call the function on new user signup
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ===================================================================
+-- Step 8: Update existing data (OPTIONAL - only if you have existing data)
+-- Replace 'YOUR_USER_ID' with actual user ID from auth.users table
+-- ===================================================================
+
+-- Example: Update all existing records to belong to a specific user
+-- UPDATE customers SET user_id = 'YOUR_USER_ID' WHERE user_id IS NULL;
+-- UPDATE transactions SET user_id = 'YOUR_USER_ID' WHERE user_id IS NULL;
+-- UPDATE tanks SET user_id = 'YOUR_USER_ID' WHERE user_id IS NULL;
+
+-- ===================================================================
+-- VERIFICATION QUERIES
+-- Run these to check if everything is working
+-- ===================================================================
+
+-- Check if user_id columns exist
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name IN ('customers', 'transactions', 'tanks') 
+  AND column_name = 'user_id';
+
+-- Check if RLS is enabled
+SELECT tablename, rowsecurity 
+FROM pg_tables 
+WHERE tablename IN ('customers', 'transactions', 'tanks');
+
+-- Check policies
+SELECT schemaname, tablename, policyname 
+FROM pg_policies 
+WHERE tablename IN ('customers', 'transactions', 'tanks');
+
+-- ===================================================================
+-- DONE! Your database is now multi-tenant ready!
+-- ===================================================================

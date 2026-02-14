@@ -1,0 +1,65 @@
+/project-root
+│
+├── index.html
+├── customers.html
+├── transactions.html
+├── reports.html
+├── settings.html
+├── mobil.html
+├── rent.html
+│
+├── components/
+│   ├── navbar.html
+│   └── footer.html
+│
+├── assets/
+│   ├── styles.css
+│   └── logo.png
+│
+├── js/
+│   ├── config.js
+│   └── app.js
+│
+└── vercel.json
+
+
+athentication process
+
+pump_name: "Khalid & Sons Petroleum"  // User A
+pump_name: "Ahmed Fuel Station"       // User B
+```
+
+**Har Jagah Show:**
+- Navbar mein
+- Footer mein
+- Bills mein
+- Reports mein
+
+### 🚀 Vercel + Supabase:
+
+**Perfect Combination:**
+- ✅ Vercel → Frontend hosting (free)
+- ✅ Supabase → Backend + Auth (free tier)
+- ✅ Scalable
+- ✅ Secure
+- ✅ Fast
+
+**Setup Steps:**
+1. Create Supabase project
+2. Add tables
+3. Enable RLS
+4. Deploy to Vercel
+5. Add environment variables
+
+### 📁 File Structure:
+```
+Root/
+├── login.html              ← Login page
+├── signup.html             ← Signup with pump details
+├── forgot-password.html    ← Password reset
+├── pump-profile.html       ← Customize pump
+├── index.html             ← Dashboard (protected)
+├── SUPABASE_SETUP.md      ← Complete guide
+└── js/
+    ├── config.js          ← Supabase keys
+    └── auth.js            ← Auth management
