@@ -414,3 +414,19 @@ WHERE tablename IN ('customers', 'transactions', 'tanks');
 -- ===================================================================
 -- DONE! Your database is now multi-tenant ready!
 -- ===================================================================
+
+-- Supabase SQL Editor mein run karein:
+
+ALTER TABLE customers DISABLE ROW LEVEL SECURITY;
+ALTER TABLE transactions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE tanks DISABLE ROW LEVEL SECURITY;
+
+-- Testing ke baad phir enable kar dena
+
+-- Trigger ko temporarily disable karein:
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+-- Yeh trigger user create hone par tanks add karta hai
+-- Agar error de raha hai to disable kar do
+-- Manually tanks baad mein add kar sakte hain
