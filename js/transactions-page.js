@@ -1,10 +1,11 @@
-// COMPLETE ALL-IN-ONE TRANSACTIONS - GUARANTEED WORKING
+// TRANSACTIONS - FINAL PERFECT VERSION
 (function() {
 'use strict';
 
 const supabase = window.supabaseClient;
 let allTransactions = [];
 let allCustomers = [];
+let isSubmitting = false; // Prevent double submissions
 
 function $(id) { return document.getElementById(id); }
 
@@ -29,12 +30,12 @@ async function loadInitialTransactions() {
     if (error) throw error;
 
     allTransactions = data || [];
-    console.log('✅ Loaded transactions:', allTransactions.length);
+    console.log('✅ Loaded:', allTransactions.length);
     
     displayTransactions(allTransactions);
     updateSummaryCards(allTransactions);
   } catch (error) {
-    console.error('❌ Error loading transactions:', error);
+    console.error('❌ Error:', error);
   }
 }
 
@@ -50,33 +51,34 @@ async function loadCustomers() {
     if (error) throw error;
 
     allCustomers = data || [];
-    console.log('✅ Loaded customers:', allCustomers.length);
+    console.log('✅ Customers:', allCustomers.length);
     
     populateCustomerDropdowns();
   } catch (error) {
-    console.error('❌ Error loading customers:', error);
+    console.error('❌ Error:', error);
   }
 }
 
 function populateCustomerDropdowns() {
-  // Sale customer dropdown
-  if ($('sale-customer')) {
+  const saleSelect = $('sale-customer');
+  const vasooliSelect = $('vasooli-customer');
+
+  if (saleSelect) {
     let html = '<option value="">Select Customer</option>';
     allCustomers.forEach(c => {
       html += `<option value="${c.id}">${c.sr_no} - ${c.name}</option>`;
     });
-    $('sale-customer').innerHTML = html;
+    saleSelect.innerHTML = html;
   }
 
-  // Vasooli customer dropdown
-  if ($('vasooli-customer')) {
+  if (vasooliSelect) {
     let html = '<option value="">Select Customer</option>';
     allCustomers.forEach(c => {
       if (c.category !== 'Owner') {
         html += `<option value="${c.id}">${c.sr_no} - ${c.name}</option>`;
       }
     });
-    $('vasooli-customer').innerHTML = html;
+    vasooliSelect.innerHTML = html;
   }
 }
 
@@ -117,13 +119,21 @@ function displayTransactions(transactions) {
 
   tbody.innerHTML = transactions.map(t => {
     const date = new Date(t.created_at);
-    const typeClass = t.transaction_type === 'Credit' ? 'bg-success' :
-                      t.transaction_type === 'Debit' ? 'bg-primary' : 'bg-warning';
+    
+    // Fix badge colors - make text visible
+    let badgeClass = '';
+    if (t.transaction_type === 'Credit') {
+      badgeClass = 'bg-success text-white';
+    } else if (t.transaction_type === 'Debit') {
+      badgeClass = 'bg-primary text-white';
+    } else {
+      badgeClass = 'bg-warning text-dark'; // Dark text for yellow background
+    }
     
     return `<tr>
       <td>${date.toLocaleDateString('en-PK')}</td>
       <td>${t.customers?.name || 'N/A'} (${t.customers?.sr_no || '-'})</td>
-      <td><span class="badge ${typeClass}">${t.transaction_type}</span></td>
+      <td><span class="badge ${badgeClass}">${t.transaction_type}</span></td>
       <td>-</td>
       <td>${t.liters > 0 ? formatNumber(t.liters) + ' L' : '-'}</td>
       <td>${t.unit_price ? 'Rs. ' + formatNumber(t.unit_price) : '-'}</td>
@@ -135,10 +145,16 @@ function displayTransactions(transactions) {
 }
 
 // ============================================
-// NEW SALE
+// NEW SALE - FIX DOUBLE ENTRY
 // ============================================
 
 async function handleNewSale() {
+  // Prevent double submission
+  if (isSubmitting) {
+    console.log('⚠️ Already submitting, ignoring duplicate click');
+    return;
+  }
+
   const customerId = $('sale-customer')?.value;
   const fuelType = $('sale-fuel-type')?.value;
   const liters = parseFloat($('sale-liters')?.value) || 0;
@@ -150,6 +166,8 @@ async function handleNewSale() {
     alert('Please fill required fields');
     return;
   }
+
+  isSubmitting = true; // Lock
 
   try {
     const { error } = await supabase
@@ -167,44 +185,72 @@ async function handleNewSale() {
 
     alert('Sale recorded!');
     closeModal('newSaleModal');
-    loadInitialTransactions();
+    await loadInitialTransactions();
   } catch (error) {
     console.error('Error:', error);
     alert('Error: ' + error.message);
+  } finally {
+    isSubmitting = false; // Unlock
   }
 }
 
 // ============================================
-// VASOOLI
+// VASOOLI - ADD DETAILS
 // ============================================
 
 async function handleVasooli() {
+  if (isSubmitting) return;
+
   const customerId = $('vasooli-customer')?.value;
   const amount = parseFloat($('vasooli-amount')?.value) || 0;
+  const month = $('vasooli-month')?.value;
+  const description = $('vasooli-description')?.value || '';
 
   if (!customerId || !amount) {
     alert('Please select customer and enter amount');
     return;
   }
 
+  isSubmitting = true;
+
   try {
+    // Get customer name for description
+    const customer = allCustomers.find(c => c.id === parseInt(customerId));
+    const customerName = customer?.name || 'Customer';
+
+    // Build detailed description
+    let fullDescription = 'Payment received';
+    if (month) {
+      const date = new Date(month + '-01');
+      const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      fullDescription = `${monthName} payment from ${customerName}`;
+    } else {
+      fullDescription = `Payment from ${customerName}`;
+    }
+    if (description) {
+      fullDescription += ` - ${description}`;
+    }
+
     const { error } = await supabase
       .from('transactions')
       .insert([{
         customer_id: parseInt(customerId),
         transaction_type: 'Debit',
         amount: amount,
-        description: 'Payment received'
+        description: fullDescription,
+        payment_month: month || null
       }]);
 
     if (error) throw error;
 
     alert('Payment recorded!');
     closeModal('vasooliModal');
-    loadInitialTransactions();
+    await loadInitialTransactions();
   } catch (error) {
     console.error('Error:', error);
     alert('Error: ' + error.message);
+  } finally {
+    isSubmitting = false;
   }
 }
 
@@ -213,16 +259,21 @@ async function handleVasooli() {
 // ============================================
 
 async function handleExpense() {
+  if (isSubmitting) return;
+
   const amount = parseFloat($('expense-amount')?.value) || 0;
   const description = $('expense-description')?.value;
+  const expenseType = $('expense-type')?.value;
+  const expenseAccount = $('expense-account')?.value;
 
   if (!amount || !description) {
     alert('Please fill all fields');
     return;
   }
 
+  isSubmitting = true;
+
   try {
-    // Get or create owner
     let customerId = null;
     
     const { data: owner } = await supabase
@@ -234,7 +285,6 @@ async function handleExpense() {
     if (owner) {
       customerId = owner.id;
     } else {
-      // Create Owner
       const { data: newOwner, error: createError } = await supabase
         .from('customers')
         .insert([{ sr_no: 0, name: 'Owner', category: 'Owner', balance: 0 }])
@@ -245,24 +295,33 @@ async function handleExpense() {
       customerId = newOwner.id;
     }
 
+    // Build description with type and account
+    const fullDescription = expenseType ? 
+      `${expenseType}: ${description}${expenseAccount ? ' (From: ' + expenseAccount + ')' : ''}` :
+      description;
+
     const { error } = await supabase
       .from('transactions')
       .insert([{
         customer_id: customerId,
         transaction_type: 'Expense',
         amount: amount,
-        description: description
+        description: fullDescription,
+        expense_type: expenseType,
+        expense_account: expenseAccount
       }]);
 
     if (error) throw error;
 
     alert('Expense recorded!');
     closeModal('expenseModal');
-    loadInitialTransactions();
-    loadCustomers(); // Reload if Owner was created
+    await loadInitialTransactions();
+    await loadCustomers();
   } catch (error) {
     console.error('Error:', error);
     alert('Error: ' + error.message);
+  } finally {
+    isSubmitting = false;
   }
 }
 
@@ -282,14 +341,14 @@ window.deleteTransaction = async function(id) {
   try {
     await supabase.from('transactions').delete().eq('id', id);
     alert('Deleted!');
-    loadInitialTransactions();
+    await loadInitialTransactions();
   } catch (error) {
     alert('Error: ' + error.message);
   }
 };
 
 // ============================================
-// AUTO-CALCULATE FOR NEW SALE
+// AUTO-CALCULATE
 // ============================================
 
 function setupAutoCalculate() {
@@ -324,7 +383,7 @@ function setupAutoCalculate() {
 }
 
 // ============================================
-// FORM SUBMISSIONS
+// FORM HANDLERS - PREVENT DOUBLE SUBMIT
 // ============================================
 
 function setupFormHandlers() {
@@ -332,7 +391,10 @@ function setupFormHandlers() {
   if (saleForm) {
     saleForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      handleNewSale();
+      e.stopPropagation();
+      if (!isSubmitting) {
+        handleNewSale();
+      }
     });
   }
 
@@ -340,7 +402,10 @@ function setupFormHandlers() {
   if (vasooliForm) {
     vasooliForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      handleVasooli();
+      e.stopPropagation();
+      if (!isSubmitting) {
+        handleVasooli();
+      }
     });
   }
 
@@ -348,7 +413,10 @@ function setupFormHandlers() {
   if (expenseForm) {
     expenseForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      handleExpense();
+      e.stopPropagation();
+      if (!isSubmitting) {
+        handleExpense();
+      }
     });
   }
 }
@@ -359,7 +427,7 @@ function setupFormHandlers() {
 
 document.addEventListener('DOMContentLoaded', () => {
   if (document.body.getAttribute('data-page') === 'transactions') {
-    console.log('🚀 Initializing transactions...');
+    console.log('🚀 Starting...');
     
     loadInitialTransactions();
     loadCustomers();
