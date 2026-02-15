@@ -1,4 +1,4 @@
-// Transactions Page - COMPLETE WORKING VERSION
+// Transactions Page - FINAL WORKING VERSION
 (function() {
 'use strict';
 
@@ -11,9 +11,7 @@ function formatNumber(num) {
   return Number(num || 0).toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-// ============================================
-// UPDATE SUMMARY CARDS
-// ============================================
+// Update Summary Cards
 function updateSummaryCards(transactions) {
   console.log('Updating summary with', transactions.length, 'transactions');
   
@@ -37,7 +35,6 @@ function updateSummaryCards(transactions) {
 
   const netBalance = totalCredit - totalExpense;
 
-  // Update DOM
   if ($('total-credit')) $('total-credit').textContent = 'Rs. ' + formatNumber(totalCredit);
   if ($('credit-count')) $('credit-count').textContent = creditCount + ' transactions';
   
@@ -50,27 +47,19 @@ function updateSummaryCards(transactions) {
   if ($('net-balance')) $('net-balance').textContent = 'Rs. ' + formatNumber(netBalance);
   if ($('transaction-count')) $('transaction-count').textContent = transactions.length + ' transactions';
 
-  console.log('Summary updated:', { totalCredit, totalDebit, totalExpense, netBalance });
+  console.log('✅ Summary updated:', { totalCredit, totalDebit, totalExpense, netBalance });
 }
 
-// ============================================
-// APPLY FILTERS
-// ============================================
+// Apply Filters
 window.applyFilters = async function() {
   const type = $('filter-type')?.value || '';
   const dateFrom = $('filter-date-from')?.value;
   const dateTo = $('filter-date-to')?.value;
 
-  console.log('Applying filters:', { type, dateFrom, dateTo });
-
   try {
     let query = supabase
       .from('transactions')
-      .select(`
-        *,
-        customer:customers(name, sr_no),
-        tank:tanks(fuel_type, name)
-      `)
+      .select('*, customers!inner(name, sr_no)')
       .order('created_at', { ascending: false });
 
     if (type) {
@@ -89,25 +78,17 @@ window.applyFilters = async function() {
 
     const { data, error } = await query.limit(200);
 
-    if (error) {
-      console.error('Filter error:', error);
-      throw error;
-    }
-
-    console.log('Filtered data:', data?.length || 0, 'transactions');
+    if (error) throw error;
 
     allTransactions = data || [];
     displayTransactions(allTransactions);
     updateSummaryCards(allTransactions);
   } catch (error) {
     console.error('Error filtering transactions:', error);
-    alert('Error filtering: ' + error.message);
   }
 };
 
-// ============================================
-// CLEAR FILTERS
-// ============================================
+// Clear Filters
 window.clearTransactionFilters = function() {
   if ($('filter-type')) $('filter-type').value = '';
   if ($('filter-date-from')) $('filter-date-from').value = '';
@@ -116,9 +97,7 @@ window.clearTransactionFilters = function() {
   loadInitialTransactions();
 };
 
-// ============================================
-// DISPLAY TRANSACTIONS
-// ============================================
+// Display Transactions
 function displayTransactions(transactions) {
   const tbody = $('transactions-table');
   if (!tbody) return;
@@ -134,12 +113,16 @@ function displayTransactions(transactions) {
     const typeClass = t.transaction_type === 'Credit' ? 'bg-success' :
       t.transaction_type === 'Debit' ? 'bg-primary' : 'bg-warning';
 
+    // Get fuel type from description or leave blank
+    const fuelType = t.description?.includes('Petrol') ? 'Petrol' : 
+                     t.description?.includes('Diesel') ? 'Diesel' : '-';
+
     html += `
       <tr>
         <td>${date.toLocaleString('en-PK', { dateStyle: 'short', timeStyle: 'short' })}</td>
-        <td>${t.customer?.name || 'N/A'} ${t.customer?.sr_no ? '(' + t.customer.sr_no + ')' : ''}</td>
+        <td>${t.customers?.name || 'N/A'} ${t.customers?.sr_no ? '(' + t.customers.sr_no + ')' : ''}</td>
         <td><span class="badge ${typeClass}">${t.transaction_type}</span></td>
-        <td>${t.tank?.fuel_type || t.tank?.name || '-'}</td>
+        <td>${fuelType}</td>
         <td>${t.liters > 0 ? formatNumber(t.liters) + ' L' : '-'}</td>
         <td>${t.unit_price ? 'Rs. ' + formatNumber(t.unit_price) : '-'}</td>
         <td><strong>Rs. ${formatNumber(t.amount)}</strong></td>
@@ -156,27 +139,18 @@ function displayTransactions(transactions) {
   tbody.innerHTML = html;
 }
 
-// ============================================
-// LOAD INITIAL TRANSACTIONS
-// ============================================
+// Load Initial Transactions
 async function loadInitialTransactions() {
   console.log('Loading initial transactions...');
   
   try {
     const { data, error } = await supabase
       .from('transactions')
-      .select(`
-        *,
-        customer:customers(name, sr_no),
-        tank:tanks(fuel_type, name)
-      `)
+      .select('*, customers!inner(name, sr_no)')
       .order('created_at', { ascending: false })
       .limit(100);
 
-    if (error) {
-      console.error('Load error:', error);
-      throw error;
-    }
+    if (error) throw error;
 
     console.log('Loaded transactions:', data?.length || 0);
 
@@ -184,22 +158,17 @@ async function loadInitialTransactions() {
     displayTransactions(allTransactions);
     updateSummaryCards(allTransactions);
   } catch (error) {
-    console.error('Error loading transactions:', error);
-    
-    // Show error in UI
+    console.error('❌ Error loading transactions:', error);
     const tbody = $('transactions-table');
     if (tbody) {
       tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4">
-        Error loading data: ${error.message}
-        <br><small>Check browser console for details</small>
+        Error: ${error.message}
       </td></tr>`;
     }
   }
 }
 
-// ============================================
-// LOAD CUSTOMERS FOR MODALS
-// ============================================
+// Load Customers for Modals
 async function loadCustomersForModals() {
   console.log('Loading customers for modals...');
   
@@ -209,14 +178,11 @@ async function loadCustomersForModals() {
       .select('id, sr_no, name, category')
       .order('sr_no');
 
-    if (error) {
-      console.error('Error loading customers:', error);
-      throw error;
-    }
+    if (error) throw error;
 
     console.log('Loaded customers:', customers?.length || 0);
 
-    // Populate sale customer dropdown
+    // Populate dropdowns
     if ($('sale-customer')) {
       let html = '<option value="">Select Customer</option>';
       customers.forEach(c => {
@@ -225,11 +191,10 @@ async function loadCustomersForModals() {
       $('sale-customer').innerHTML = html;
     }
 
-    // Populate vasooli customer dropdown
     if ($('vasooli-customer')) {
       let html = '<option value="">Select Customer</option>';
       customers.forEach(c => {
-        if (c.category !== 'Owner') { // Don't show owner in vasooli
+        if (c.category !== 'Owner') {
           html += `<option value="${c.id}">${c.sr_no} - ${c.name}</option>`;
         }
       });
@@ -237,23 +202,16 @@ async function loadCustomersForModals() {
     }
 
   } catch (error) {
-    console.error('Error loading customers:', error);
-    
-    // Show error in modal
+    console.error('❌ Error loading customers:', error);
     if ($('sale-customer')) {
-      $('sale-customer').innerHTML = '<option value="">Error loading customers</option>';
-    }
-    if ($('vasooli-customer')) {
-      $('vasooli-customer').innerHTML = '<option value="">Error loading customers</option>';
+      $('sale-customer').innerHTML = '<option value="">Error loading</option>';
     }
   }
 }
 
-// ============================================
-// DELETE TRANSACTION
-// ============================================
+// Delete Transaction
 window.deleteTransaction = async function(id) {
-  if (!confirm('Are you sure you want to delete this transaction?')) return;
+  if (!confirm('Are you sure?')) return;
   
   try {
     const { error } = await supabase
@@ -263,22 +221,20 @@ window.deleteTransaction = async function(id) {
 
     if (error) throw error;
 
-    alert('Transaction deleted successfully!');
+    alert('Deleted successfully!');
     loadInitialTransactions();
   } catch (error) {
-    console.error('Error deleting transaction:', error);
+    console.error('Error deleting:', error);
     alert('Error: ' + error.message);
   }
 };
 
-// ============================================
-// INITIALIZE
-// ============================================
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
   if (document.body.getAttribute('data-page') === 'transactions') {
-    console.log('Initializing transactions page...');
+    console.log('✅ Initializing transactions page...');
     
-    // Set default date range (last 30 days)
+    // Set default dates
     const today = new Date();
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(today.getDate() - 30);
@@ -293,12 +249,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load data
     loadInitialTransactions();
     loadCustomersForModals();
-
-    console.log('✅ Transactions page initialized');
   }
 });
 
-// Make loadInitialTransactions available globally for enhancements
 window.loadInitialTransactions = loadInitialTransactions;
 
 })();
