@@ -430,3 +430,35 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 -- Yeh trigger user create hone par tanks add karta hai
 -- Agar error de raha hai to disable kar do
 -- Manually tanks baad mein add kar sakte hain
+
+
+-- Check if users are being created but not confirmed
+SELECT 
+  email,
+  email_confirmed_at,
+  created_at,
+  CASE 
+    WHEN email_confirmed_at IS NOT NULL THEN '✓ Confirmed'
+    ELSE '✗ Not Confirmed'
+  END as status
+FROM auth.users
+ORDER BY created_at DESC;
+
+-- Copy-paste this complete file in Supabase SQL Editor:
+
+ALTER TABLE transactions 
+ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50);
+
+ALTER TABLE transactions 
+ADD COLUMN IF NOT EXISTS expense_type VARCHAR(100);
+
+ALTER TABLE transactions 
+ADD COLUMN IF NOT EXISTS expense_account VARCHAR(50);
+
+ALTER TABLE transactions 
+ADD COLUMN IF NOT EXISTS payment_month VARCHAR(10);
+
+ALTER TABLE transactions 
+ADD COLUMN IF NOT EXISTS entry_method VARCHAR(20);
+
+-- Done! Click "Run"
