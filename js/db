@@ -462,3 +462,24 @@ ALTER TABLE transactions
 ADD COLUMN IF NOT EXISTS entry_method VARCHAR(20);
 
 -- Done! Click "Run"
+
+-- Run this to check:
+
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'transactions' 
+  AND column_name IN (
+    'payment_method', 
+    'expense_type', 
+    'expense_account', 
+    'payment_month', 
+    'entry_method'
+  )
+ORDER BY column_name;
+
+-- Should show 5 rows
+
+
+ALTER TABLE customers DISABLE ROW LEVEL SECURITY;
+ALTER TABLE transactions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE tanks DISABLE ROW LEVEL SECURITY;

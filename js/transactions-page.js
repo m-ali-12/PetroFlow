@@ -1,229 +1,272 @@
-// Transactions Enhancements - Auto-Calculate & Tracking
+// Transactions Page - COMPLETE WORKING VERSION
 (function() {
 'use strict';
 
 const supabase = window.supabaseClient;
+let allTransactions = [];
+
 function $(id) { return document.getElementById(id); }
 
-// ============================================
-// NEW SALE AUTO-CALCULATE FUNCTIONS
-// ============================================
+function formatNumber(num) {
+  return Number(num || 0).toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
-// Toggle between entry methods
-window.toggleSaleMethod = function(method) {
-  if (method === 'liters') {
-    $('sale-liters-section').style.display = 'block';
-    $('sale-amount-section').style.display = 'none';
-    $('sale-liters').required = true;
-    $('sale-amount-direct').required = false;
-    $('sale-liters').value = '';
-    $('sale-amount').value = '';
-  } else {
-    $('sale-liters-section').style.display = 'none';
-    $('sale-amount-section').style.display = 'block';
-    $('sale-liters').required = false;
-    $('sale-amount-direct').required = true;
-    $('sale-amount-direct').value = '';
-    $('sale-amount').value = '';
+// ============================================
+// UPDATE SUMMARY CARDS
+// ============================================
+function updateSummaryCards(transactions) {
+  console.log('Updating summary with', transactions.length, 'transactions');
+  
+  let totalCredit = 0, creditCount = 0;
+  let totalDebit = 0, debitCount = 0;
+  let totalExpense = 0, expenseCount = 0;
+
+  transactions.forEach(t => {
+    const amount = parseFloat(t.amount) || 0;
+    if (t.transaction_type === 'Credit') {
+      totalCredit += amount;
+      creditCount++;
+    } else if (t.transaction_type === 'Debit') {
+      totalDebit += amount;
+      debitCount++;
+    } else if (t.transaction_type === 'Expense') {
+      totalExpense += amount;
+      expenseCount++;
+    }
+  });
+
+  const netBalance = totalCredit - totalExpense;
+
+  // Update DOM
+  if ($('total-credit')) $('total-credit').textContent = 'Rs. ' + formatNumber(totalCredit);
+  if ($('credit-count')) $('credit-count').textContent = creditCount + ' transactions';
+  
+  if ($('total-debit')) $('total-debit').textContent = 'Rs. ' + formatNumber(totalDebit);
+  if ($('debit-count')) $('debit-count').textContent = debitCount + ' transactions';
+  
+  if ($('total-expense')) $('total-expense').textContent = 'Rs. ' + formatNumber(totalExpense);
+  if ($('expense-count')) $('expense-count').textContent = expenseCount + ' transactions';
+  
+  if ($('net-balance')) $('net-balance').textContent = 'Rs. ' + formatNumber(netBalance);
+  if ($('transaction-count')) $('transaction-count').textContent = transactions.length + ' transactions';
+
+  console.log('Summary updated:', { totalCredit, totalDebit, totalExpense, netBalance });
+}
+
+// ============================================
+// APPLY FILTERS
+// ============================================
+window.applyFilters = async function() {
+  const type = $('filter-type')?.value || '';
+  const dateFrom = $('filter-date-from')?.value;
+  const dateTo = $('filter-date-to')?.value;
+
+  console.log('Applying filters:', { type, dateFrom, dateTo });
+
+  try {
+    let query = supabase
+      .from('transactions')
+      .select(`
+        *,
+        customer:customers(name, sr_no),
+        tank:tanks(fuel_type, name)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (type) {
+      query = query.eq('transaction_type', type);
+    }
+
+    if (dateFrom) {
+      query = query.gte('created_at', new Date(dateFrom).toISOString());
+    }
+
+    if (dateTo) {
+      const endDate = new Date(dateTo);
+      endDate.setHours(23, 59, 59, 999);
+      query = query.lte('created_at', endDate.toISOString());
+    }
+
+    const { data, error } = await query.limit(200);
+
+    if (error) {
+      console.error('Filter error:', error);
+      throw error;
+    }
+
+    console.log('Filtered data:', data?.length || 0, 'transactions');
+
+    allTransactions = data || [];
+    displayTransactions(allTransactions);
+    updateSummaryCards(allTransactions);
+  } catch (error) {
+    console.error('Error filtering transactions:', error);
+    alert('Error filtering: ' + error.message);
   }
 };
 
-// Update fuel price when fuel type changes
-window.updateSaleFuelPrice = function() {
-  const fuelType = $('sale-fuel-type').value;
-  const prices = JSON.parse(localStorage.getItem('fuel_prices') || '{}');
+// ============================================
+// CLEAR FILTERS
+// ============================================
+window.clearTransactionFilters = function() {
+  if ($('filter-type')) $('filter-type').value = '';
+  if ($('filter-date-from')) $('filter-date-from').value = '';
+  if ($('filter-date-to')) $('filter-date-to').value = '';
   
-  if (fuelType && prices[fuelType]) {
-    $('sale-unit-price').value = prices[fuelType];
-  } else {
-    // Default prices
-    const defaults = { 'Petrol': 285, 'Diesel': 305 };
-    $('sale-unit-price').value = defaults[fuelType] || 0;
-  }
-  
-  // Recalculate
-  const method = document.querySelector('input[name="sale-entry-method"]:checked').value;
-  if (method === 'liters') {
-    window.calcSaleFromLiters();
-  } else {
-    window.calcSaleFromAmount();
-  }
-};
-
-// Calculate from liters
-window.calcSaleFromLiters = function() {
-  const liters = parseFloat($('sale-liters').value) || 0;
-  const rate = parseFloat($('sale-unit-price').value) || 0;
-  
-  if (liters > 0 && rate > 0) {
-    const total = liters * rate;
-    $('sale-amount').value = total.toFixed(2);
-  } else {
-    $('sale-amount').value = '';
-  }
-};
-
-// Calculate from amount
-window.calcSaleFromAmount = function() {
-  const amount = parseFloat($('sale-amount-direct').value) || 0;
-  const rate = parseFloat($('sale-unit-price').value) || 0;
-  
-  if (amount > 0 && rate > 0) {
-    const liters = amount / rate;
-    $('sale-liters').value = liters.toFixed(2);
-    $('sale-amount').value = amount.toFixed(2);
-  } else {
-    $('sale-amount').value = '';
-  }
+  loadInitialTransactions();
 };
 
 // ============================================
-// VASOOLI ENHANCEMENTS
+// DISPLAY TRANSACTIONS
 // ============================================
+function displayTransactions(transactions) {
+  const tbody = $('transactions-table');
+  if (!tbody) return;
 
-// Load customer balance
-window.loadVasooliCustomerBalance = async function(customerId) {
-  if (!customerId) {
-    $('vasooli-balance-info').style.display = 'none';
+  if (transactions.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No transactions found</td></tr>';
     return;
   }
 
-  try {
-    const { data: customer } = await supabase
-      .from('customers')
-      .select('balance')
-      .eq('id', customerId)
-      .single();
+  let html = '';
+  transactions.forEach(t => {
+    const date = new Date(t.created_at);
+    const typeClass = t.transaction_type === 'Credit' ? 'bg-success' :
+      t.transaction_type === 'Debit' ? 'bg-primary' : 'bg-warning';
 
-    if (customer) {
-      const formatted = Number(customer.balance || 0).toLocaleString('en-PK', { 
-        minimumFractionDigits: 2, 
-        maximumFractionDigits: 2 
+    html += `
+      <tr>
+        <td>${date.toLocaleString('en-PK', { dateStyle: 'short', timeStyle: 'short' })}</td>
+        <td>${t.customer?.name || 'N/A'} ${t.customer?.sr_no ? '(' + t.customer.sr_no + ')' : ''}</td>
+        <td><span class="badge ${typeClass}">${t.transaction_type}</span></td>
+        <td>${t.tank?.fuel_type || t.tank?.name || '-'}</td>
+        <td>${t.liters > 0 ? formatNumber(t.liters) + ' L' : '-'}</td>
+        <td>${t.unit_price ? 'Rs. ' + formatNumber(t.unit_price) : '-'}</td>
+        <td><strong>Rs. ${formatNumber(t.amount)}</strong></td>
+        <td><small>${t.description || '-'}</small></td>
+        <td>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteTransaction(${t.id})">
+            <i class="bi bi-trash"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+}
+
+// ============================================
+// LOAD INITIAL TRANSACTIONS
+// ============================================
+async function loadInitialTransactions() {
+  console.log('Loading initial transactions...');
+  
+  try {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select(`
+        *,
+        customer:customers(name, sr_no),
+        tank:tanks(fuel_type, name)
+      `)
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (error) {
+      console.error('Load error:', error);
+      throw error;
+    }
+
+    console.log('Loaded transactions:', data?.length || 0);
+
+    allTransactions = data || [];
+    displayTransactions(allTransactions);
+    updateSummaryCards(allTransactions);
+  } catch (error) {
+    console.error('Error loading transactions:', error);
+    
+    // Show error in UI
+    const tbody = $('transactions-table');
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4">
+        Error loading data: ${error.message}
+        <br><small>Check browser console for details</small>
+      </td></tr>`;
+    }
+  }
+}
+
+// ============================================
+// LOAD CUSTOMERS FOR MODALS
+// ============================================
+async function loadCustomersForModals() {
+  console.log('Loading customers for modals...');
+  
+  try {
+    const { data: customers, error } = await supabase
+      .from('customers')
+      .select('id, sr_no, name, category')
+      .order('sr_no');
+
+    if (error) {
+      console.error('Error loading customers:', error);
+      throw error;
+    }
+
+    console.log('Loaded customers:', customers?.length || 0);
+
+    // Populate sale customer dropdown
+    if ($('sale-customer')) {
+      let html = '<option value="">Select Customer</option>';
+      customers.forEach(c => {
+        html += `<option value="${c.id}">${c.sr_no} - ${c.name}</option>`;
       });
-      $('vasooli-current-balance').textContent = 'Rs. ' + formatted;
-      $('vasooli-balance-info').style.display = 'block';
+      $('sale-customer').innerHTML = html;
     }
+
+    // Populate vasooli customer dropdown
+    if ($('vasooli-customer')) {
+      let html = '<option value="">Select Customer</option>';
+      customers.forEach(c => {
+        if (c.category !== 'Owner') { // Don't show owner in vasooli
+          html += `<option value="${c.id}">${c.sr_no} - ${c.name}</option>`;
+        }
+      });
+      $('vasooli-customer').innerHTML = html;
+    }
+
   } catch (error) {
-    console.error('Error loading balance:', error);
+    console.error('Error loading customers:', error);
+    
+    // Show error in modal
+    if ($('sale-customer')) {
+      $('sale-customer').innerHTML = '<option value="">Error loading customers</option>';
+    }
+    if ($('vasooli-customer')) {
+      $('vasooli-customer').innerHTML = '<option value="">Error loading customers</option>';
+    }
   }
-};
+}
 
-// Enhanced addVasooli
-window.addVasooli = async function() {
-  const customerId = $('vasooli-customer').value;
-  const amount = parseFloat($('vasooli-amount').value);
-  const month = $('vasooli-month').value;
-  const method = $('vasooli-method').value;
-  const description = $('vasooli-description').value;
-
-  if (!customerId || !amount) {
-    alert('Please select customer and enter amount');
-    return;
-  }
-
+// ============================================
+// DELETE TRANSACTION
+// ============================================
+window.deleteTransaction = async function(id) {
+  if (!confirm('Are you sure you want to delete this transaction?')) return;
+  
   try {
-    // Build description
-    let fullDescription = `Payment received via ${method}`;
-    if (month) {
-      const date = new Date(month + '-01');
-      const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-      fullDescription += ` for ${monthName}`;
-    }
-    if (description) {
-      fullDescription += ` - ${description}`;
-    }
-
-    // Create transaction
     const { error } = await supabase
       .from('transactions')
-      .insert([{
-        customer_id: parseInt(customerId),
-        transaction_type: 'Debit',
-        amount: amount,
-        description: fullDescription
-      }]);
+      .delete()
+      .eq('id', id);
 
     if (error) throw error;
 
-    if (window.showToast) {
-      window.showToast('Payment recorded successfully!', 'success');
-    } else {
-      alert('Payment recorded successfully!');
-    }
-    
-    bootstrap.Modal.getInstance($('vasooliModal')).hide();
-    $('vasooliForm').reset();
-    $('vasooli-balance-info').style.display = 'none';
-    
-    // Reload transactions
-    if (window.loadInitialTransactions) {
-      window.loadInitialTransactions();
-    }
-
+    alert('Transaction deleted successfully!');
+    loadInitialTransactions();
   } catch (error) {
-    console.error('Error adding vasooli:', error);
-    alert('Error: ' + error.message);
-  }
-};
-
-// ============================================
-// EXPENSE ENHANCEMENTS
-// ============================================
-
-window.addExpense = async function() {
-  const amount = parseFloat($('expense-amount').value);
-  const description = $('expense-description').value;
-  const expenseType = $('expense-type').value;
-  const account = $('expense-account').value;
-
-  if (!amount || !description || !expenseType || !account) {
-    alert('Please fill all required fields');
-    return;
-  }
-
-  try {
-    // Find Owner customer
-    const { data: owner } = await supabase
-      .from('customers')
-      .select('id')
-      .eq('category', 'Owner')
-      .single();
-
-    if (!owner) {
-      alert('Owner account not found. Please create one first.');
-      return;
-    }
-
-    // Create expense transaction
-    const fullDescription = `${expenseType}: ${description} (Paid from: ${account})`;
-    
-    const { error } = await supabase
-      .from('transactions')
-      .insert([{
-        customer_id: owner.id,
-        transaction_type: 'Expense',
-        amount: amount,
-        description: fullDescription
-      }]);
-
-    if (error) throw error;
-
-    if (window.showToast) {
-      window.showToast('Expense recorded successfully!', 'success');
-    } else {
-      alert('Expense recorded successfully!');
-    }
-    
-    bootstrap.Modal.getInstance($('expenseModal')).hide();
-    $('expenseForm').reset();
-    
-    // Reload transactions
-    if (window.loadInitialTransactions) {
-      window.loadInitialTransactions();
-    }
-
-  } catch (error) {
-    console.error('Error adding expense:', error);
+    console.error('Error deleting transaction:', error);
     alert('Error: ' + error.message);
   }
 };
@@ -231,7 +274,31 @@ window.addExpense = async function() {
 // ============================================
 // INITIALIZE
 // ============================================
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.body.getAttribute('data-page') === 'transactions') {
+    console.log('Initializing transactions page...');
+    
+    // Set default date range (last 30 days)
+    const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 30);
 
-console.log('✅ Transaction enhancements loaded');
+    if ($('filter-date-from')) {
+      $('filter-date-from').value = thirtyDaysAgo.toISOString().split('T')[0];
+    }
+    if ($('filter-date-to')) {
+      $('filter-date-to').value = today.toISOString().split('T')[0];
+    }
+
+    // Load data
+    loadInitialTransactions();
+    loadCustomersForModals();
+
+    console.log('✅ Transactions page initialized');
+  }
+});
+
+// Make loadInitialTransactions available globally for enhancements
+window.loadInitialTransactions = loadInitialTransactions;
 
 })();
