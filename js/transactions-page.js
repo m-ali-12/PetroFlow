@@ -1,4 +1,4 @@
-// TRANSACTIONS - FINAL BULLETPROOF VERSION
+// TRANSACTIONS - FINAL WORKING VERSION WITHOUT CONFLICTS
 (function() {
 'use strict';
 
@@ -6,7 +6,7 @@ const supabase = window.supabaseClient;
 let allTransactions = [];
 let allCustomers = [];
 let isSubmitting = false;
-let fuelPrices = { Petrol: 285, Diesel: 305 }; // Default prices
+let fuelPrices = { Petrol: 285, Diesel: 305 };
 
 function $(id) { return document.getElementById(id); }
 
@@ -15,7 +15,7 @@ function formatNumber(num) {
 }
 
 // ============================================
-// LOAD FUEL PRICES FROM SETTINGS
+// LOAD PRICES FROM SETTINGS
 // ============================================
 
 async function loadFuelPrices() {
@@ -25,20 +25,18 @@ async function loadFuelPrices() {
     const { data, error } = await supabase
       .from('settings')
       .select('petrol_price, diesel_price')
-      .single();
+      .maybeSingle();
 
-    if (error) {
+    if (error || !data) {
       console.log('No settings found, using defaults');
       return;
     }
 
-    if (data) {
-      fuelPrices = {
-        Petrol: parseFloat(data.petrol_price) || 285,
-        Diesel: parseFloat(data.diesel_price) || 305
-      };
-      console.log('✅ Loaded prices:', fuelPrices);
-    }
+    fuelPrices = {
+      Petrol: parseFloat(data.petrol_price) || 285,
+      Diesel: parseFloat(data.diesel_price) || 305
+    };
+    console.log('✅ Loaded prices:', fuelPrices);
   } catch (error) {
     console.log('Using default prices');
   }
@@ -106,7 +104,7 @@ function populateCustomerDropdowns() {
     let html = '<option value="">Select Customer</option>';
     allCustomers.forEach(c => {
       if (c.category !== 'Owner') {
-        html += `<option value="${c.id}">${c.sr_no} - ${c.name}</option>`;
+        html += `<option value="${c.id}">${c.sr_no} - ${c.name} (Balance: Rs. ${formatNumber(c.balance || 0)})</option>`;
       }
     });
     vasooliSelect.innerHTML = html;
@@ -179,10 +177,7 @@ function displayTransactions(transactions) {
 // ============================================
 
 async function handleNewSale() {
-  if (isSubmitting) {
-    console.log('⚠️ Already submitting');
-    return;
-  }
+  if (isSubmitting) return;
 
   const customerId = $('sale-customer')?.value;
   const fuelType = $('sale-fuel-type')?.value;
@@ -197,7 +192,6 @@ async function handleNewSale() {
   }
 
   isSubmitting = true;
-  console.log('Saving sale:', { customerId, fuelType, liters, unitPrice, amount });
 
   try {
     const { error } = await supabase
@@ -214,12 +208,11 @@ async function handleNewSale() {
 
     if (error) throw error;
 
-    console.log('✅ Sale saved');
     alert('Sale recorded!');
     closeModal('newSaleModal');
     await loadInitialTransactions();
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error('Error:', error);
     alert('Error: ' + error.message);
   } finally {
     isSubmitting = false;
@@ -227,11 +220,14 @@ async function handleNewSale() {
 }
 
 // ============================================
-// VASOOLI
+// VASOOLI - FIXED VERSION
 // ============================================
 
 async function handleVasooli() {
-  if (isSubmitting) return;
+  if (isSubmitting) {
+    console.log('Already submitting');
+    return;
+  }
 
   const customerId = $('vasooli-customer')?.value;
   const amount = parseFloat($('vasooli-amount')?.value) || 0;
@@ -239,6 +235,8 @@ async function handleVasooli() {
   const paymentDate = $('vasooli-date')?.value;
   const month = $('vasooli-month')?.value;
   const description = $('vasooli-description')?.value || '';
+
+  console.log('Vasooli data:', { customerId, amount, fuelCategory, paymentDate, month });
 
   if (!customerId || !amount) {
     alert('Please select customer and enter amount');
@@ -248,9 +246,16 @@ async function handleVasooli() {
   isSubmitting = true;
 
   try {
+    // Find customer from allCustomers array (already loaded)
     const customer = allCustomers.find(c => c.id === parseInt(customerId));
-    const customerName = customer?.name || 'Customer';
+    
+    if (!customer) {
+      throw new Error('Customer not found');
+    }
 
+    const customerName = customer.name || 'Customer';
+
+    // Build description
     let fullDescription = '';
     if (fuelCategory) {
       fullDescription = `${fuelCategory} payment`;
@@ -283,17 +288,20 @@ async function handleVasooli() {
       transactionData.created_at = new Date(paymentDate).toISOString();
     }
 
+    console.log('Inserting vasooli:', transactionData);
+
     const { error } = await supabase
       .from('transactions')
       .insert([transactionData]);
 
     if (error) throw error;
 
+    console.log('✅ Vasooli saved');
     alert('Payment recorded!');
     closeModal('vasooliModal');
     await loadInitialTransactions();
   } catch (error) {
-    console.error('Error:', error);
+    console.error('❌ Error recording vasooli:', error);
     alert('Error: ' + error.message);
   } finally {
     isSubmitting = false;
@@ -301,7 +309,7 @@ async function handleVasooli() {
 }
 
 // ============================================
-// EXPENSE - FIX OWNER ISSUE
+// EXPENSE
 // ============================================
 
 async function handleExpense() {
@@ -322,47 +330,29 @@ async function handleExpense() {
   isSubmitting = true;
 
   try {
-    // ALWAYS use first customer (don't require Owner category)
+    // Use first customer (Owner or any)
     let customerId = null;
     
-    // Try to find Owner
-    const { data: owner } = await supabase
-      .from('customers')
-      .select('id')
-      .eq('category', 'Owner')
-      .maybeSingle();
-
+    const owner = allCustomers.find(c => c.category === 'Owner');
     if (owner) {
       customerId = owner.id;
-      console.log('Using Owner:', customerId);
+    } else if (allCustomers.length > 0) {
+      customerId = allCustomers[0].id;
     } else {
-      // Use first customer
-      if (allCustomers.length > 0) {
-        customerId = allCustomers[0].id;
-        console.log('Using first customer:', customerId);
-      } else {
-        // Create Owner customer
-        console.log('Creating Owner customer...');
-        const { data: newOwner, error: createError } = await supabase
-          .from('customers')
-          .insert([{ 
-            sr_no: 0, 
-            name: 'Owner', 
-            category: 'Owner', 
-            balance: 0 
-          }])
-          .select()
-          .single();
-        
-        if (createError) throw createError;
-        customerId = newOwner.id;
-        await loadCustomers(); // Reload
-        console.log('Owner created:', customerId);
-      }
+      // Create Owner
+      const { data: newOwner, error: createError } = await supabase
+        .from('customers')
+        .insert([{ sr_no: 0, name: 'Owner', category: 'Owner', balance: 0 }])
+        .select()
+        .single();
+      
+      if (createError) throw createError;
+      customerId = newOwner.id;
+      await loadCustomers();
     }
 
     const fullDescription = expenseType ? 
-      `${expenseType}: ${description}${expenseAccount ? ' (From: ' + expenseAccount + ')' : ''}` :
+      `${expenseType}: ${description} (From: ${expenseAccount || 'N/A'})` :
       description;
 
     console.log('Inserting expense:', { customerId, amount, fullDescription });
@@ -415,7 +405,7 @@ window.deleteTransaction = async function(id) {
 };
 
 // ============================================
-// AUTO-CALCULATE - USE SETTINGS PRICES
+// AUTO-CALCULATE
 // ============================================
 
 function setupAutoCalculate() {
@@ -429,7 +419,6 @@ function setupAutoCalculate() {
       const price = fuelPrices[fuelSelect.value] || 285;
       if (priceInput) {
         priceInput.value = price;
-        console.log('Price set:', fuelSelect.value, '=', price);
       }
       calculateAmount();
     });
@@ -447,9 +436,7 @@ function setupAutoCalculate() {
     const liters = parseFloat(litersInput?.value) || 0;
     const price = parseFloat(priceInput?.value) || 0;
     if (amountInput && liters > 0 && price > 0) {
-      const total = (liters * price).toFixed(2);
-      amountInput.value = total;
-      console.log('Calculated:', liters, 'x', price, '=', total);
+      amountInput.value = (liters * price).toFixed(2);
     }
   }
 }
@@ -463,10 +450,7 @@ function setupFormHandlers() {
   if (saleForm) {
     saleForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      e.stopPropagation();
-      if (!isSubmitting) {
-        handleNewSale();
-      }
+      if (!isSubmitting) handleNewSale();
     });
   }
 
@@ -474,10 +458,7 @@ function setupFormHandlers() {
   if (vasooliForm) {
     vasooliForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      e.stopPropagation();
-      if (!isSubmitting) {
-        handleVasooli();
-      }
+      if (!isSubmitting) handleVasooli();
     });
   }
 
@@ -485,10 +466,7 @@ function setupFormHandlers() {
   if (expenseForm) {
     expenseForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      e.stopPropagation();
-      if (!isSubmitting) {
-        handleExpense();
-      }
+      if (!isSubmitting) handleExpense();
     });
   }
 }
@@ -501,14 +479,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (document.body.getAttribute('data-page') === 'transactions') {
     console.log('🚀 Starting transactions...');
     
-    await loadFuelPrices(); // Load prices from settings FIRST
+    await loadFuelPrices();
     await loadCustomers();
     await loadInitialTransactions();
     
     setupAutoCalculate();
     setupFormHandlers();
     
-    // Set default date for vasooli
     if ($('vasooli-date')) {
       $('vasooli-date').value = new Date().toISOString().split('T')[0];
     }
@@ -517,6 +494,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+// Expose for reload
 window.loadInitialTransactions = loadInitialTransactions;
 
 })();
