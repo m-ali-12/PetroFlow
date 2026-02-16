@@ -530,3 +530,95 @@ FROM transactions
 WHERE fuel_type IS NOT NULL 
 ORDER BY created_at DESC 
 LIMIT 5;
+
+
+-- ===================================================================
+-- COMPLETE DATABASE SETUP FOR TRANSACTIONS
+-- Run this ONCE in Supabase SQL Editor
+-- ===================================================================
+
+-- Step 1: Add all missing columns to transactions table
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS fuel_type VARCHAR(50);
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50);
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS expense_type VARCHAR(100);
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS expense_account VARCHAR(50);
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS payment_month VARCHAR(10);
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS entry_method VARCHAR(20);
+
+-- Step 2: Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_transactions_fuel_type ON transactions(fuel_type);
+CREATE INDEX IF NOT EXISTS idx_transactions_payment_method ON transactions(payment_method);
+CREATE INDEX IF NOT EXISTS idx_transactions_expense_type ON transactions(expense_type);
+CREATE INDEX IF NOT EXISTS idx_transactions_payment_month ON transactions(payment_month);
+
+-- Step 3: Verify columns exist
+SELECT column_name, data_type, is_nullable
+FROM information_schema.columns 
+WHERE table_name = 'transactions' 
+  AND column_name IN (
+    'fuel_type', 'payment_method', 'expense_type', 
+    'expense_account', 'payment_month', 'entry_method'
+  )
+ORDER BY column_name;
+
+-- Step 4: Check RLS status
+SELECT tablename, rowsecurity 
+FROM pg_tables 
+WHERE tablename IN ('customers', 'transactions', 'tanks')
+  AND schemaname = 'public';
+
+-- Step 5: Disable RLS if enabled (for testing)
+ALTER TABLE customers DISABLE ROW LEVEL SECURITY;
+ALTER TABLE transactions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE tanks DISABLE ROW LEVEL SECURITY;
+
+-- Step 6: Verify settings table exists (for fuel prices)
+SELECT EXISTS (
+  SELECT FROM information_schema.tables 
+  WHERE table_name = 'settings'
+) as settings_table_exists;
+
+-- If settings table doesn't exist, create it
+CREATE TABLE IF NOT EXISTS settings (
+  id SERIAL PRIMARY KEY,
+  petrol_price DECIMAL(10,2) DEFAULT 285.00,
+  diesel_price DECIMAL(10,2) DEFAULT 305.00,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Insert default settings if table is empty
+INSERT INTO settings (petrol_price, diesel_price)
+SELECT 285.00, 305.00
+WHERE NOT EXISTS (SELECT 1 FROM settings);
+
+-- Step 7: Test query to verify everything works
+SELECT 
+  id,
+  transaction_type,
+  fuel_type,
+  expense_type,
+  expense_account,
+  payment_method,
+  payment_month,
+  amount,
+  description
+FROM transactions
+ORDER BY created_at DESC
+LIMIT 5;
+
+-- ===================================================================
+-- SUCCESS! All columns added and ready to use
+-- ===================================================================
+
+-- Expected output from Step 3:
+-- column_name       | data_type          | is_nullable
+-- -----------------|--------------------|-----------
+-- entry_method     | character varying  | YES
+-- expense_account  | character varying  | YES
+-- expense_type     | character varying  | YES
+-- fuel_type        | character varying  | YES
+-- payment_method   | character varying  | YES
+-- payment_month    | character varying  | YES
+
+-- If you see all 6 rows, you're good to go! ✅

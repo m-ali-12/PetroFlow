@@ -1,4 +1,4 @@
-// TRANSACTIONS - FINAL WORKING VERSION WITHOUT CONFLICTS
+// TRANSACTIONS - WITH PAGINATION & FUEL PRICE IN VASOOLI
 (function() {
 'use strict';
 
@@ -7,6 +7,11 @@ let allTransactions = [];
 let allCustomers = [];
 let isSubmitting = false;
 let fuelPrices = { Petrol: 285, Diesel: 305 };
+
+// Pagination state
+let currentPage = 1;
+let itemsPerPage = 10;
+let sortOrder = 'desc'; // desc = newest first, asc = oldest first
 
 function $(id) { return document.getElementById(id); }
 
@@ -53,8 +58,8 @@ async function loadInitialTransactions() {
     const { data, error } = await supabase
       .from('transactions')
       .select('*, customers!inner(name, sr_no)')
-      .order('created_at', { ascending: false })
-      .limit(100);
+      .order('created_at', { ascending: sortOrder === 'asc' })
+      .limit(1000); // Load more for pagination
 
     if (error) throw error;
 
@@ -112,41 +117,28 @@ function populateCustomerDropdowns() {
 }
 
 // ============================================
-// DISPLAY & UPDATE
+// PAGINATION
 // ============================================
-
-function updateSummaryCards(transactions) {
-  let credit = 0, debit = 0, expense = 0;
-  let creditCount = 0, debitCount = 0, expenseCount = 0;
-
-  transactions.forEach(t => {
-    const amt = parseFloat(t.amount) || 0;
-    if (t.transaction_type === 'Credit') { credit += amt; creditCount++; }
-    else if (t.transaction_type === 'Debit') { debit += amt; debitCount++; }
-    else if (t.transaction_type === 'Expense') { expense += amt; expenseCount++; }
-  });
-
-  if ($('total-credit')) $('total-credit').textContent = 'Rs. ' + formatNumber(credit);
-  if ($('credit-count')) $('credit-count').textContent = creditCount + ' transactions';
-  if ($('total-debit')) $('total-debit').textContent = 'Rs. ' + formatNumber(debit);
-  if ($('debit-count')) $('debit-count').textContent = debitCount + ' transactions';
-  if ($('total-expense')) $('total-expense').textContent = 'Rs. ' + formatNumber(expense);
-  if ($('expense-count')) $('expense-count').textContent = expenseCount + ' transactions';
-  if ($('net-balance')) $('net-balance').textContent = 'Rs. ' + formatNumber(credit - expense);
-
-  console.log('✅ Summary updated');
-}
 
 function displayTransactions(transactions) {
   const tbody = $('transactions-table');
   if (!tbody) return;
 
   if (transactions.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4">No transactions</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4">No transactions found</td></tr>';
+    updatePaginationInfo(0);
     return;
   }
 
-  tbody.innerHTML = transactions.map(t => {
+  // Calculate pagination
+  const totalItems = transactions.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const start = (currentPage - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  const pageItems = transactions.slice(start, end);
+
+  // Display rows
+  tbody.innerHTML = pageItems.map(t => {
     const date = new Date(t.created_at);
     
     let badgeClass = '';
@@ -170,6 +162,106 @@ function displayTransactions(transactions) {
       <td><button class="btn btn-sm btn-danger" onclick="window.deleteTransaction(${t.id})">×</button></td>
     </tr>`;
   }).join('');
+
+  updatePaginationInfo(totalItems);
+  renderPaginationControls(totalPages);
+}
+
+function updatePaginationInfo(totalItems) {
+  const badge = $('transaction-count');
+  if (badge) {
+    const start = (currentPage - 1) * itemsPerPage + 1;
+    const end = Math.min(currentPage * itemsPerPage, totalItems);
+    badge.textContent = totalItems > 0 ? 
+      `Showing ${start}-${end} of ${totalItems} transactions` : 
+      '0 transactions';
+  }
+}
+
+function renderPaginationControls(totalPages) {
+  const container = document.querySelector('.card-body.p-0');
+  if (!container) return;
+
+  // Remove existing pagination
+  const existing = container.querySelector('.pagination-controls');
+  if (existing) existing.remove();
+
+  if (totalPages <= 1) return;
+
+  const paginationHTML = `
+    <div class="pagination-controls p-3 border-top d-flex justify-content-between align-items-center">
+      <div>
+        <button class="btn btn-sm btn-outline-primary" ${currentPage === 1 ? 'disabled' : ''} 
+                onclick="window.changePage(${currentPage - 1})">
+          <i class="bi bi-chevron-left"></i> Previous
+        </button>
+        <span class="mx-3">Page ${currentPage} of ${totalPages}</span>
+        <button class="btn btn-sm btn-outline-primary" ${currentPage === totalPages ? 'disabled' : ''} 
+                onclick="window.changePage(${currentPage + 1})">
+          Next <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+      <div>
+        <select class="form-select form-select-sm d-inline-block w-auto" 
+                onchange="window.changeItemsPerPage(this.value)">
+          <option value="10" ${itemsPerPage === 10 ? 'selected' : ''}>10 per page</option>
+          <option value="25" ${itemsPerPage === 25 ? 'selected' : ''}>25 per page</option>
+          <option value="50" ${itemsPerPage === 50 ? 'selected' : ''}>50 per page</option>
+          <option value="100" ${itemsPerPage === 100 ? 'selected' : ''}>100 per page</option>
+          <option value="999999" ${itemsPerPage === 999999 ? 'selected' : ''}>Show All</option>
+        </select>
+        <select class="form-select form-select-sm d-inline-block w-auto ms-2" 
+                onchange="window.changeSortOrder(this.value)">
+          <option value="desc" ${sortOrder === 'desc' ? 'selected' : ''}>Newest First</option>
+          <option value="asc" ${sortOrder === 'asc' ? 'selected' : ''}>Oldest First</option>
+        </select>
+      </div>
+    </div>
+  `;
+
+  container.insertAdjacentHTML('beforeend', paginationHTML);
+}
+
+window.changePage = function(page) {
+  currentPage = page;
+  displayTransactions(allTransactions);
+};
+
+window.changeItemsPerPage = function(value) {
+  itemsPerPage = parseInt(value);
+  currentPage = 1;
+  displayTransactions(allTransactions);
+};
+
+window.changeSortOrder = async function(order) {
+  sortOrder = order;
+  await loadInitialTransactions();
+};
+
+// ============================================
+// UPDATE SUMMARY
+// ============================================
+
+function updateSummaryCards(transactions) {
+  let credit = 0, debit = 0, expense = 0;
+  let creditCount = 0, debitCount = 0, expenseCount = 0;
+
+  transactions.forEach(t => {
+    const amt = parseFloat(t.amount) || 0;
+    if (t.transaction_type === 'Credit') { credit += amt; creditCount++; }
+    else if (t.transaction_type === 'Debit') { debit += amt; debitCount++; }
+    else if (t.transaction_type === 'Expense') { expense += amt; expenseCount++; }
+  });
+
+  if ($('total-credit')) $('total-credit').textContent = 'Rs. ' + formatNumber(credit);
+  if ($('credit-count')) $('credit-count').textContent = creditCount + ' transactions';
+  if ($('total-debit')) $('total-debit').textContent = 'Rs. ' + formatNumber(debit);
+  if ($('debit-count')) $('debit-count').textContent = debitCount + ' transactions';
+  if ($('total-expense')) $('total-expense').textContent = 'Rs. ' + formatNumber(expense);
+  if ($('expense-count')) $('expense-count').textContent = expenseCount + ' transactions';
+  if ($('net-balance')) $('net-balance').textContent = 'Rs. ' + formatNumber(credit - expense);
+
+  console.log('✅ Summary updated');
 }
 
 // ============================================
@@ -220,23 +312,33 @@ async function handleNewSale() {
 }
 
 // ============================================
-// VASOOLI - FIXED VERSION
+// VASOOLI WITH FUEL PRICE CALCULATION
 // ============================================
 
-async function handleVasooli() {
-  if (isSubmitting) {
-    console.log('Already submitting');
-    return;
+// Calculate vasooli amount from liters
+window.calculateVasooliAmount = function() {
+  const fuelCategory = $('vasooli-fuel-category')?.value;
+  const liters = parseFloat($('vasooli-liters')?.value) || 0;
+  const amountInput = $('vasooli-amount');
+
+  if (fuelCategory && liters > 0 && amountInput) {
+    const price = fuelPrices[fuelCategory] || 285;
+    const amount = liters * price;
+    amountInput.value = amount.toFixed(2);
+    console.log('Calculated:', liters, 'L x Rs.', price, '= Rs.', amount);
   }
+};
+
+async function handleVasooli() {
+  if (isSubmitting) return;
 
   const customerId = $('vasooli-customer')?.value;
   const amount = parseFloat($('vasooli-amount')?.value) || 0;
   const fuelCategory = $('vasooli-fuel-category')?.value || '';
+  const liters = parseFloat($('vasooli-liters')?.value) || 0;
   const paymentDate = $('vasooli-date')?.value;
   const month = $('vasooli-month')?.value;
   const description = $('vasooli-description')?.value || '';
-
-  console.log('Vasooli data:', { customerId, amount, fuelCategory, paymentDate, month });
 
   if (!customerId || !amount) {
     alert('Please select customer and enter amount');
@@ -246,19 +348,17 @@ async function handleVasooli() {
   isSubmitting = true;
 
   try {
-    // Find customer from allCustomers array (already loaded)
     const customer = allCustomers.find(c => c.id === parseInt(customerId));
-    
-    if (!customer) {
-      throw new Error('Customer not found');
-    }
+    if (!customer) throw new Error('Customer not found');
 
     const customerName = customer.name || 'Customer';
 
-    // Build description
     let fullDescription = '';
     if (fuelCategory) {
       fullDescription = `${fuelCategory} payment`;
+      if (liters > 0) {
+        fullDescription += ` (${liters} L)`;
+      }
     } else {
       fullDescription = 'Payment received';
     }
@@ -279,6 +379,8 @@ async function handleVasooli() {
       customer_id: parseInt(customerId),
       transaction_type: 'Debit',
       amount: amount,
+      liters: liters > 0 ? liters : null,
+      unit_price: fuelCategory && liters > 0 ? fuelPrices[fuelCategory] : null,
       description: fullDescription,
       payment_month: month || null,
       fuel_type: fuelCategory || null
@@ -288,20 +390,17 @@ async function handleVasooli() {
       transactionData.created_at = new Date(paymentDate).toISOString();
     }
 
-    console.log('Inserting vasooli:', transactionData);
-
     const { error } = await supabase
       .from('transactions')
       .insert([transactionData]);
 
     if (error) throw error;
 
-    console.log('✅ Vasooli saved');
     alert('Payment recorded!');
     closeModal('vasooliModal');
     await loadInitialTransactions();
   } catch (error) {
-    console.error('❌ Error recording vasooli:', error);
+    console.error('Error:', error);
     alert('Error: ' + error.message);
   } finally {
     isSubmitting = false;
@@ -320,8 +419,6 @@ async function handleExpense() {
   const expenseType = $('expense-type')?.value;
   const expenseAccount = $('expense-account')?.value;
 
-  console.log('Expense data:', { amount, description, expenseType, expenseAccount });
-
   if (!amount || !description) {
     alert('Please fill all fields');
     return;
@@ -330,7 +427,6 @@ async function handleExpense() {
   isSubmitting = true;
 
   try {
-    // Use first customer (Owner or any)
     let customerId = null;
     
     const owner = allCustomers.find(c => c.category === 'Owner');
@@ -339,7 +435,6 @@ async function handleExpense() {
     } else if (allCustomers.length > 0) {
       customerId = allCustomers[0].id;
     } else {
-      // Create Owner
       const { data: newOwner, error: createError } = await supabase
         .from('customers')
         .insert([{ sr_no: 0, name: 'Owner', category: 'Owner', balance: 0 }])
@@ -355,8 +450,6 @@ async function handleExpense() {
       `${expenseType}: ${description} (From: ${expenseAccount || 'N/A'})` :
       description;
 
-    console.log('Inserting expense:', { customerId, amount, fullDescription });
-
     const { error } = await supabase
       .from('transactions')
       .insert([{
@@ -370,12 +463,11 @@ async function handleExpense() {
 
     if (error) throw error;
 
-    console.log('✅ Expense saved');
     alert('Expense recorded!');
     closeModal('expenseModal');
     await loadInitialTransactions();
   } catch (error) {
-    console.error('❌ Expense error:', error);
+    console.error('Error:', error);
     alert('Error: ' + error.message);
   } finally {
     isSubmitting = false;
@@ -417,20 +509,13 @@ function setupAutoCalculate() {
   if (fuelSelect) {
     fuelSelect.addEventListener('change', () => {
       const price = fuelPrices[fuelSelect.value] || 285;
-      if (priceInput) {
-        priceInput.value = price;
-      }
+      if (priceInput) priceInput.value = price;
       calculateAmount();
     });
   }
 
-  if (litersInput) {
-    litersInput.addEventListener('input', calculateAmount);
-  }
-
-  if (priceInput) {
-    priceInput.addEventListener('input', calculateAmount);
-  }
+  if (litersInput) litersInput.addEventListener('input', calculateAmount);
+  if (priceInput) priceInput.addEventListener('input', calculateAmount);
 
   function calculateAmount() {
     const liters = parseFloat(litersInput?.value) || 0;
@@ -439,6 +524,13 @@ function setupAutoCalculate() {
       amountInput.value = (liters * price).toFixed(2);
     }
   }
+
+  // Setup vasooli calculation
+  const vasooliLiters = $('vasooli-liters');
+  const vasooliFuel = $('vasooli-fuel-category');
+  
+  if (vasooliLiters) vasooliLiters.addEventListener('input', window.calculateVasooliAmount);
+  if (vasooliFuel) vasooliFuel.addEventListener('change', window.calculateVasooliAmount);
 }
 
 // ============================================
@@ -494,7 +586,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// Expose for reload
 window.loadInitialTransactions = loadInitialTransactions;
 
 })();
