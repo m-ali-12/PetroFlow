@@ -506,3 +506,27 @@ ALTER TABLE transactions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE tanks DISABLE ROW LEVEL SECURITY;
 
 -- Done!
+
+-- ADD FUEL_TYPE COLUMN TO TRANSACTIONS
+-- This will store which fuel type (Petrol/Diesel) for each transaction
+
+-- Add column
+ALTER TABLE transactions 
+ADD COLUMN IF NOT EXISTS fuel_type VARCHAR(50);
+
+-- Add index for better query performance
+CREATE INDEX IF NOT EXISTS idx_transactions_fuel_type 
+ON transactions(fuel_type);
+
+-- Verify column added
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'transactions' 
+  AND column_name = 'fuel_type';
+
+-- Sample query to test
+SELECT id, fuel_type, amount, description 
+FROM transactions 
+WHERE fuel_type IS NOT NULL 
+ORDER BY created_at DESC 
+LIMIT 5;
