@@ -385,29 +385,61 @@
     }
   }
 
-  async function loadCustomers() {
-    const user = await getUserOrNull();
-    if (!user) {
-      console.warn("⚠️ Not logged in, skipping customers load.");
-      return;
-    }
+  // async function loadCustomers() {
+  //   const user = await getUserOrNull();
+  //   if (!user) {
+  //     console.warn("⚠️ Not logged in, skipping customers load.");
+  //     return;
+  //   }
 
-    try {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("sr_no");
+  //   try {
+  //     const { data, error } = await supabase
+  //       .from("customers")
+  //       .select("*")
+  //       .eq("user_id", user.id)
+  //       .order("sr_no");
 
-      if (error) throw error;
+  //     if (error) throw error;
 
-      allCustomers = data || [];
-      populateCustomerDropdowns();
-    } catch (err) {
-      console.error("❌ Error loading customers:", err);
-      // Avoid popup on load
-    }
-  }
+  //     allCustomers = data || [];
+  //     populateCustomerDropdowns();
+  //   } catch (err) {
+  //     console.error("❌ Error loading customers:", err);
+  //     // Avoid popup on load
+  //   }
+  // }
+
+  async function loadCustomers(){
+
+ const { data:{ user } } =
+ await supabase.auth.getUser();
+
+ if(!user){
+
+ console.log("User not logged in");
+ return;
+
+ }
+
+ const { data, error } =
+ await supabase
+ .from("customers")
+ .select("*")
+ .eq("user_id", user.id);
+
+ if(error){
+
+ console.error(error);
+ return;
+
+ }
+
+ allCustomers = data;
+
+ populateCustomerDropdowns();
+
+}
+
 
   function populateCustomerDropdowns() {
     const saleSelect = $("sale-customer");

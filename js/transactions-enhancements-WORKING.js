@@ -1,231 +1,157 @@
-// assets/js/transactions-enhancements-WORKING.js
-(function () {
-  "use strict";
+// js/transactions-enhancements-WORKING.js
 
-  function $(id) {
-    return document.getElementById(id);
-  }
+(function(){
 
-  function safeNumber(v) {
-    const n = parseFloat(v);
-    return Number.isFinite(n) ? n : 0;
-  }
+// =====================================================
+// GLOBAL fuel price state
+// =====================================================
 
-  // Ensure core object exists
-  const core = window.__TXN__;
-  if (!core) {
-    console.warn("⚠️ __TXN__ core not found. Load transactions-page-FINAL.js before this file.");
-  }
+window.fuelPrices = {
+ Petrol: 0,
+ Diesel: 0
+};
 
-  // =========================================================
-  // SALE: Toggle Entry Method
-  // =========================================================
-  window.toggleSaleMethod = function (method) {
-    const litersSection = $("sale-liters-section");
-    const amountSection = $("sale-amount-section");
+// =====================================================
+// ASK USER FOR PRICE
+// =====================================================
 
-    if (method === "liters") {
-      if (litersSection) litersSection.style.display = "block";
-      if (amountSection) amountSection.style.display = "none";
-      if ($("sale-liters")) $("sale-liters").required = true;
-      if ($("sale-amount-direct")) $("sale-amount-direct").required = false;
-    } else {
-      if (litersSection) litersSection.style.display = "none";
-      if (amountSection) amountSection.style.display = "block";
-      if ($("sale-liters")) $("sale-liters").required = false;
-      if ($("sale-amount-direct")) $("sale-amount-direct").required = true;
-    }
-  };
+window.askFuelPricesIfNeeded = function(){
 
-  // =========================================================
-  // SALE: Update Fuel Price into unit price
-  // =========================================================
-  window.updateSaleFuelPrice = function () {
-    const fuelType = $("sale-fuel-type")?.value;
-    if (!fuelType) return;
+ if(window.fuelPrices.Petrol > 0 && window.fuelPrices.Diesel > 0)
+ return;
 
-    const prices = core?.fuelPrices || { Petrol: 285, Diesel: 305 };
-    const price = safeNumber(prices[fuelType]) || (fuelType === "Petrol" ? 285 : 305);
+ const petrol = prompt("Enter Petrol price per liter:");
 
-    if ($("sale-unit-price")) $("sale-unit-price").value = price;
+ if(petrol === null) return;
 
-    // recalc if something already entered
-    if ($("sale-liters")?.value) window.calcSaleFromLiters();
-    if ($("sale-amount-direct")?.value) window.calcSaleFromAmount();
-  };
+ const diesel = prompt("Enter Diesel price per liter:");
 
-  // =========================================================
-  // SALE: Calculate total from liters
-  // =========================================================
-  window.calcSaleFromLiters = function () {
-    const liters = safeNumber($("sale-liters")?.value);
-    const rate = safeNumber($("sale-unit-price")?.value);
-    const total = liters > 0 && rate > 0 ? liters * rate : 0;
+ if(diesel === null) return;
 
-    if ($("sale-amount")) $("sale-amount").value = total > 0 ? total.toFixed(2) : "";
-  };
+ window.fuelPrices.Petrol = parseFloat(petrol);
+ window.fuelPrices.Diesel = parseFloat(diesel);
 
-  // =========================================================
-  // SALE: Calculate liters from amount
-  // =========================================================
-  window.calcSaleFromAmount = function () {
-    const amount = safeNumber($("sale-amount-direct")?.value);
-    const rate = safeNumber($("sale-unit-price")?.value);
-    if (amount > 0 && rate > 0) {
-      const liters = amount / rate;
-      if ($("sale-liters")) $("sale-liters").value = liters.toFixed(2);
-      if ($("sale-amount")) $("sale-amount").value = amount.toFixed(2);
-    } else {
-      if ($("sale-amount")) $("sale-amount").value = "";
-    }
-  };
+ console.log("Fuel prices set:", window.fuelPrices);
 
-  // =========================================================
-  // VASOOLI: Fuel prices input UI (Petrol/Diesel)
-  // We inject a small box into vasooli modal (no HTML changes required)
-  // =========================================================
-  function injectFuelPriceBoxIfMissing() {
-    const modalBody = $("vasooliModal")?.querySelector(".modal-body");
-    if (!modalBody) return;
+};
 
-    if (modalBody.querySelector("#fuel-price-box")) return;
+// =====================================================
+// SALE fuel price update
+// =====================================================
 
-    const box = document.createElement("div");
-    box.id = "fuel-price-box";
-    box.className = "alert alert-light border mb-3";
+window.updateSaleFuelPrice = function(){
 
-    box.innerHTML = `
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <strong>Fuel Prices (Auto Calculation)</strong>
-        <button type="button" class="btn btn-sm btn-outline-primary" id="btn-save-fuel-prices">
-          Save Prices
-        </button>
-      </div>
-      <div class="row g-2">
-        <div class="col-md-6">
-          <label class="form-label small mb-1">Petrol Price</label>
-          <input type="number" step="0.01" class="form-control" id="input-petrol-price" placeholder="e.g. 285">
-        </div>
-        <div class="col-md-6">
-          <label class="form-label small mb-1">Diesel Price</label>
-          <input type="number" step="0.01" class="form-control" id="input-diesel-price" placeholder="e.g. 305">
-        </div>
-      </div>
-      <small class="text-muted d-block mt-2">
-        Agar price change ho to yahan update karo. Vasooli liters enter karoge to amount auto calculate hoga.
-      </small>
-    `;
+ const fuel = document.getElementById("sale-fuel-type").value;
 
-    // Insert at top of modal body
-    modalBody.insertBefore(box, modalBody.firstChild);
+ if(!fuel) return;
 
-    // Save button
-    const btn = document.getElementById("btn-save-fuel-prices");
-    if (btn) {
-      btn.addEventListener("click", async () => {
-        const p = safeNumber(document.getElementById("input-petrol-price")?.value) || 285;
-        const d = safeNumber(document.getElementById("input-diesel-price")?.value) || 305;
+ window.askFuelPricesIfNeeded();
 
-        // update core + settings
-        if (core?.saveFuelPricesToSettings) {
-          await core.saveFuelPricesToSettings(p, d);
-        } else {
-          // fallback
-          if (core) core.fuelPrices = { Petrol: p, Diesel: d };
-        }
+ document.getElementById("sale-unit-price").value =
+ window.fuelPrices[fuel];
 
-        alert("✅ Fuel prices saved!");
-        window.calculateVasooliAmount();
-      });
-    }
-  }
+};
 
-  // Refresh UI price inputs from current loaded prices
-  window.refreshFuelUI = function () {
-    injectFuelPriceBoxIfMissing();
-    const prices = core?.fuelPrices || { Petrol: 285, Diesel: 305 };
+// =====================================================
+// SALE amount calculate
+// =====================================================
 
-    const p = document.getElementById("input-petrol-price");
-    const d = document.getElementById("input-diesel-price");
+window.calcSaleFromLiters = function(){
 
-    if (p) p.value = safeNumber(prices.Petrol) || 285;
-    if (d) d.value = safeNumber(prices.Diesel) || 305;
-  };
+ const liters = parseFloat(
+ document.getElementById("sale-liters").value || 0
+ );
 
-  // =========================================================
-  // VASOOLI: calculate amount = liters * fuelPrice
-  // =========================================================
-  window.calculateVasooliAmount = function () {
-    const fuelCategory = $("vasooli-fuel-category")?.value;
-    const liters = safeNumber($("vasooli-liters")?.value);
-    const amountInput = $("vasooli-amount");
+ const rate = parseFloat(
+ document.getElementById("sale-unit-price").value || 0
+ );
 
-    if (!amountInput) return;
+ document.getElementById("sale-amount").value =
+ (liters * rate).toFixed(2);
 
-    if (!fuelCategory || liters <= 0) return;
+};
 
-    const prices = core?.fuelPrices || { Petrol: 285, Diesel: 305 };
-    const price = safeNumber(prices[fuelCategory]) || (fuelCategory === "Petrol" ? 285 : 305);
+// =====================================================
+// VASOOLI amount calculate
+// =====================================================
 
-    const amount = liters * price;
-    amountInput.value = amount.toFixed(2);
-  };
+window.calculateVasooliAmount = function(){
 
-  // =========================================================
-  // Hook vasooli inputs (no HTML change required)
-  // =========================================================
-  function hookVasooliInputs() {
-    const fuelSel = $("vasooli-fuel-category");
-    const litersInput = $("vasooli-liters");
+ const fuel =
+ document.getElementById("vasooli-fuel-category").value;
 
-    if (fuelSel) {
-      fuelSel.addEventListener("change", () => {
-        window.calculateVasooliAmount();
-      });
-    }
+ const liters =
+ parseFloat(
+ document.getElementById("vasooli-liters").value || 0
+ );
 
-    if (litersInput) {
-      litersInput.addEventListener("input", () => {
-        window.calculateVasooliAmount();
-      });
-    }
+ if(!fuel || !liters) return;
 
-    // If form submit doesn't call addVasooli in your HTML, enforce it:
-    const form = $("vasooliForm");
-    if (form) {
-      form.addEventListener("submit", (e) => {
-        e.preventDefault();
-        if (typeof window.addVasooli === "function") window.addVasooli();
-      });
-    }
-  }
+ window.askFuelPricesIfNeeded();
 
-  // =========================================================
-  // Hook sale inputs
-  // =========================================================
-  function hookSaleInputs() {
-    const fuelSel = $("sale-fuel-type");
-    const liters = $("sale-liters");
-    const amountDirect = $("sale-amount-direct");
+ const price = window.fuelPrices[fuel];
 
-    if (fuelSel) fuelSel.addEventListener("change", window.updateSaleFuelPrice);
-    if (liters) liters.addEventListener("input", window.calcSaleFromLiters);
-    if (amountDirect) amountDirect.addEventListener("input", window.calcSaleFromAmount);
-  }
+ document.getElementById("vasooli-amount").value =
+ (liters * price).toFixed(2);
 
-  document.addEventListener("DOMContentLoaded", () => {
-    hookSaleInputs();
-    hookVasooliInputs();
-  });
+};
 
-  // Also when vasooli modal opens
-  const vasooliModal = $("vasooliModal");
-  if (vasooliModal) {
-    vasooliModal.addEventListener("shown.bs.modal", () => {
-      window.refreshFuelUI();
-      hookVasooliInputs();
-    });
-  }
+// =====================================================
+// EVENT HOOKS
+// =====================================================
+
+document.addEventListener("DOMContentLoaded", function(){
+
+ const saleFuel =
+ document.getElementById("sale-fuel-type");
+
+ if(saleFuel){
+
+ saleFuel.addEventListener(
+ "change",
+ updateSaleFuelPrice
+ );
+
+ }
+
+ const saleLiters =
+ document.getElementById("sale-liters");
+
+ if(saleLiters){
+
+ saleLiters.addEventListener(
+ "input",
+ calcSaleFromLiters
+ );
+
+ }
+
+ const vasFuel =
+ document.getElementById("vasooli-fuel-category");
+
+ if(vasFuel){
+
+ vasFuel.addEventListener(
+ "change",
+ calculateVasooliAmount
+ );
+
+ }
+
+ const vasLiters =
+ document.getElementById("vasooli-liters");
+
+ if(vasLiters){
+
+ vasLiters.addEventListener(
+ "input",
+ calculateVasooliAmount
+ );
+
+ }
+
+});
+
 })();
 
 
