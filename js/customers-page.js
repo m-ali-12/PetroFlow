@@ -1,5 +1,5 @@
 // =============================================
-// CUSTOMERS PAGE - FIXED WITH AUTH & USER_ID
+// CUSTOMERS - COMPLETE FIX
 // =============================================
 (function() {
 'use strict';
@@ -13,9 +13,9 @@ function fmt(n) {
   return Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
-// ═══════════════════════════════════════════
-// 1. AUTH - Wait for user
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
+// AUTH
+// ════════════════════════════════════════════
 async function getUser() {
   for (let i = 0; i < 3; i++) {
     try {
@@ -26,19 +26,22 @@ async function getUser() {
         console.log('✅ User:', user.email);
         return user;
       }
-    } catch (e) { console.warn('Auth retry', i); }
+    } catch (e) { console.warn('Auth retry', i+1); }
     await new Promise(r => setTimeout(r, 400));
   }
-  console.error('❌ No user - redirecting');
+  console.error('❌ No user');
   window.location.href = 'login.html';
   return null;
 }
 
-// ═══════════════════════════════════════════
-// 2. LOAD CUSTOMERS
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
+// LOAD
+// ════════════════════════════════════════════
 async function loadCustomers() {
-  if (!currentUserId) return;
+  if (!currentUserId) {
+    console.error('❌ No user_id');
+    return;
+  }
   console.log('Loading customers...');
   try {
     const { data, error } = await supabase
@@ -65,7 +68,8 @@ function display(list) {
     return;
   }
   tbody.innerHTML = list.map(c => {
-    const balCls = c.balance > 0 ? 'text-danger fw-bold' : c.balance < 0 ? 'text-success fw-bold' : 'text-muted';
+    const balCls = c.balance > 0 ? 'text-danger fw-bold' : 
+                   c.balance < 0 ? 'text-success fw-bold' : 'text-muted';
     const balTxt = c.balance > 0 ? `Rs. ${fmt(c.balance)} (Udhaar)` :
                    c.balance < 0 ? `Rs. ${fmt(Math.abs(c.balance))} (Advance)` : 'Rs. 0.00';
     const catCls = c.category === 'Member' ? 'bg-primary' :
@@ -78,9 +82,15 @@ function display(list) {
       <td><span class="badge ${catCls}">${c.category}</span></td>
       <td class="${balCls}">${balTxt}</td>
       <td>
-        <button class="btn btn-sm btn-primary" onclick="window.viewLedger(${c.id})"><i class="bi bi-journal-text"></i></button>
-        <button class="btn btn-sm btn-warning" onclick="window.editCust(${c.id})"><i class="bi bi-pencil"></i></button>
-        <button class="btn btn-sm btn-danger" onclick="window.delCust(${c.id})"><i class="bi bi-trash"></i></button>
+        <button class="btn btn-sm btn-primary" onclick="window.viewLedger(${c.id})">
+          <i class="bi bi-journal-text"></i>
+        </button>
+        <button class="btn btn-sm btn-warning" onclick="window.editCust(${c.id})">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button class="btn btn-sm btn-danger" onclick="window.delCust(${c.id})">
+          <i class="bi bi-trash"></i>
+        </button>
       </td>
     </tr>`;
   }).join('');
@@ -102,9 +112,9 @@ function updateSummary() {
   console.log('✅ Summary updated');
 }
 
-// ═══════════════════════════════════════════
-// 3. FILTER
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
+// FILTER
+// ════════════════════════════════════════════
 function filter() {
   const s = $('search-input')?.value.toLowerCase() || '';
   const c = $('filter-category')?.value || '';
@@ -116,49 +126,68 @@ function filter() {
   });
   display(filtered);
 }
+
 function clearFilter() {
   const s = $('search-input'); if (s) s.value = '';
   const c = $('filter-category'); if (c) c.value = '';
   display(allCustomers);
 }
 
-// ═══════════════════════════════════════════
-// 4. ADD CUSTOMER
-// ═══════════════════════════════════════════
-async function addCust() {
-  if (!currentUserId) { alert('Not logged in'); return; }
+// ════════════════════════════════════════════
+// ADD CUSTOMER
+// ════════════════════════════════════════════
+async function addCustomer() {
+  if (!currentUserId) {
+    alert('Not logged in'); 
+    return;
+  }
+
   const sr = parseInt($('customer-sr-no')?.value);
   const nm = $('customer-name')?.value?.trim();
   const ph = $('customer-phone')?.value?.trim();
   const ct = $('customer-category')?.value;
   const bl = parseFloat($('customer-balance')?.value) || 0;
-  if (!sr || !nm || !ct) { alert('Fill SR No, Name, Category'); return; }
-  if (allCustomers.find(c => c.sr_no === sr)) {
-    alert(`SR ${sr} already exists`); return;
+
+  if (!sr || !nm || !ct) {
+    alert('Fill SR No, Name, Category'); 
+    return;
   }
+
+  // Check duplicate
+  if (allCustomers.find(c => c.sr_no === sr)) {
+    alert(`SR ${sr} already exists`);
+    return;
+  }
+
   try {
     console.log('Adding customer, user_id:', currentUserId);
-    const { error } = await supabase.from('customers').insert([{
-      user_id: currentUserId,
-      sr_no: sr,
-      name: nm,
-      phone: ph || null,
-      category: ct,
-      balance: bl
-    }]);
+    
+    const { error } = await supabase
+      .from('customers')
+      .insert([{
+        user_id: currentUserId,
+        sr_no: sr,
+        name: nm,
+        phone: ph || null,
+        category: ct,
+        balance: bl
+      }]);
+
     if (error) throw error;
-    toast('Customer added!', 'success');
+
+    console.log('✅ Customer added');
+    toast('Customer added successfully!', 'success');
     closeModal('addCustomerModal');
     await loadCustomers();
   } catch (e) {
     console.error('❌ Add error:', e);
-    alert('Error: ' + e.message);
+    alert('Error adding customer: ' + e.message);
   }
 }
 
-// ═══════════════════════════════════════════
-// 5. EDIT CUSTOMER
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
+// EDIT CUSTOMER
+// ════════════════════════════════════════════
 window.editCust = function(id) {
   const c = allCustomers.find(x => x.id === id);
   if (!c) return;
@@ -171,44 +200,73 @@ window.editCust = function(id) {
   new bootstrap.Modal($('editCustomerModal')).show();
 };
 
-async function updateCust() {
-  if (!currentUserId) { alert('Not logged in'); return; }
+async function updateCustomer() {
+  if (!currentUserId) {
+    alert('Not logged in');
+    return;
+  }
+
   const id = parseInt($('edit-customer-id').value);
   const sr = parseInt($('edit-sr-no').value);
   const nm = $('edit-name').value.trim();
   const ph = $('edit-phone').value.trim();
   const ct = $('edit-category').value;
   const bl = parseFloat($('edit-balance').value) || 0;
-  if (!sr || !nm || !ct) { alert('Fill all required'); return; }
+
+  if (!sr || !nm || !ct) {
+    alert('Fill all required fields');
+    return;
+  }
+
   try {
-    const { error } = await supabase.from('customers').update({
-      sr_no: sr, name: nm, phone: ph || null, category: ct, balance: bl
-    }).eq('id', id).eq('user_id', currentUserId);
+    const { error } = await supabase
+      .from('customers')
+      .update({
+        sr_no: sr,
+        name: nm,
+        phone: ph || null,
+        category: ct,
+        balance: bl
+      })
+      .eq('id', id)
+      .eq('user_id', currentUserId);
+
     if (error) throw error;
-    toast('Updated!', 'success');
+
+    toast('Customer updated!', 'success');
     closeModal('editCustomerModal');
     await loadCustomers();
-  } catch (e) { alert('Error: ' + e.message); }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
 }
 
-// ═══════════════════════════════════════════
-// 6. DELETE
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
+// DELETE
+// ════════════════════════════════════════════
 window.delCust = async function(id) {
   const c = allCustomers.find(x => x.id === id);
-  if (!c || !confirm(`Delete ${c.name}?`)) return;
+  if (!c || !confirm(`Delete ${c.name}? This cannot be undone.`)) return;
+
   try {
-    const { error } = await supabase.from('customers').delete()
-      .eq('id', id).eq('user_id', currentUserId);
+    const { error } = await supabase
+      .from('customers')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', currentUserId);
+
     if (error) throw error;
-    toast('Deleted', 'success');
+
+    toast('Customer deleted', 'success');
     await loadCustomers();
-  } catch (e) { alert('Error: ' + e.message); }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
 };
 
-// ═══════════════════════════════════════════
-// 7. LEDGER
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
+// LEDGER
+// ════════════════════════════════════════════
 window.viewLedger = function(id) {
   const c = allCustomers.find(x => x.id === id);
   if (!c) return;
@@ -216,15 +274,16 @@ window.viewLedger = function(id) {
   window.location.href = 'customer-details.html?id=' + id;
 };
 
-// ═══════════════════════════════════════════
-// 8. HELPERS
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════
 function closeModal(id) {
   const m = bootstrap.Modal.getInstance($(id));
   if (m) m.hide();
   const f = $(id)?.querySelector('form');
   if (f) f.reset();
 }
+
 function toast(msg, type = 'info') {
   const el = $('liveToast');
   if (!el) return;
@@ -233,35 +292,59 @@ function toast(msg, type = 'info') {
   new bootstrap.Toast(el).show();
 }
 
-// ═══════════════════════════════════════════
-// 9. EVENTS
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
+// EVENTS
+// ════════════════════════════════════════════
 function bind() {
+  // Add form
   const addForm = $('addCustomerForm');
-  if (addForm) addForm.addEventListener('submit', e => { e.preventDefault(); addCust(); });
+  if (addForm) {
+    addForm.addEventListener('submit', e => {
+      e.preventDefault();
+      addCustomer();
+    });
+  }
+
+  // Edit form
   const editForm = $('editCustomerForm');
-  if (editForm) editForm.addEventListener('submit', e => { e.preventDefault(); updateCust(); });
+  if (editForm) {
+    editForm.addEventListener('submit', e => {
+      e.preventDefault();
+      updateCustomer();
+    });
+  }
+
+  // Search
   const srch = $('search-input');
   if (srch) srch.addEventListener('input', filter);
+
+  // Category filter
   const cat = $('filter-category');
   if (cat) cat.addEventListener('change', filter);
+
+  // Clear button
   const clr = $('clear-filters');
   if (clr) clr.addEventListener('click', clearFilter);
 }
 
-// ═══════════════════════════════════════════
-// 10. INIT
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
   if (document.body.getAttribute('data-page') !== 'customers') return;
+
   console.log('🚀 Customers starting...');
+
   const user = await getUser();
   if (!user) return;
+
   bind();
   await loadCustomers();
-  console.log('✅ Ready!');
+
+  console.log('✅ Customers ready!');
 });
 
+// Export
 window.loadCustomers = loadCustomers;
 
 })();
