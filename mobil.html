@@ -1,316 +1,544 @@
+<!-- ================================================================ -->
+<!-- MOBIL OIL SECTION - Enhanced with Current Design Style -->
+<!-- Copy this section and paste in your index.html after settings-section -->
+<!-- ================================================================ -->
 
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Mobil Oil | Khalid & Sons Petroleum</title>
-  <link rel="icon" type="image/png" href="assets/logo.jfif">
-
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="assets/styles.css">
-</head>
-
-<body data-page="mobil">
-  <div id="navbar-placeholder"></div>
-
-  <div class="container py-4">
-    <h3 class="mb-4"><i class="bi bi-droplet-half me-2"></i>Mobil Oil Management</h3>
-
-    <!-- Stock Cards -->
-    <div class="row g-3 mb-4">
-      <div class="col-md-6">
-        <div class="card shadow-sm border-primary">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="text-muted mb-2">Car Mobil Stock</h6>
-                <h2 class="mb-0" id="mobil-car-stock-page">0</h2>
-                <small class="text-muted">Liters</small>
-              </div>
-              <div class="stat-icon" style="background: rgba(13, 110, 253, 0.1); padding: 1rem; border-radius: 10px;">
-                <i class="bi bi-droplet-fill text-primary" style="font-size: 2rem;"></i>
-              </div>
-            </div>
-          </div>
+<div id="mobil-section" class="content-section" style="display: none;">
+    
+    <!-- Header with gradient like dashboard -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body d-flex justify-content-between align-items-center bg-gradient text-white rounded" style="background: linear-gradient(135deg, #e91e63 0%, #9c27b0 100%) !important;">
+            <h4 class="mb-0"><i class="bi bi-droplet-half me-2"></i>Mobil Oil Management</h4>
+            <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addMobilCustomerModal">
+                <i class="bi bi-plus-lg"></i> Add Customer
+            </button>
         </div>
-      </div>
-      <div class="col-md-6">
-        <div class="card shadow-sm border-success">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="text-muted mb-2">Open Mobil Stock</h6>
-                <h2 class="mb-0" id="mobil-open-stock-page">0</h2>
-                <small class="text-muted">Liters</small>
-              </div>
-              <div class="stat-icon" style="background: rgba(25, 135, 84, 0.1); padding: 1rem; border-radius: 10px;">
-                <i class="bi bi-droplet-fill text-success" style="font-size: 2rem;"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
-    <!-- Quick Actions -->
+    <!-- Summary Cards (Same style as dashboard) -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card p-3 shadow-sm border-0 bg-white" style="border-left: 5px solid #e91e63 !important;">
+                <h6 class="text-muted">Total Stock</h6>
+                <h3 id="mobil-total-stock">0 L</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 shadow-sm border-0 bg-white" style="border-left: 5px solid #9c27b0 !important;">
+                <h6 class="text-muted">Stock Value</h6>
+                <h3 class="text-success" id="mobil-stock-value">Rs. 0</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 shadow-sm border-0 bg-white" style="border-left: 5px solid #ff9800 !important;">
+                <h6 class="text-muted">Total Credit</h6>
+                <h3 class="text-danger" id="mobil-total-credit">Rs. 0</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 shadow-sm border-0 bg-white" style="border-left: 5px solid #2196f3 !important;">
+                <h6 class="text-muted">Total Customers</h6>
+                <h3 id="mobil-total-customers">0</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions (Same style as dashboard) -->
     <div class="row g-3 mb-4">
-      <div class="col-md-3">
-        <button class="btn btn-primary w-100 py-3" data-bs-toggle="modal" data-bs-target="#receiveMobilModal">
-          <i class="bi bi-box-arrow-in-down me-2"></i>
-          Receive Stock
-        </button>
-      </div>
-      <div class="col-md-3">
-        <button class="btn btn-success w-100 py-3" data-bs-toggle="modal" data-bs-target="#saleMobilModal">
-          <i class="bi bi-cart-plus me-2"></i>
-          Sale Entry
-        </button>
-      </div>
-      <div class="col-md-3">
-        <button class="btn btn-warning w-100 py-3" data-bs-toggle="modal" data-bs-target="#mobilExpenseModal">
-          <i class="bi bi-wallet2 me-2"></i>
-          Add Expense
-        </button>
-      </div>
-      <div class="col-md-3">
-        <button class="btn btn-info w-100 py-3" onclick="viewMobilHistory()">
-          <i class="bi bi-clock-history me-2"></i>
-          View History
-        </button>
-      </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary w-100 py-3" data-bs-toggle="modal" data-bs-target="#mobilSaleModal">
+                <i class="bi bi-cart-plus me-2"></i>New Sale
+            </button>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-success w-100 py-3" data-bs-toggle="modal" data-bs-target="#mobilPaymentModal">
+                <i class="bi bi-cash me-2"></i>Record Payment
+            </button>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-info w-100 py-3" data-bs-toggle="modal" data-bs-target="#addMobilStockModal">
+                <i class="bi bi-boxes me-2"></i>Add Stock
+            </button>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-warning w-100 py-3" onclick="loadMobilCustomers()">
+                <i class="bi bi-people-fill me-2"></i>View All
+            </button>
+        </div>
+    </div>
+
+    <!-- Customer List with Search -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Mobil Oil Customers</h6>
+                <input type="text" class="form-control w-50" id="mobil-customer-search" placeholder="Search by name or phone..." oninput="searchMobilCustomers()">
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Customer Name</th>
+                            <th>Phone</th>
+                            <th>Vehicle</th>
+                            <th>Credit Balance</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mobil-customers-table">
+                        <tr>
+                            <td colspan="5" class="text-center py-3 text-muted">No customers added yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- Recent Transactions -->
     <div class="card shadow-sm">
-      <div class="card-header bg-white">
-        <h5 class="mb-0">Recent Mobil Transactions</h5>
-      </div>
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-hover mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Mobil Type</th>
-                <th>Customer/Supplier</th>
-                <th>Quantity</th>
-                <th>Rate</th>
-                <th>Amount</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="mobil-transactions-table">
-              <tr><td colspan="8" class="text-center text-muted py-4">Loading...</td></tr>
-            </tbody>
-          </table>
+        <div class="card-body">
+            <h6>Recent Mobil Transactions</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Customer</th>
+                            <th>Type</th>
+                            <th>Oil Type</th>
+                            <th>Qty</th>
+                            <th>Amount</th>
+                            <th>Payment</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mobil-transactions-table">
+                        <tr>
+                            <td colspan="7" class="text-center py-3 text-muted">No transactions yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 
-  <!-- Receive Stock Modal -->
-  <div class="modal fade" id="receiveMobilModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form id="receiveMobilForm" onsubmit="event.preventDefault(); receiveMobilStock();">
-          <div class="modal-header bg-primary text-white">
-            <h5 class="modal-title"><i class="bi bi-box-arrow-in-down me-2"></i>Receive Mobil Stock</h5>
-            <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label">Mobil Type *</label>
-              <select id="receive-mobil-type" class="form-select" required>
-                <option value="">Select Type</option>
-                <option value="Car Mobil">Car Mobil</option>
-                <option value="Open Mobil">Open Mobil</option>
-              </select>
-            </div>
+</div>
 
-            <div class="mb-3">
-              <label class="form-label">Supplier Name</label>
-              <input id="receive-supplier" class="form-control" type="text" placeholder="e.g., PSO, Shell">
-            </div>
+<!-- ================================================================ -->
+<!-- RENT/SHOPS SECTION - Enhanced with Current Design Style -->
+<!-- ================================================================ -->
 
-            <div class="row g-2">
-              <div class="col-md-6">
-                <label class="form-label">Quantity (Liters) *</label>
-                <input id="receive-quantity" class="form-control" type="number" step="0.01" required>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Rate per Liter *</label>
-                <input id="receive-rate" class="form-control" type="number" step="0.01" required>
-              </div>
-            </div>
-
-            <div class="mb-3 mt-2">
-              <label class="form-label">Total Amount</label>
-              <input id="receive-amount" class="form-control" type="number" step="0.01" readonly>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Receiving Date *</label>
-              <input id="receive-date" class="form-control" type="date" required>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Invoice/Bill Number</label>
-              <input id="receive-invoice" class="form-control" type="text">
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Notes</label>
-              <textarea id="receive-notes" class="form-control" rows="2"></textarea>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
-            <button class="btn btn-primary" type="submit">
-              <i class="bi bi-check-circle me-1"></i>Receive Stock
+<div id="rent-section" class="content-section" style="display: none;">
+    
+    <!-- Header -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body d-flex justify-content-between align-items-center bg-gradient text-white rounded" style="background: linear-gradient(135deg, #4caf50 0%, #2196f3 100%) !important;">
+            <h4 class="mb-0"><i class="bi bi-shop me-2"></i>Shop Rent Management</h4>
+            <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addShopModal">
+                <i class="bi bi-plus-lg"></i> Add Shop
             </button>
-          </div>
-        </form>
-      </div>
+        </div>
     </div>
-  </div>
 
-  <!-- Sale Mobil Modal -->
-  <div class="modal fade" id="saleMobilModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form id="saleMobilForm" onsubmit="event.preventDefault(); saleMobilOil();">
-          <div class="modal-header bg-success text-white">
-            <h5 class="modal-title"><i class="bi bi-cart-plus me-2"></i>Mobil Oil Sale</h5>
-            <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label">Customer *</label>
-              <select id="sale-customer" class="form-select" required></select>
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card p-3 shadow-sm border-0 bg-white" style="border-left: 5px solid #4caf50 !important;">
+                <h6 class="text-muted">Total Shops</h6>
+                <h3 id="rent-total-shops">0</h3>
             </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 shadow-sm border-0 bg-white" style="border-left: 5px solid #2196f3 !important;">
+                <h6 class="text-muted">Monthly Rent</h6>
+                <h3 class="text-primary" id="rent-monthly-total">Rs. 0</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 shadow-sm border-0 bg-white" style="border-left: 5px solid #ff9800 !important;">
+                <h6 class="text-muted">Collected</h6>
+                <h3 class="text-success" id="rent-collected">Rs. 0</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 shadow-sm border-0 bg-white" style="border-left: 5px solid #f44336 !important;">
+                <h6 class="text-muted">Pending</h6>
+                <h3 class="text-danger" id="rent-pending">Rs. 0</h3>
+            </div>
+        </div>
+    </div>
 
-            <div class="mb-3">
-              <label class="form-label">Mobil Type *</label>
-              <select id="sale-mobil-type" class="form-select" required>
-                <option value="">Select Type</option>
-                <option value="Car Mobil">Car Mobil</option>
-                <option value="Open Mobil">Open Mobil</option>
-              </select>
-            </div>
-
-            <div class="row g-2">
-              <div class="col-md-6">
-                <label class="form-label">Quantity (Liters) *</label>
-                <input id="sale-quantity" class="form-control" type="number" step="0.01" required>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Rate per Liter *</label>
-                <input id="sale-rate" class="form-control" type="number" step="0.01" required value="850">
-              </div>
-            </div>
-
-            <div class="mb-3 mt-2">
-              <label class="form-label">Total Amount</label>
-              <input id="sale-amount" class="form-control" type="number" step="0.01" readonly>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Sale Date *</label>
-              <input id="sale-date" class="form-control" type="date" required>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Payment Type</label>
-              <select id="sale-payment-type" class="form-select">
-                <option value="cash">Cash</option>
-                <option value="credit">Credit (Udhaar)</option>
-              </select>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Notes</label>
-              <textarea id="sale-notes" class="form-control" rows="2"></textarea>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
-            <button class="btn btn-success" type="submit">
-              <i class="bi bi-check-circle me-1"></i>Complete Sale
+    <!-- Quick Actions -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <button class="btn btn-success w-100 py-3" data-bs-toggle="modal" data-bs-target="#recordRentPaymentModal">
+                <i class="bi bi-cash-coin me-2"></i>Record Payment
             </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Mobil Expense Modal -->
-  <div class="modal fade" id="mobilExpenseModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form id="mobilExpenseForm" onsubmit="event.preventDefault(); addMobilExpense();">
-          <div class="modal-header bg-warning">
-            <h5 class="modal-title"><i class="bi bi-wallet2 me-2"></i>Mobil Expense</h5>
-            <button class="btn-close" type="button" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label">Expense Type *</label>
-              <select id="expense-type" class="form-select" required>
-                <option value="Transport">Transport</option>
-                <option value="Labour">Labour</option>
-                <option value="Storage">Storage</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Amount *</label>
-              <input id="expense-amount-mobil" class="form-control" type="number" step="0.01" required>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Date *</label>
-              <input id="expense-date" class="form-control" type="date" required>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Description *</label>
-              <textarea id="expense-description-mobil" class="form-control" rows="2" required></textarea>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
-            <button class="btn btn-warning" type="submit">
-              <i class="bi bi-check-circle me-1"></i>Save Expense
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-warning w-100 py-3" onclick="loadOverdueRents()">
+                <i class="bi bi-exclamation-triangle me-2"></i>View Overdue
             </button>
-          </div>
-        </form>
-      </div>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-info w-100 py-3" onclick="generateMonthlyRents()">
+                <i class="bi bi-calendar-check me-2"></i>Generate Month
+            </button>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary w-100 py-3" onclick="loadAllShops()">
+                <i class="bi bi-list me-2"></i>View All Shops
+            </button>
+        </div>
     </div>
-  </div>
 
-  <!-- Toast -->
-  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
-    <div id="liveToast" class="toast" role="alert">
-      <div class="toast-header">
-        <strong class="me-auto" id="toast-title">Info</strong>
-        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-      </div>
-      <div class="toast-body" id="toast-message">...</div>
+    <!-- Shop List with Search -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Shops List</h6>
+                <input type="text" class="form-control w-50" id="shop-search" placeholder="Search by shop no, name, or owner..." oninput="searchShops()">
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Shop No</th>
+                            <th>Shop Name</th>
+                            <th>Owner Name</th>
+                            <th>Phone</th>
+                            <th>Monthly Rent</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shops-table">
+                        <tr>
+                            <td colspan="7" class="text-center py-3 text-muted">No shops added yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <div id="footer-placeholder"></div>
+    <!-- Current Month Rent Status -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h6>Current Month Rent Status</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Shop No</th>
+                            <th>Shop Name</th>
+                            <th>Rent Amount</th>
+                            <th>Paid Amount</th>
+                            <th>Balance</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rent-status-table">
+                        <tr>
+                            <td colspan="7" class="text-center py-3 text-muted">No rent entries for this month</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/config.js"></script>
-  <script src="js/auth.js"></script>  
-  <script src="js/app.js"></script>
-  <script src="js/mobil-management.js"></script>
-</body>
-</html>
+</div>
+
+<!-- ================================================================ -->
+<!-- ADD THIS TO YOUR NAVBAR (navbar.html file) -->
+<!-- ================================================================ -->
+<!--
+Add these two items in your navbar menu:
+
+<li class="nav-item">
+    <a class="nav-link" href="#" onclick="showSection('mobil')">
+        <i class="bi bi-droplet-half"></i>
+        <span>Mobil Oil</span>
+    </a>
+</li>
+
+<li class="nav-item">
+    <a class="nav-link" href="#" onclick="showSection('rent')">
+        <i class="bi bi-shop"></i>
+        <span>Rent/Shops</span>
+    </a>
+</li>
+-->
+
+<!-- ================================================================ -->
+<!-- MODALS FOR MOBIL OIL -->
+<!-- ================================================================ -->
+
+<!-- Add Mobil Customer Modal -->
+<div class="modal fade" id="addMobilCustomerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Mobil Customer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Customer Name *</label>
+                    <input type="text" class="form-control" id="new-mobil-customer-name" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Phone</label>
+                    <input type="text" class="form-control" id="new-mobil-customer-phone" placeholder="03XX-XXXXXXX">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Vehicle Type</label>
+                    <select class="form-select" id="new-mobil-customer-vehicle">
+                        <option value="Car">Car</option>
+                        <option value="Motorcycle">Motorcycle</option>
+                        <option value="Truck">Truck</option>
+                        <option value="Rickshaw">Rickshaw</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Address</label>
+                    <textarea class="form-control" id="new-mobil-customer-address" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="addMobilCustomer()">Add Customer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Mobil Stock Modal -->
+<div class="modal fade" id="addMobilStockModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Mobil Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Oil Type *</label>
+                    <select class="form-select" id="new-mobil-stock-type">
+                        <option value="Car Mobil">Car Mobil</option>
+                        <option value="Open Mobil">Open Mobil</option>
+                        <option value="Engine Oil">Engine Oil</option>
+                        <option value="Gear Oil">Gear Oil</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Brand</label>
+                    <input type="text" class="form-control" id="new-mobil-stock-brand" placeholder="Shell, Caltex, etc.">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Grade</label>
+                    <input type="text" class="form-control" id="new-mobil-stock-grade" placeholder="10W-40, 20W-50">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Quantity (Liters) *</label>
+                    <input type="number" class="form-control" id="new-mobil-stock-qty" step="0.01">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Unit Price *</label>
+                    <input type="number" class="form-control" id="new-mobil-stock-price" step="0.01">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="addMobilStock()">Add Stock</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobil Sale Modal -->
+<div class="modal fade" id="mobilSaleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">New Mobil Sale</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Customer *</label>
+                        <select class="form-select" id="mobil-sale-customer" onchange="showMobilCustomerBalance()">
+                            <option value="">-- Select Customer --</option>
+                        </select>
+                        <small id="mobil-customer-balance-display" class="text-danger"></small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Oil Type *</label>
+                        <select class="form-select" id="mobil-sale-oil" onchange="updateMobilPrice()">
+                            <option value="">-- Select Oil --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Quantity (L) *</label>
+                        <input type="number" class="form-control" id="mobil-sale-qty" step="0.01" oninput="calculateMobilTotal()">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Price/L</label>
+                        <input type="number" class="form-control" id="mobil-sale-price" readonly>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Total</label>
+                        <input type="number" class="form-control" id="mobil-sale-total" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Payment *</label>
+                        <select class="form-select" id="mobil-sale-payment">
+                            <option value="Credit">Credit (Udhaar)</option>
+                            <option value="Cash">Cash</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveMobilSale()">Save Sale</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobil Payment Modal -->
+<div class="modal fade" id="mobilPaymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Record Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Customer *</label>
+                    <select class="form-select" id="mobil-payment-customer" onchange="showMobilPaymentBalance()">
+                        <option value="">-- Select Customer --</option>
+                    </select>
+                    <small id="mobil-payment-balance-display" class="text-danger fw-bold"></small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Amount *</label>
+                    <input type="number" class="form-control" id="mobil-payment-amount" step="0.01">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="saveMobilPayment()">Save Payment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- MODALS FOR RENT/SHOPS -->
+<!-- ================================================================ -->
+
+<!-- Add Shop Modal -->
+<div class="modal fade" id="addShopModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Shop</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Shop No *</label>
+                        <input type="text" class="form-control" id="new-shop-no" placeholder="S-001">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Shop Name *</label>
+                        <input type="text" class="form-control" id="new-shop-name">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Owner Name *</label>
+                        <input type="text" class="form-control" id="new-shop-owner">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Owner Phone</label>
+                        <input type="text" class="form-control" id="new-shop-phone">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Monthly Rent *</label>
+                        <input type="number" class="form-control" id="new-shop-rent" step="100">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Security Deposit</label>
+                        <input type="number" class="form-control" id="new-shop-deposit" step="100">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Floor</label>
+                        <select class="form-select" id="new-shop-floor">
+                            <option value="Ground">Ground Floor</option>
+                            <option value="First">First Floor</option>
+                            <option value="Second">Second Floor</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="new-shop-status">
+                            <option value="Occupied">Occupied</option>
+                            <option value="Vacant">Vacant</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="addNewShop()">Add Shop</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Record Rent Payment Modal -->
+<div class="modal fade" id="recordRentPaymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Record Rent Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Select Shop *</label>
+                    <select class="form-select" id="rent-payment-shop" onchange="showShopRentDetails()">
+                        <option value="">-- Select Shop --</option>
+                    </select>
+                    <small id="shop-rent-details" class="text-muted"></small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Amount Paid *</label>
+                    <input type="number" class="form-control" id="rent-payment-amount" step="100">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Payment Method</label>
+                    <select class="form-select" id="rent-payment-method">
+                        <option value="Cash">Cash</option>
+                        <option value="Bank">Bank Transfer</option>
+                        <option value="Cheque">Cheque</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Receipt No</label>
+                    <input type="text" class="form-control" id="rent-payment-receipt">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="saveRentPayment()">Save Payment</button>
+            </div>
+        </div>
+    </div>
+</div>
