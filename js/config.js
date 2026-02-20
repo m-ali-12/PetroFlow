@@ -7,8 +7,10 @@
 const SUPABASE_URL = 'https://ycoxgzplqkqqhzqrc1vt.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljb3hnenBscWtxcWh6cXJjMXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1NDIwMTYsImV4cCI6MjA1MzExODAxNn0.m7dPGWHPYiXx4hJpW3dXc8LPxsZQCDnGqJMQQVw7234';
 
-// Initialize Supabase Client (ONLY ONCE)
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// ✅ FIX: window.supabase = Supabase LIBRARY hai
+// Hum client ko alag naam "supabaseClient" dete hain
+// Taake library overwrite na ho
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Table Names
 const TABLES = {
@@ -130,7 +132,10 @@ function showLoading(show = true) {
 // =============================================
 // Make available globally
 // =============================================
-window.supabase = supabase;
+
+// ✅ FIX: supabaseClient naam se export karo — window.supabase library ko mat chhuo
+window.supabaseClient = supabaseClient;
+
 window.TABLES = TABLES;
 window.getCurrentPrices = getCurrentPrices;
 window.savePrice = savePrice;
@@ -146,4 +151,4 @@ window.showLoading = showLoading;
 window.TANK_CAPACITY = TANK_CAPACITY;
 
 console.log('Config loaded successfully');
-console.log('Supabase initialized:', supabase ? 'Yes' : 'No');
+console.log('Supabase client initialized:', supabaseClient ? 'Yes' : 'No');
