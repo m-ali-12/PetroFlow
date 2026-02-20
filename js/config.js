@@ -7,10 +7,14 @@
 const SUPABASE_URL = 'https://ycoxgzplqkqqhzqrc1vt.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljb3hnenBscWtxcWh6cXJjMXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1NDIwMTYsImV4cCI6MjA1MzExODAxNn0.m7dPGWHPYiXx4hJpW3dXc8LPxsZQCDnGqJMQQVw7234';
 
-// ✅ FIX: window.supabase = Supabase LIBRARY hai
-// Hum client ko alag naam "supabaseClient" dete hain
-// Taake library overwrite na ho
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); // renamed from const supabase
+// ✅ FIX: Ensure Supabase library is loaded before creating client
+let supabaseClient = null;
+
+if (window.supabase && typeof window.supabase.createClient === 'function') {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} else {
+    console.error('Supabase library not loaded. Make sure supabase-js CDN is included BEFORE config.js');
+}
 
 // Table Names
 const TABLES = {
@@ -133,7 +137,6 @@ function showLoading(show = true) {
 // Make available globally
 // =============================================
 
-// ✅ FIX: supabaseClient naam se export karo — window.supabase library ko mat chhuo
 window.supabaseClient = supabaseClient;
 
 window.TABLES = TABLES;
