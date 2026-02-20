@@ -7,34 +7,47 @@
 const SUPABASE_URL = 'https://ycoxgzplqkqqhzqrc1vt.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljb3hnenBscWtxcWh6cXJjMXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1NDIwMTYsImV4cCI6MjA1MzExODAxNn0.m7dPGWHPYiXx4hJpW3dXc8LPxsZQCDnGqJMQQVw7234';
 
-// ✅ FIX: Ensure Supabase library is loaded before creating client
+// Initialize Supabase Client safely
 let supabaseClient = null;
 
 if (window.supabase && typeof window.supabase.createClient === 'function') {
-    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    supabaseClient = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
+        {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true
+            }
+        }
+    );
 } else {
-    console.error('Supabase library not loaded. Make sure supabase-js CDN is included BEFORE config.js');
+    console.error('Supabase library not loaded correctly');
 }
 
+// =============================================
 // Table Names
+// =============================================
+
 const TABLES = {
-    // Fuel Management
     tanks: 'tanks',
     customers: 'customers',
     transactions: 'transactions',
     dailyReports: 'daily_reports',
-    
-    // Mobil Oil
+
     mobilCustomers: 'mobil_customers',
     mobilStock: 'mobil_stock',
     mobilTransactions: 'mobil_transactions',
-    
-    // Rent Management
+
     shops: 'shops',
     rentPayments: 'rent_payments'
 };
 
-// Default Prices (fallback)
+// =============================================
+// Default Prices
+// =============================================
+
 const DEFAULT_PRICES = {
     petrol: 276.50,
     diesel: 289.75
@@ -67,13 +80,13 @@ function getPrice(fuelType) {
 
 function initializePrices() {
     const prices = getCurrentPrices();
-    
+
     const petrolInput = document.getElementById('petrol-price');
     const dieselInput = document.getElementById('diesel-price');
-    
+
     if (petrolInput) petrolInput.value = prices.petrol;
     if (dieselInput) dieselInput.value = prices.diesel;
-    
+
     console.log('Prices initialized:', prices);
 }
 
@@ -112,13 +125,15 @@ function showToast(title, message, type = 'success') {
     const toastTitle = document.getElementById('toast-title');
     const toastMessage = document.getElementById('toast-message');
     const toastElement = document.getElementById('liveToast');
-    
+
     if (toastTitle && toastMessage && toastElement) {
+
         toastTitle.textContent = title;
         toastMessage.textContent = message;
-        
-        toastElement.className = `toast ${type === 'success' ? 'bg-success' : 'bg-danger'} text-white`;
-        
+
+        toastElement.className =
+            `toast ${type === 'success' ? 'bg-success' : 'bg-danger'} text-white`;
+
         const toast = new bootstrap.Toast(toastElement);
         toast.show();
     } else {
@@ -128,13 +143,14 @@ function showToast(title, message, type = 'success') {
 
 function showLoading(show = true) {
     const loader = document.getElementById('loading-overlay');
+
     if (loader) {
         loader.style.display = show ? 'flex' : 'none';
     }
 }
 
 // =============================================
-// Make available globally
+// Export Globals
 // =============================================
 
 window.supabaseClient = supabaseClient;
