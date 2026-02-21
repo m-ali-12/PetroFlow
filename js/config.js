@@ -411,220 +411,342 @@
 // =============================================
 
 // ⚠️ IMPORTANT: replace with your REAL Supabase URL
+
 // Go to: Supabase Dashboard → Settings → API → Project URL
 
-const SUPABASE_URL = 'https://ycoxgzplqkqqhzqrclvt.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljb3hnenBscWtxcWh6cXJjbHZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2NTE2MjEsImV4cCI6MjA4NjIyNzYyMX0.wYQN_c-LVl949E1Hp0AAeyHtvDEpo92Llpo4b21cHN8';
+// here new code start
 
-// Wait until Supabase library loads
-let supabaseClient = null;
+// const SUPABASE_URL = 'https://ycoxgzplqkqqhzqrclvt.supabase.co';
+// const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljb3hnenBscWtxcWh6cXJjbHZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2NTE2MjEsImV4cCI6MjA4NjIyNzYyMX0.wYQN_c-LVl949E1Hp0AAeyHtvDEpo92Llpo4b21cHN8';
 
-if (window.supabase && typeof window.supabase.createClient === 'function') {
+// // Wait until Supabase library loads
+// let supabaseClient = null;
 
-    supabaseClient = window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_ANON_KEY,
-        {
-            auth: {
-                persistSession: true,
-                autoRefreshToken: true,
-                detectSessionInUrl: true
-            }
-        }
-    );
+// if (window.supabase && typeof window.supabase.createClient === 'function') {
 
-    console.log('Supabase initialized successfully');
+//     supabaseClient = window.supabase.createClient(
+//         SUPABASE_URL,
+//         SUPABASE_ANON_KEY,
+//         {
+//             auth: {
+//                 persistSession: true,
+//                 autoRefreshToken: true,
+//                 detectSessionInUrl: true
+//             }
+//         }
+//     );
 
-} else {
+//     console.log('Supabase initialized successfully');
 
-    console.error('Supabase library not loaded');
+// } else {
 
+//     console.error('Supabase library not loaded');
+
+// }
+
+// // =============================================
+// // Table Names
+// // =============================================
+
+// const TABLES = {
+
+//     tanks: 'tanks',
+//     customers: 'customers',
+//     transactions: 'transactions',
+//     dailyReports: 'daily_reports',
+
+//     mobilCustomers: 'mobil_customers',
+//     mobilStock: 'mobil_stock',
+//     mobilTransactions: 'mobil_transactions',
+
+//     shops: 'shops',
+//     rentPayments: 'rent_payments'
+
+// };
+
+// // =============================================
+// // Default Prices
+// // =============================================
+
+// const DEFAULT_PRICES = {
+
+//     petrol: 276.50,
+//     diesel: 289.75
+
+// };
+
+// // =============================================
+// // Tank Capacity
+// // =============================================
+
+// const TANK_CAPACITY = 25000;
+
+// // =============================================
+// // Price Functions
+// // =============================================
+
+// function getCurrentPrices() {
+
+//     return {
+
+//         petrol: parseFloat(localStorage.getItem('petrol_price')) || DEFAULT_PRICES.petrol,
+
+//         diesel: parseFloat(localStorage.getItem('diesel_price')) || DEFAULT_PRICES.diesel
+
+//     };
+
+// }
+
+// function savePrice(fuelType, price) {
+
+//     const key = fuelType === 'Petrol'
+//         ? 'petrol_price'
+//         : 'diesel_price';
+
+//     localStorage.setItem(key, price);
+
+// }
+
+// function getPrice(fuelType) {
+
+//     const prices = getCurrentPrices();
+
+//     return fuelType === 'Petrol'
+//         ? prices.petrol
+//         : prices.diesel;
+
+// }
+
+// function initializePrices() {
+
+//     const prices = getCurrentPrices();
+
+//     const petrolInput = document.getElementById('petrol-price');
+
+//     const dieselInput = document.getElementById('diesel-price');
+
+//     if (petrolInput)
+//         petrolInput.value = prices.petrol;
+
+//     if (dieselInput)
+//         dieselInput.value = prices.diesel;
+
+// }
+
+// // =============================================
+// // Utilities
+// // =============================================
+
+// function formatNumber(num) {
+
+//     return parseFloat(num).toLocaleString('en-PK', {
+
+//         minimumFractionDigits: 2,
+//         maximumFractionDigits: 2
+
+//     });
+
+// }
+
+// function formatCurrency(amount) {
+
+//     return 'Rs. ' + formatNumber(amount);
+
+// }
+
+// function formatDate(date) {
+
+//     return new Date(date).toLocaleDateString('en-PK', {
+
+//         year: 'numeric',
+//         month: 'short',
+//         day: 'numeric'
+
+//     });
+
+// }
+
+// function formatDateSQL(date) {
+
+//     return new Date(date)
+//         .toISOString()
+//         .split('T')[0];
+
+// }
+
+// function getTodayDate() {
+
+//     return formatDateSQL(new Date());
+
+// }
+
+// function showToast(title, message, type = 'success') {
+
+//     alert(title + ': ' + message);
+
+// }
+
+// function showLoading(show = true) {
+
+//     const loader = document.getElementById('loading-overlay');
+
+//     if (loader)
+//         loader.style.display = show
+//             ? 'flex'
+//             : 'none';
+
+// }
+
+// // =============================================
+// // Export globals
+// // =============================================
+
+// window.supabaseClient = supabaseClient;
+
+// window.TABLES = TABLES;
+
+// window.getCurrentPrices = getCurrentPrices;
+
+// window.savePrice = savePrice;
+
+// window.getPrice = getPrice;
+
+// window.initializePrices = initializePrices;
+
+// window.formatNumber = formatNumber;
+
+// window.formatCurrency = formatCurrency;
+
+// window.formatDate = formatDate;
+
+// window.formatDateSQL = formatDateSQL;
+
+// window.getTodayDate = getTodayDate;
+
+// window.showToast = showToast;
+
+// window.showLoading = showLoading;
+
+// window.TANK_CAPACITY = TANK_CAPACITY;
+
+// console.log('Config loaded successfully');
+// console.log('Supabase client initialized:', supabaseClient ? 'Yes' : 'No');
+
+// 417 new code start and end here
+
+
+// =============================================
+// FILE: js/config.js
+// FINAL WORKING VERSION
+// =============================================
+
+// Supabase Configuration
+const SUPABASE_URL = 'https://ycoxgzplqkqqhzqrc1vt.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljb3hnenBscWtxcWh6cXJjMXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1NDIwMTYsImV4cCI6MjA1MzExODAxNn0.m7dPGWHPYiXx4hJpW3dXc8LPxsZQCDnGqJMQQVw7234';
+
+// Wait for Supabase library to load
+let supabase;
+
+function initializeSupabase() {
+    if (typeof window.supabase === 'undefined' || typeof window.supabase.createClient === 'undefined') {
+        console.error('Supabase library not loaded!');
+        return null;
+    }
+    
+    try {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('✅ Supabase initialized successfully');
+        return supabase;
+    } catch (error) {
+        console.error('Error initializing Supabase:', error);
+        return null;
+    }
 }
 
-// =============================================
+// Initialize immediately
+supabase = initializeSupabase();
+
+// Make available globally
+window.supabase = supabase;
+
 // Table Names
-// =============================================
-
 const TABLES = {
-
     tanks: 'tanks',
     customers: 'customers',
     transactions: 'transactions',
     dailyReports: 'daily_reports',
-
     mobilCustomers: 'mobil_customers',
     mobilStock: 'mobil_stock',
     mobilTransactions: 'mobil_transactions',
-
     shops: 'shops',
     rentPayments: 'rent_payments'
-
 };
 
-// =============================================
 // Default Prices
-// =============================================
-
 const DEFAULT_PRICES = {
-
     petrol: 276.50,
     diesel: 289.75
-
 };
 
-// =============================================
-// Tank Capacity
-// =============================================
-
-const TANK_CAPACITY = 25000;
-
-// =============================================
-// Price Functions
-// =============================================
-
+// Utility Functions
 function getCurrentPrices() {
-
     return {
-
         petrol: parseFloat(localStorage.getItem('petrol_price')) || DEFAULT_PRICES.petrol,
-
         diesel: parseFloat(localStorage.getItem('diesel_price')) || DEFAULT_PRICES.diesel
-
     };
-
 }
 
 function savePrice(fuelType, price) {
-
-    const key = fuelType === 'Petrol'
-        ? 'petrol_price'
-        : 'diesel_price';
-
+    const key = fuelType === 'Petrol' ? 'petrol_price' : 'diesel_price';
     localStorage.setItem(key, price);
-
 }
 
 function getPrice(fuelType) {
-
     const prices = getCurrentPrices();
-
-    return fuelType === 'Petrol'
-        ? prices.petrol
-        : prices.diesel;
-
+    return fuelType === 'Petrol' ? prices.petrol : prices.diesel;
 }
-
-function initializePrices() {
-
-    const prices = getCurrentPrices();
-
-    const petrolInput = document.getElementById('petrol-price');
-
-    const dieselInput = document.getElementById('diesel-price');
-
-    if (petrolInput)
-        petrolInput.value = prices.petrol;
-
-    if (dieselInput)
-        dieselInput.value = prices.diesel;
-
-}
-
-// =============================================
-// Utilities
-// =============================================
 
 function formatNumber(num) {
-
-    return parseFloat(num).toLocaleString('en-PK', {
-
+    return parseFloat(num || 0).toLocaleString('en-PK', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
-
     });
-
 }
 
 function formatCurrency(amount) {
-
     return 'Rs. ' + formatNumber(amount);
-
 }
 
 function formatDate(date) {
-
     return new Date(date).toLocaleDateString('en-PK', {
-
         year: 'numeric',
         month: 'short',
         day: 'numeric'
-
     });
-
 }
 
-function formatDateSQL(date) {
-
-    return new Date(date)
-        .toISOString()
-        .split('T')[0];
-
+function showToast(title, message) {
+    const toast = document.getElementById('liveToast');
+    if (toast) {
+        document.getElementById('toast-title').textContent = title;
+        document.getElementById('toast-message').textContent = message;
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+    } else {
+        alert(title + ': ' + message);
+    }
 }
 
-function getTodayDate() {
-
-    return formatDateSQL(new Date());
-
-}
-
-function showToast(title, message, type = 'success') {
-
-    alert(title + ': ' + message);
-
-}
-
-function showLoading(show = true) {
-
-    const loader = document.getElementById('loading-overlay');
-
-    if (loader)
-        loader.style.display = show
-            ? 'flex'
-            : 'none';
-
-}
-
-// =============================================
-// Export globals
-// =============================================
-
-window.supabaseClient = supabaseClient;
-
+// Make functions global
 window.TABLES = TABLES;
-
 window.getCurrentPrices = getCurrentPrices;
-
 window.savePrice = savePrice;
-
 window.getPrice = getPrice;
-
-window.initializePrices = initializePrices;
-
 window.formatNumber = formatNumber;
-
 window.formatCurrency = formatCurrency;
-
 window.formatDate = formatDate;
-
-window.formatDateSQL = formatDateSQL;
-
-window.getTodayDate = getTodayDate;
-
 window.showToast = showToast;
+window.initializeSupabase = initializeSupabase;
 
-window.showLoading = showLoading;
-
-window.TANK_CAPACITY = TANK_CAPACITY;
-
-console.log('Config loaded successfully');
-console.log('Supabase client initialized:', supabaseClient ? 'Yes' : 'No');
+console.log('✅ Config.js loaded');
+console.log('Supabase client:', supabase ? 'Ready' : 'Not initialized');
