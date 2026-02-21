@@ -15,7 +15,7 @@
     window.PETRO_CONFIG_LOADED = true;
 
     // ✅ MUST MATCH PROJECT REF INSIDE YOUR API KEY
-    const SUPABASE_URL = 'https://ycoxgzplqkqqhzqrc1vt.supabase.co';
+    const SUPABASE_URL = 'https://ycoxgzplqkqqhzqrclvt.supabase.co';
 
     // ✅ COPY EXACT FROM SUPABASE DASHBOARD → SETTINGS → API → anon public
     const SUPABASE_ANON_KEY =
