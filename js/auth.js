@@ -1,255 +1,269 @@
 // =============================================
 // FILE: js/auth.js
-// Authentication System - Supabase v2 Fixed
+// Complete Auth Fix - No Loops, No Errors
 // =============================================
 
-const isLoginPage = window.location.pathname.includes('login') || 
-                    window.location.pathname.includes('signup');
+// Check if we're on login/signup page
+const isAuthPage = window.location.pathname.includes('login') || 
+                   window.location.pathname.includes('signup') ||
+                   window.location.pathname.includes('auth');
 
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('Auth system initializing...');
+// Prevent multiple initializations
+if (!window.authInitialized) {
+    window.authInitialized = true;
     
-    if (typeof supabase === 'undefined') {
-        console.error('Supabase client not initialized!');
-        return;
-    }
-    
-    console.log('Supabase client available');
-    
-    if (!isLoginPage) {
+    document.addEventListener('DOMContentLoaded', async function() {
+        console.log('Auth initializing...');
+        
+        // Check if Supabase exists
+        if (typeof supabase === 'undefined') {
+            console.error('Supabase not loaded!');
+            if (!isAuthPage) {
+                setTimeout(() => window.location.href = 'login.html', 100);
+            }
+            return;
+        }
+        
+        console.log('Supabase available');
+        
+        // If on auth page, setup forms only
+        if (isAuthPage) {
+            setupAuthForms();
+            return; // Don't check auth on login page
+        }
+        
+        // If on other pages, check auth
         await checkAuth();
-    } else {
-        setupAuthForms();
-    }
-});
+    });
+}
 
+// =============================================
+// Check Authentication
+// =============================================
 async function checkAuth() {
     try {
+        // Use getUser() instead of getSession()
         const { data, error } = await supabase.auth.getUser();
         
-        if (error || !data.user) {
-            console.log('No authenticated user, redirecting to login');
+        if (error) {
+            console.error('Auth error:', error.message);
             redirectToLogin();
             return;
         }
         
-        console.log('User authenticated:', data.user.email);
-        updateUserDisplay(data.user);
+        if (!data || !data.user) {
+            console.log('No user found');
+            redirectToLogin();
+            return;
+        }
         
-    } catch (error) {
-        console.error('Auth check failed:', error);
+        // User is authenticated
+        console.log('Authenticated:', data.user.email);
+        updateUserInfo(data.user);
+        
+    } catch (err) {
+        console.error('Auth check failed:', err);
         redirectToLogin();
     }
 }
 
+// =============================================
+// Setup Login/Signup Forms
+// =============================================
 function setupAuthForms() {
+    console.log('Setting up auth forms');
+    
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
-        loginForm.addEventListener('submit', handleLogin);
+        loginForm.onsubmit = handleLogin;
+        console.log('Login form ready');
     }
     
     const signupForm = document.getElementById('signupForm');
     if (signupForm) {
-        signupForm.addEventListener('submit', handleSignup);
+        signupForm.onsubmit = handleSignup;
+        console.log('Signup form ready');
     }
 }
 
+// =============================================
+// Handle Login
+// =============================================
 async function handleLogin(e) {
     e.preventDefault();
     
-    const email = document.getElementById('loginEmail')?.value;
+    const email = document.getElementById('loginEmail')?.value?.trim();
     const password = document.getElementById('loginPassword')?.value;
-    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const btn = e.target.querySelector('button[type="submit"]');
     
     if (!email || !password) {
-        showAuthError('Please enter email and password');
-        return;
+        alert('Please enter email and password');
+        return false;
     }
     
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Signing in...';
+    // Show loading
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Signing in...';
     }
     
     try {
         const { data, error } = await supabase.auth.signInWithPassword({
-            email: email.trim(),
+            email: email,
             password: password
         });
         
         if (error) {
             console.error('Login error:', error);
-            showAuthError(error.message.includes('Invalid') ? 'Invalid email or password' : error.message);
+            alert('Login failed: ' + (error.message || 'Invalid credentials'));
             
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Sign In';
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = 'Sign In';
             }
-            return;
+            return false;
         }
         
-        console.log('Login successful');
-        showAuthSuccess('Login successful! Redirecting...');
+        if (data && data.user) {
+            console.log('Login successful');
+            alert('Login successful!');
+            
+            // Wait a moment, then redirect
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 500);
+        }
         
-        setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 1000);
+    } catch (err) {
+        console.error('Login exception:', err);
+        alert('Login error: ' + err.message);
         
-    } catch (error) {
-        console.error('Login exception:', error);
-        showAuthError('Login failed. Please try again.');
-        
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Sign In';
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = 'Sign In';
         }
     }
+    
+    return false;
 }
 
+// =============================================
+// Handle Signup
+// =============================================
 async function handleSignup(e) {
     e.preventDefault();
     
-    const email = document.getElementById('signupEmail')?.value;
+    const email = document.getElementById('signupEmail')?.value?.trim();
     const password = document.getElementById('signupPassword')?.value;
-    const confirmPassword = document.getElementById('confirmPassword')?.value;
-    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const confirm = document.getElementById('confirmPassword')?.value;
+    const btn = e.target.querySelector('button[type="submit"]');
     
-    if (!email || !password || !confirmPassword) {
-        showAuthError('Please fill all fields');
-        return;
+    if (!email || !password) {
+        alert('Please fill all fields');
+        return false;
     }
     
-    if (password !== confirmPassword) {
-        showAuthError('Passwords do not match');
-        return;
+    if (password !== confirm) {
+        alert('Passwords do not match');
+        return false;
     }
     
     if (password.length < 6) {
-        showAuthError('Password must be at least 6 characters');
-        return;
+        alert('Password must be at least 6 characters');
+        return false;
     }
     
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating account...';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Creating account...';
     }
     
     try {
         const { data, error } = await supabase.auth.signUp({
-            email: email.trim(),
-            password: password,
-            options: {
-                emailRedirectTo: window.location.origin + '/index.html'
-            }
+            email: email,
+            password: password
         });
         
         if (error) {
             console.error('Signup error:', error);
-            showAuthError(error.message);
+            alert('Signup failed: ' + error.message);
             
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="bi bi-person-plus"></i> Sign Up';
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = 'Sign Up';
             }
-            return;
+            return false;
         }
         
         console.log('Signup successful');
+        alert('Account created! ' + (data.session ? 'Redirecting...' : 'Check your email to verify.'));
         
-        if (data.user && !data.session) {
-            showAuthSuccess('Account created! Please check your email to verify.');
-        } else if (data.session) {
-            showAuthSuccess('Account created successfully! Redirecting...');
+        if (data.session) {
             setTimeout(() => {
                 window.location.href = 'index.html';
-            }, 1500);
+            }, 1000);
         }
         
-    } catch (error) {
-        console.error('Signup exception:', error);
-        showAuthError('Signup failed. Please try again.');
+    } catch (err) {
+        console.error('Signup exception:', err);
+        alert('Signup error: ' + err.message);
         
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="bi bi-person-plus"></i> Sign Up';
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = 'Sign Up';
         }
+    }
+    
+    return false;
+}
+
+// =============================================
+// Handle Logout
+// =============================================
+async function handleLogout() {
+    if (!confirm('Are you sure you want to logout?')) {
+        return;
+    }
+    
+    try {
+        await supabase.auth.signOut();
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = 'login.html';
+    } catch (err) {
+        console.error('Logout error:', err);
+        alert('Logout failed');
     }
 }
 
-async function handleLogout() {
-    try {
-        const { error } = await supabase.auth.signOut();
-        
-        if (error) {
-            console.error('Logout error:', error);
-            alert('Logout failed. Please try again.');
-            return;
-        }
-        
-        localStorage.clear();
-        window.location.href = 'login.html';
-        
-    } catch (error) {
-        console.error('Logout exception:', error);
-        alert('Logout failed. Please try again.');
-    }
-}
+// =============================================
+// Helper Functions
+// =============================================
 
 function redirectToLogin() {
-    if (!isLoginPage) {
-        window.location.href = 'login.html';
+    if (!isAuthPage) {
+        console.log('Redirecting to login...');
+        // Use replace to prevent back button loop
+        window.location.replace('login.html');
     }
 }
 
-function updateUserDisplay(user) {
+function updateUserInfo(user) {
+    // Update user display elements
     const userEmail = document.getElementById('user-email');
-    if (userEmail) {
-        userEmail.textContent = user.email;
-    }
+    if (userEmail) userEmail.textContent = user.email;
     
-    const userAvatar = document.getElementById('user-avatar');
-    if (userAvatar) {
-        userAvatar.textContent = user.email.charAt(0).toUpperCase();
-    }
+    const userName = document.getElementById('user-name');
+    if (userName) userName.textContent = user.email.split('@')[0];
+    
+    const userAvatar = document.querySelector('.user-avatar');
+    if (userAvatar) userAvatar.textContent = user.email.charAt(0).toUpperCase();
 }
 
-function showAuthError(message) {
-    console.error('Auth Error:', message);
-    
-    const errorDiv = document.querySelector('.alert-danger') || 
-                     document.getElementById('auth-error');
-    
-    if (errorDiv) {
-        errorDiv.className = 'alert alert-danger';
-        errorDiv.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>' + message;
-        errorDiv.style.display = 'block';
-    } else {
-        const form = document.getElementById('loginForm') || document.getElementById('signupForm');
-        if (form) {
-            const alert = document.createElement('div');
-            alert.className = 'alert alert-danger';
-            alert.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>' + message;
-            form.insertBefore(alert, form.firstChild);
-        } else {
-            alert(message);
-        }
-    }
-}
-
-function showAuthSuccess(message) {
-    console.log('Auth Success:', message);
-    
-    const errorDiv = document.querySelector('.alert-danger') || 
-                     document.getElementById('auth-error');
-    
-    if (errorDiv) {
-        errorDiv.className = 'alert alert-success';
-        errorDiv.innerHTML = '<i class="bi bi-check-circle me-2"></i>' + message;
-        errorDiv.style.display = 'block';
-    }
-}
-
+// =============================================
+// Make functions global
+// =============================================
 window.handleLogout = handleLogout;
 window.checkAuth = checkAuth;
 
-console.log('Auth.js loaded successfully');
+console.log('✅ Auth.js loaded');
