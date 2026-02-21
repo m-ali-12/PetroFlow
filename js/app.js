@@ -246,13 +246,8 @@
       // Only filter by user_id if userId exists (auth enabled)
       if (userId) {
         query = query.eq("user_id", userId);
-      } else {
-        console.warn("No userId found; customers not loaded.");
-        customersCache = [];
-        updateCustomersTable();
-        populateCustomerDropdowns();
-        return;
       }
+      // If no userId (auth disabled), load all customers without filtering
 
       const { data, error } = await query;
       if (error) throw error;
@@ -318,20 +313,18 @@
 
       const userId = await getAuthUserId();
 
-      if (!userId) {
-        transactionsCache = [];
-        updateTransactionsTable();
-        updateRecentTransactions();
-        console.warn("No userId found; transactions not loaded.");
-        return;
-      }
-
-      const { data, error } = await sb
+      let txQuery = sb
         .from("transactions")
         .select(`*, customer:customers(name, sr_no), tank:tanks(fuel_type)`)
-        .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(200);
+
+      // Only filter by user_id if userId exists (auth enabled)
+      if (userId) {
+        txQuery = txQuery.eq("user_id", userId);
+      }
+
+      const { data, error } = await txQuery;
 
       if (error) throw error;
       transactionsCache = data || [];
@@ -426,9 +419,10 @@
       if (!sb) return;
 
       const userId = await getAuthUserId();
-      if (!userId) return showToast("Login required", "error");
 
-      const { error } = await sb.from("transactions").delete().eq("id", id).eq("user_id", userId);
+      let delQuery = sb.from("transactions").delete().eq("id", id);
+      if (userId) delQuery = delQuery.eq("user_id", userId);
+      const { error } = await delQuery;
       if (error) throw error;
 
       showToast("Transaction deleted successfully!", "success");
@@ -565,7 +559,7 @@
     if (!sb) return showToast("Database not ready", "error");
 
     const userId = await getAuthUserId();
-    if (!userId) return showToast("Login required", "error");
+    // userId may be null when auth is disabled — that's OK
 
     const customerId = $("sale-customer")?.value;
     const fuelType = $("sale-fuel-type")?.value;
@@ -618,11 +612,12 @@
 
       if (paymentType === "credit") {
         const customer = customersCache.find((c) => c.id === parseInt(customerId));
-        const { error: customerError } = await sb
+        let custUpdate = sb
           .from("customers")
           .update({ balance: parseNum(customer?.balance) + amount })
-          .eq("id", customerId)
-          .eq("user_id", userId);
+          .eq("id", customerId);
+        if (userId) custUpdate = custUpdate.eq("user_id", userId);
+        const { error: customerError } = await custUpdate;
 
         if (customerError) throw customerError;
       }
@@ -646,7 +641,7 @@
     if (!sb) return showToast("Database not ready", "error");
 
     const userId = await getAuthUserId();
-    if (!userId) return showToast("Login required", "error");
+    // userId may be null when auth is disabled — that's OK
 
     const customerId = $("vasooli-customer")?.value;
     const amount = parseNum($("vasooli-amount")?.value);
@@ -674,11 +669,12 @@
       if (transError) throw transError;
 
       const customer = customersCache.find((c) => c.id === parseInt(customerId));
-      const { error: customerError } = await sb
+      let custUpdate = sb
         .from("customers")
         .update({ balance: parseNum(customer?.balance) - amount })
-        .eq("id", customerId)
-        .eq("user_id", userId);
+        .eq("id", customerId);
+      if (userId) custUpdate = custUpdate.eq("user_id", userId);
+      const { error: customerError } = await custUpdate;
 
       if (customerError) throw customerError;
 
@@ -700,7 +696,7 @@
     if (!sb) return showToast("Database not ready", "error");
 
     const userId = await getAuthUserId();
-    if (!userId) return showToast("Login required", "error");
+    // userId may be null when auth is disabled — that's OK
 
     const amount = parseNum($("expense-amount")?.value);
     const description = $("expense-description")?.value;
