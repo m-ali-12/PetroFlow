@@ -406,32 +406,225 @@
 // Configuration & Settings Management
 // =============================================
 
+// =============================================
 // Supabase Configuration
-const SUPABASE_URL = 'https://ycoxgzplqkqqhzqrc1vt.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljb3hnenBscWtxcWh6cXJjMXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1NDIwMTYsImV4cCI6MjA1MzExODAxNn0.m7dPGWHPYiXx4hJpW3dXc8LPxsZQCDnGqJMQQVw7234';
+// =============================================
 
-// Correct Supabase client initialization for CDN v2
+// ⚠️ IMPORTANT: replace with your REAL Supabase URL
+// Go to: Supabase Dashboard → Settings → API → Project URL
+
+const SUPABASE_URL = 'https://ycoxgzplqkqqhzqrclvt.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljb3hnenBscWtxcWh6cXJjbHZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2NTE2MjEsImV4cCI6MjA4NjIyNzYyMX0.wYQN_c-LVl949E1Hp0AAeyHtvDEpo92Llpo4b21cHN8';
+
+// Wait until Supabase library loads
 let supabaseClient = null;
 
 if (window.supabase && typeof window.supabase.createClient === 'function') {
 
     supabaseClient = window.supabase.createClient(
         SUPABASE_URL,
-        SUPABASE_ANON_KEY
+        SUPABASE_ANON_KEY,
+        {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true
+            }
+        }
     );
 
-    window.supabaseClient = supabaseClient;
-
-    console.log("Supabase initialized successfully");
+    console.log('Supabase initialized successfully');
 
 } else {
 
-    console.error("Supabase CDN not loaded. Make sure this script is included BEFORE config.js");
+    console.error('Supabase library not loaded');
 
 }
 
-// Export globally
+// =============================================
+// Table Names
+// =============================================
+
+const TABLES = {
+
+    tanks: 'tanks',
+    customers: 'customers',
+    transactions: 'transactions',
+    dailyReports: 'daily_reports',
+
+    mobilCustomers: 'mobil_customers',
+    mobilStock: 'mobil_stock',
+    mobilTransactions: 'mobil_transactions',
+
+    shops: 'shops',
+    rentPayments: 'rent_payments'
+
+};
+
+// =============================================
+// Default Prices
+// =============================================
+
+const DEFAULT_PRICES = {
+
+    petrol: 276.50,
+    diesel: 289.75
+
+};
+
+// =============================================
+// Tank Capacity
+// =============================================
+
+const TANK_CAPACITY = 25000;
+
+// =============================================
+// Price Functions
+// =============================================
+
+function getCurrentPrices() {
+
+    return {
+
+        petrol: parseFloat(localStorage.getItem('petrol_price')) || DEFAULT_PRICES.petrol,
+
+        diesel: parseFloat(localStorage.getItem('diesel_price')) || DEFAULT_PRICES.diesel
+
+    };
+
+}
+
+function savePrice(fuelType, price) {
+
+    const key = fuelType === 'Petrol'
+        ? 'petrol_price'
+        : 'diesel_price';
+
+    localStorage.setItem(key, price);
+
+}
+
+function getPrice(fuelType) {
+
+    const prices = getCurrentPrices();
+
+    return fuelType === 'Petrol'
+        ? prices.petrol
+        : prices.diesel;
+
+}
+
+function initializePrices() {
+
+    const prices = getCurrentPrices();
+
+    const petrolInput = document.getElementById('petrol-price');
+
+    const dieselInput = document.getElementById('diesel-price');
+
+    if (petrolInput)
+        petrolInput.value = prices.petrol;
+
+    if (dieselInput)
+        dieselInput.value = prices.diesel;
+
+}
+
+// =============================================
+// Utilities
+// =============================================
+
+function formatNumber(num) {
+
+    return parseFloat(num).toLocaleString('en-PK', {
+
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+
+    });
+
+}
+
+function formatCurrency(amount) {
+
+    return 'Rs. ' + formatNumber(amount);
+
+}
+
+function formatDate(date) {
+
+    return new Date(date).toLocaleDateString('en-PK', {
+
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+
+    });
+
+}
+
+function formatDateSQL(date) {
+
+    return new Date(date)
+        .toISOString()
+        .split('T')[0];
+
+}
+
+function getTodayDate() {
+
+    return formatDateSQL(new Date());
+
+}
+
+function showToast(title, message, type = 'success') {
+
+    alert(title + ': ' + message);
+
+}
+
+function showLoading(show = true) {
+
+    const loader = document.getElementById('loading-overlay');
+
+    if (loader)
+        loader.style.display = show
+            ? 'flex'
+            : 'none';
+
+}
+
+// =============================================
+// Export globals
+// =============================================
+
 window.supabaseClient = supabaseClient;
 
-console.log("Config loaded successfully");
-console.log("Supabase client initialized:", supabaseClient ? "Yes" : "No");
+window.TABLES = TABLES;
+
+window.getCurrentPrices = getCurrentPrices;
+
+window.savePrice = savePrice;
+
+window.getPrice = getPrice;
+
+window.initializePrices = initializePrices;
+
+window.formatNumber = formatNumber;
+
+window.formatCurrency = formatCurrency;
+
+window.formatDate = formatDate;
+
+window.formatDateSQL = formatDateSQL;
+
+window.getTodayDate = getTodayDate;
+
+window.showToast = showToast;
+
+window.showLoading = showLoading;
+
+window.TANK_CAPACITY = TANK_CAPACITY;
+
+console.log('Config loaded successfully');
+console.log('Supabase client initialized:', supabaseClient ? 'Yes' : 'No');
