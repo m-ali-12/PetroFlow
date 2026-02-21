@@ -1,162 +1,65 @@
 // =============================================
-// FILE: js/auth.js
-// SIMPLIFIED WORKING VERSION
+// FILE: js/config.js
+// ABSOLUTE FINAL FIX - NO DUPLICATE DECLARATION
 // =============================================
 
-const isAuthPage = window.location.pathname.includes('login') || 
-                   window.location.pathname.includes('signup');
+// Check if supabase is already declared
+if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+    console.log('Using existing Supabase client');
+} else {
+    // Only create if doesn't exist
+    const SUPABASE_URL = 'https://ycoxgzplqkqqhzqrc1vt.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljb3hnenBscWtxcWh6cXJjMXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1NDIwMTYsImV4cCI6MjA1MzExODAxNn0.m7dPGWHPYiXx4hJpW3dXc8LPxsZQCDnGqJMQQVw7234';
 
-// Only initialize once
-if (!window.authInitialized) {
-    window.authInitialized = true;
-    
-    document.addEventListener('DOMContentLoaded', async function() {
-        console.log('Auth initializing...');
-        
-        // Wait a moment for Supabase to load
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        if (!window.supabase) {
-            console.error('Supabase not available');
-            return;
-        }
-        
-        console.log('Supabase available');
-        
-        if (isAuthPage) {
-            setupForms();
-        } else {
-            checkAuth();
-        }
+    // Create client
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+        window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('✅ Supabase client initialized');
+    } else {
+        console.error('❌ Supabase library not loaded! Check if CDN script is included.');
+    }
+}
+
+// Table names
+window.TABLES = {
+    tanks: 'tanks',
+    customers: 'customers',
+    transactions: 'transactions',
+    dailyReports: 'daily_reports',
+    mobilCustomers: 'mobil_customers',
+    mobilStock: 'mobil_stock',
+    mobilTransactions: 'mobil_transactions',
+    shops: 'shops',
+    rentPayments: 'rent_payments'
+};
+
+// Utility functions
+window.formatNumber = function(num) {
+    return parseFloat(num || 0).toLocaleString('en-PK', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
     });
-}
+};
 
-async function checkAuth() {
-    try {
-        if (!window.supabase || !window.supabase.auth) {
-            console.error('Supabase auth not available');
-            redirectToLogin();
-            return;
-        }
-        
-        const { data, error } = await window.supabase.auth.getUser();
-        
-        if (error || !data || !data.user) {
-            console.log('No user, redirecting...');
-            redirectToLogin();
-            return;
-        }
-        
-        console.log('User authenticated:', data.user.email);
-        
-    } catch (err) {
-        console.error('Auth check error:', err);
-        redirectToLogin();
-    }
-}
+window.formatCurrency = function(amount) {
+    return 'Rs. ' + window.formatNumber(amount);
+};
 
-function setupForms() {
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.onsubmit = handleLogin;
-    }
-    
-    const signupForm = document.getElementById('signupForm');
-    if (signupForm) {
-        signupForm.onsubmit = handleSignup;
-    }
-}
+window.getPrice = function(fuelType) {
+    const prices = {
+        petrol: parseFloat(localStorage.getItem('petrol_price')) || 276.50,
+        diesel: parseFloat(localStorage.getItem('diesel_price')) || 289.75
+    };
+    return fuelType === 'Petrol' ? prices.petrol : prices.diesel;
+};
 
-async function handleLogin(e) {
-    e.preventDefault();
-    
-    const email = document.getElementById('loginEmail')?.value;
-    const password = document.getElementById('loginPassword')?.value;
-    
-    if (!email || !password) {
-        alert('Enter email and password');
-        return false;
-    }
-    
-    try {
-        const { data, error } = await window.supabase.auth.signInWithPassword({
-            email: email,
-            password: password
-        });
-        
-        if (error) {
-            alert('Login failed: ' + error.message);
-            return false;
-        }
-        
-        console.log('Login successful');
-        window.location.href = 'index.html';
-        
-    } catch (err) {
-        console.error('Login error:', err);
-        alert('Login error');
-    }
-    
-    return false;
-}
+window.savePrice = function(fuelType, price) {
+    const key = fuelType === 'Petrol' ? 'petrol_price' : 'diesel_price';
+    localStorage.setItem(key, price);
+};
 
-async function handleSignup(e) {
-    e.preventDefault();
-    
-    const email = document.getElementById('signupEmail')?.value;
-    const password = document.getElementById('signupPassword')?.value;
-    const confirm = document.getElementById('confirmPassword')?.value;
-    
-    if (!email || !password) {
-        alert('Fill all fields');
-        return false;
-    }
-    
-    if (password !== confirm) {
-        alert('Passwords do not match');
-        return false;
-    }
-    
-    try {
-        const { data, error } = await window.supabase.auth.signUp({
-            email: email,
-            password: password
-        });
-        
-        if (error) {
-            alert('Signup failed: ' + error.message);
-            return false;
-        }
-        
-        alert('Account created!');
-        if (data.session) {
-            window.location.href = 'index.html';
-        }
-        
-    } catch (err) {
-        console.error('Signup error:', err);
-        alert('Signup error');
-    }
-    
-    return false;
-}
+window.showToast = function(title, message) {
+    alert(title + ': ' + message);
+};
 
-async function handleLogout() {
-    try {
-        await window.supabase.auth.signOut();
-        window.location.href = 'login.html';
-    } catch (err) {
-        console.error('Logout error:', err);
-    }
-}
-
-function redirectToLogin() {
-    if (!isAuthPage) {
-        window.location.replace('login.html');
-    }
-}
-
-window.handleLogout = handleLogout;
-window.checkAuth = checkAuth;
-
-console.log('✅ Auth.js loaded');
+console.log('✅ Config loaded');
