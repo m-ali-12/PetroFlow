@@ -4,7 +4,6 @@
 (function() {
 'use strict';
 
-const supabase = window.supabaseClient;
 let allCustomers = [];
 let currentUserId = null;
 
@@ -13,42 +12,41 @@ function fmt(n) {
   return Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
+function getSupabase() {
+  return window.supabaseClient;
+}
+
 // ════════════════════════════════════════════
-// AUTH
+// AUTH (disabled — works without login)
 // ════════════════════════════════════════════
 async function getUser() {
-  for (let i = 0; i < 3; i++) {
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) throw error;
-      if (user?.id) {
-        currentUserId = user.id;
-        console.log('✅ User:', user.email);
-        return user;
+  try {
+    const sb = getSupabase();
+    if (sb?.auth?.getUser) {
+      const { data, error } = await sb.auth.getUser();
+      if (!error && data?.user?.id) {
+        currentUserId = data.user.id;
+        console.log('✅ User:', data.user.email);
+        return data.user;
       }
-    } catch (e) { console.warn('Auth retry', i+1); }
-    await new Promise(r => setTimeout(r, 400));
-  }
-  console.error('❌ No user');
-  window.location.href = 'login.html';
-  return null;
+    }
+  } catch (e) { /* auth disabled, continue without user */ }
+  console.log('ℹ️ No auth user — loading all data');
+  return null; // don't redirect
 }
 
 // ════════════════════════════════════════════
 // LOAD
 // ════════════════════════════════════════════
 async function loadCustomers() {
-  if (!currentUserId) {
-    console.error('❌ No user_id');
-    return;
-  }
+  const sb = getSupabase();
+  if (!sb) { console.error('❌ Supabase not ready'); return; }
   console.log('Loading customers...');
   try {
-    const { data, error } = await supabase
-      .from('customers')
-      .select('*')
-      .eq('user_id', currentUserId)
-      .order('sr_no');
+    let query = sb.from('customers').select('*').order('sr_no');
+    // Only filter by user_id if auth is enabled and user is logged in
+    if (currentUserId) query = query.eq('user_id', currentUserId);
+    const { data, error } = await query;
     if (error) throw error;
     allCustomers = data || [];
     console.log('✅ Customers:', allCustomers.length);
@@ -79,16 +77,16 @@ function display(list) {
       <td>${c.sr_no}</td>
       <td>${c.name}</td>
       <td>${c.phone || '-'}</td>
-      <td><span class="badge ${catCls}">${c.category}</span></td>
+      <td><span class="badge ${catCls}">${c.category || '-'}</span></td>
       <td class="${balCls}">${balTxt}</td>
       <td>
-        <button class="btn btn-sm btn-primary" onclick="window.viewLedger(${c.id})">
-          <i class="bi bi-journal-text"></i>
+        <button class="btn btn-sm btn-outline-primary" onclick="window.viewLedger(${c.id})">
+          <i class="bi bi-eye"></i>
         </button>
-        <button class="btn btn-sm btn-warning" onclick="window.editCust(${c.id})">
+        <button class="btn btn-sm btn-outline-warning" onclick="window.editCust(${c.id})">
           <i class="bi bi-pencil"></i>
         </button>
-        <button class="btn btn-sm btn-danger" onclick="window.delCust(${c.id})">
+        <button class="btn btn-sm btn-outline-danger" onclick="window.delCust(${c.id})">
           <i class="bi bi-trash"></i>
         </button>
       </td>
@@ -137,10 +135,8 @@ function clearFilter() {
 // ADD CUSTOMER
 // ════════════════════════════════════════════
 async function addCustomer() {
-  if (!currentUserId) {
-    alert('Not logged in'); 
-    return;
-  }
+  const sb = getSupabase();
+  if (!sb) { alert('Database not ready'); return; }
 
   const sr = parseInt($('customer-sr-no')?.value);
   const nm = $('customer-name')?.value?.trim();
@@ -160,19 +156,10 @@ async function addCustomer() {
   }
 
   try {
-    console.log('Adding customer, user_id:', currentUserId);
-    
-    const { error } = await supabase
-      .from('customers')
-      .insert([{
-        user_id: currentUserId,
-        sr_no: sr,
-        name: nm,
-        phone: ph || null,
-        category: ct,
-        balance: bl
-      }]);
+    const insertData = { sr_no: sr, name: nm, phone: ph || null, category: ct, balance: bl };
+    if (currentUserId) insertData.user_id = currentUserId;
 
+    const { error } = await sb.from('customers').insert([insertData]);
     if (error) throw error;
 
     console.log('✅ Customer added');
@@ -201,10 +188,8 @@ window.editCust = function(id) {
 };
 
 async function updateCustomer() {
-  if (!currentUserId) {
-    alert('Not logged in');
-    return;
-  }
+  const sb = getSupabase();
+  if (!sb) { alert('Database not ready'); return; }
 
   const id = parseInt($('edit-customer-id').value);
   const sr = parseInt($('edit-sr-no').value);
@@ -219,18 +204,11 @@ async function updateCustomer() {
   }
 
   try {
-    const { error } = await supabase
-      .from('customers')
-      .update({
-        sr_no: sr,
-        name: nm,
-        phone: ph || null,
-        category: ct,
-        balance: bl
-      })
-      .eq('id', id)
-      .eq('user_id', currentUserId);
-
+    let query = sb.from('customers')
+      .update({ sr_no: sr, name: nm, phone: ph || null, category: ct, balance: bl })
+      .eq('id', id);
+    if (currentUserId) query = query.eq('user_id', currentUserId);
+    const { error } = await query;
     if (error) throw error;
 
     toast('Customer updated!', 'success');
@@ -245,16 +223,15 @@ async function updateCustomer() {
 // DELETE
 // ════════════════════════════════════════════
 window.delCust = async function(id) {
+  const sb = getSupabase();
+  if (!sb) { alert('Database not ready'); return; }
   const c = allCustomers.find(x => x.id === id);
   if (!c || !confirm(`Delete ${c.name}? This cannot be undone.`)) return;
 
   try {
-    const { error } = await supabase
-      .from('customers')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', currentUserId);
-
+    let query = sb.from('customers').delete().eq('id', id);
+    if (currentUserId) query = query.eq('user_id', currentUserId);
+    const { error } = await query;
     if (error) throw error;
 
     toast('Customer deleted', 'success');
@@ -278,9 +255,11 @@ window.viewLedger = function(id) {
 // HELPERS
 // ════════════════════════════════════════════
 function closeModal(id) {
-  const m = bootstrap.Modal.getInstance($(id));
+  const el = $(id);
+  if (!el) return;
+  const m = bootstrap.Modal.getInstance(el);
   if (m) m.hide();
-  const f = $(id)?.querySelector('form');
+  const f = el.querySelector('form');
   if (f) f.reset();
 }
 
@@ -296,33 +275,18 @@ function toast(msg, type = 'info') {
 // EVENTS
 // ════════════════════════════════════════════
 function bind() {
-  // Add form
   const addForm = $('addCustomerForm');
-  if (addForm) {
-    addForm.addEventListener('submit', e => {
-      e.preventDefault();
-      addCustomer();
-    });
-  }
+  if (addForm) addForm.addEventListener('submit', e => { e.preventDefault(); addCustomer(); });
 
-  // Edit form
   const editForm = $('editCustomerForm');
-  if (editForm) {
-    editForm.addEventListener('submit', e => {
-      e.preventDefault();
-      updateCustomer();
-    });
-  }
+  if (editForm) editForm.addEventListener('submit', e => { e.preventDefault(); updateCustomer(); });
 
-  // Search
   const srch = $('search-input');
   if (srch) srch.addEventListener('input', filter);
 
-  // Category filter
   const cat = $('filter-category');
   if (cat) cat.addEventListener('change', filter);
 
-  // Clear button
   const clr = $('clear-filters');
   if (clr) clr.addEventListener('click', clearFilter);
 }
@@ -335,20 +299,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   console.log('🚀 Customers starting...');
 
-  const user = await getUser();
-  if (!user) return;
+  // Wait for supabase to be ready
+  await new Promise(resolve => {
+    function check() { if (window.supabaseClient) return resolve(); setTimeout(check, 100); }
+    check();
+  });
 
+  await getUser(); // try auth but don't redirect if fails
   bind();
   await loadCustomers();
 
   console.log('✅ Customers ready!');
 });
 
-// Export
 window.loadCustomers = loadCustomers;
 
 })();
-
 // Customers Page Management
 // (function() {
 // 'use strict';
