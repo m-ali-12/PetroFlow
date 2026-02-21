@@ -88,7 +88,7 @@
     
     window.PETRO_CONFIG_LOADED = true;
     
-    const SUPABASE_URL = 'https://ycoxgzplqkqqhzqrc1vt.supabase.co';
+    const SUPABASE_URL = 'https://ycoxgzplqkqqhzqrclvt.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljb3hnenBscWtxcWh6cXJjMXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1NDIwMTYsImV4cCI6MjA1MzExODAxNn0.m7dPGWHPYiXx4hJpW3dXc8LPxsZQCDnGqJMQQVw7234';
     
     function initSupabase() {
