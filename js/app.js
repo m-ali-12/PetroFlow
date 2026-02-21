@@ -14,9 +14,11 @@
   let tanksCache = [];
 
   // =============================
-  // Get Supabase instance
+  // Get Supabase instance (live getter — fixes "supabase.from is not a function")
   // =============================
-  const supabase = window.supabaseClient;
+  function getSupabase() {
+    return window.supabaseClient;
+  }
 
   // =============================
   // Helpers
@@ -51,23 +53,23 @@
   }
 
   // =============================
-  // Auth Helpers (FIX "uuid undefined")
+  // Auth Helpers (authentication disabled — userId always null safe)
   // =============================
   async function getAuthUser() {
     try {
-      // Your custom auth wrapper
+      const sb = getSupabase();
+      if (!sb) return null;
+
       if (window.auth && typeof window.auth.getCurrentUser === "function") {
         const u = await window.auth.getCurrentUser();
-        // u can be {id,...} OR {user:{id}} OR {data:{user}}
         if (u?.id) return u;
         if (u?.user?.id) return u.user;
         if (u?.data?.user?.id) return u.data.user;
         return null;
       }
 
-      // Supabase native
-      if (supabase?.auth?.getUser) {
-        const { data, error } = await supabase.auth.getUser();
+      if (sb?.auth?.getUser) {
+        const { data, error } = await sb.auth.getUser();
         if (error) return null;
         return data?.user || null;
       }
@@ -108,7 +110,6 @@
     }
   }
 
-  // Fallback loader: components/navbar.html -> navbar.html (same for footer)
   async function loadComponentWithFallback(placeholderId, primaryUrl, fallbackUrl) {
     const ok = await loadComponent(placeholderId, primaryUrl);
     if (!ok && fallbackUrl) {
@@ -190,7 +191,10 @@
   // =============================
   async function loadTanks() {
     try {
-      const { data, error } = await supabase.from("tanks").select("*").order("id");
+      const sb = getSupabase();
+      if (!sb) { showToast("Database not ready", "error"); return; }
+
+      const { data, error } = await sb.from("tanks").select("*").order("id");
       if (error) throw error;
       tanksCache = data || [];
       updateStockDisplay();
@@ -232,20 +236,25 @@
 
   async function loadCustomers() {
     try {
+      const sb = getSupabase();
+      if (!sb) return;
+
       const userId = await getAuthUserId();
 
-      // If you have login system: must have userId, otherwise block safely
-      if (!userId) {
+      let query = sb.from("customers").select("*").order("sr_no", { ascending: true });
+
+      // Only filter by user_id if userId exists (auth enabled)
+      if (userId) {
+        query = query.eq("user_id", userId);
+      } else {
+        console.warn("No userId found; customers not loaded.");
         customersCache = [];
         updateCustomersTable();
         populateCustomerDropdowns();
-        console.warn("No userId found; customers not loaded.");
         return;
       }
 
-      // IMPORTANT: correct syntax is .eq('user_id', userId)
-      const { data, error } = await supabase.from("customers").select("*").eq("user_id", userId).order("sr_no", { ascending: true });
-
+      const { data, error } = await query;
       if (error) throw error;
       customersCache = data || [];
       updateCustomersTable();
@@ -304,6 +313,9 @@
 
   async function loadTransactions() {
     try {
+      const sb = getSupabase();
+      if (!sb) return;
+
       const userId = await getAuthUserId();
 
       if (!userId) {
@@ -314,7 +326,7 @@
         return;
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from("transactions")
         .select(`*, customer:customers(name, sr_no), tank:tanks(fuel_type)`)
         .eq("user_id", userId)
@@ -410,10 +422,13 @@
   window.deleteTransaction = async function (id) {
     if (!confirm("Are you sure you want to delete this transaction? This cannot be undone.")) return;
     try {
+      const sb = getSupabase();
+      if (!sb) return;
+
       const userId = await getAuthUserId();
       if (!userId) return showToast("Login required", "error");
 
-      const { error } = await supabase.from("transactions").delete().eq("id", id).eq("user_id", userId);
+      const { error } = await sb.from("transactions").delete().eq("id", id).eq("user_id", userId);
       if (error) throw error;
 
       showToast("Transaction deleted successfully!", "success");
@@ -425,7 +440,7 @@
   };
 
   // =============================
-  // Modal Openers (Fix "openNewSaleModal is not defined")
+  // Modal Openers
   // =============================
   function safeShowModal(modalId) {
     const modalEl = $(modalId);
@@ -438,11 +453,10 @@
   }
 
   window.openNewSaleModal = function () {
-    // Prefill fuel prices when opening
     ensureConfigPrices();
     safeShowModal("newSaleModal");
-    hydrateSalePriceFromFuel(); // sets unit price based on selected fuel if empty
-    recalcSaleTotals(); // compute amount/liters if possible
+    hydrateSalePriceFromFuel();
+    recalcSaleTotals();
   };
 
   window.openVasooliModal = function () {
@@ -472,7 +486,6 @@
     const unitEl = $("sale-unit-price");
     if (!unitEl) return;
 
-    // If user already typed something, don't override
     const current = parseNum(unitEl.value);
     if (current > 0) return;
 
@@ -481,8 +494,6 @@
   }
 
   function getEntryMode() {
-    // If you have toggle buttons, set a hidden input id="sale-entry-mode" to "liters" or "amount"
-    // Otherwise default: liters mode.
     const m = $("sale-entry-mode")?.value;
     return m === "amount" ? "amount" : "liters";
   }
@@ -504,7 +515,6 @@
         litersEl.value = liters > 0 ? liters.toFixed(3) : "";
       }
     } else {
-      // liters mode
       const liters = litersEl ? parseNum(litersEl.value) : 0;
       if (unit > 0 && liters > 0) {
         amountEl.value = (liters * unit).toFixed(2);
@@ -529,7 +539,6 @@
     if (unitEl) unitEl.addEventListener("input", recalcSaleTotals);
     if (amountEl) amountEl.addEventListener("input", recalcSaleTotals);
 
-    // Optional: if you have two buttons for entry method
     const byLitersBtn = document.querySelector('[data-sale-entry="liters"]');
     const byAmountBtn = document.querySelector('[data-sale-entry="amount"]');
     const modeHidden = $("sale-entry-mode");
@@ -552,6 +561,9 @@
   // Transaction Functions
   // =============================
   window.addSale = async function () {
+    const sb = getSupabase();
+    if (!sb) return showToast("Database not ready", "error");
+
     const userId = await getAuthUserId();
     if (!userId) return showToast("Login required", "error");
 
@@ -563,13 +575,11 @@
     const paymentType = $("sale-payment-type")?.value;
     const description = $("sale-description")?.value;
 
-    // Must get price from user (unitPrice required)
     if (!customerId || !fuelType || !(unitPrice > 0)) {
       showToast("Customer, Fuel, and Rate per Liter are required", "error");
       return;
     }
 
-    // Either liters OR amount should be valid, and both must end up > 0
     if (!(amount > 0) || !(liters > 0)) {
       showToast("Please enter Liters or Amount (auto-calc will fill the other).", "error");
       return;
@@ -584,7 +594,7 @@
     }
 
     try {
-      const { error: transError } = await supabase.from("transactions").insert([
+      const { error: transError } = await sb.from("transactions").insert([
         {
           user_id: userId,
           customer_id: parseInt(customerId),
@@ -599,7 +609,7 @@
 
       if (transError) throw transError;
 
-      const { error: tankError } = await supabase
+      const { error: tankError } = await sb
         .from("tanks")
         .update({ current_stock: tank.current_stock - liters, last_updated: new Date().toISOString() })
         .eq("id", tank.id);
@@ -608,7 +618,7 @@
 
       if (paymentType === "credit") {
         const customer = customersCache.find((c) => c.id === parseInt(customerId));
-        const { error: customerError } = await supabase
+        const { error: customerError } = await sb
           .from("customers")
           .update({ balance: parseNum(customer?.balance) + amount })
           .eq("id", customerId)
@@ -632,6 +642,9 @@
   };
 
   window.addVasooli = async function () {
+    const sb = getSupabase();
+    if (!sb) return showToast("Database not ready", "error");
+
     const userId = await getAuthUserId();
     if (!userId) return showToast("Login required", "error");
 
@@ -645,7 +658,7 @@
     }
 
     try {
-      const { error: transError } = await supabase.from("transactions").insert([
+      const { error: transError } = await sb.from("transactions").insert([
         {
           user_id: userId,
           customer_id: parseInt(customerId),
@@ -661,7 +674,7 @@
       if (transError) throw transError;
 
       const customer = customersCache.find((c) => c.id === parseInt(customerId));
-      const { error: customerError } = await supabase
+      const { error: customerError } = await sb
         .from("customers")
         .update({ balance: parseNum(customer?.balance) - amount })
         .eq("id", customerId)
@@ -683,6 +696,9 @@
   };
 
   window.addExpense = async function () {
+    const sb = getSupabase();
+    if (!sb) return showToast("Database not ready", "error");
+
     const userId = await getAuthUserId();
     if (!userId) return showToast("Login required", "error");
 
@@ -695,11 +711,10 @@
     }
 
     try {
-      // Owner account: keep your logic, but MUST be filtered by user_id
       const owner = customersCache.find((c) => c.category === "Owner" && String(c.sr_no) === "0");
       if (!owner) return showToast("Owner account not found. Please create one first.", "error");
 
-      const { error } = await supabase.from("transactions").insert([
+      const { error } = await sb.from("transactions").insert([
         {
           user_id: userId,
           customer_id: owner.id,
@@ -732,7 +747,16 @@
   document.addEventListener("DOMContentLoaded", async () => {
     console.log("🚀 App initializing...");
 
-    // Load navbar/footer (robust paths)
+    // Wait for supabaseClient to be ready
+    await new Promise((resolve) => {
+      function check() {
+        if (window.supabaseClient) return resolve();
+        setTimeout(check, 100);
+      }
+      check();
+    });
+
+    // Load navbar/footer
     await loadComponentWithFallback("navbar-placeholder", "components/navbar.html", "navbar.html");
     await loadComponentWithFallback("footer-placeholder", "components/footer.html", "footer.html");
 
@@ -745,7 +769,7 @@
     const page = document.body.getAttribute("data-page");
     console.log(`📄 Current page: ${page}`);
 
-    // Always load tanks (usually shared)
+    // Always load tanks
     await loadTanks();
 
     // Load user-specific data
