@@ -1,10 +1,13 @@
 // =============================================
-// MOBIL OIL MANAGEMENT - js/mobil-management.js
-// Settings table se kaam karta hai (NO tanks table)
-// Auth disabled
+// MOBIL OIL MANAGEMENT - FINAL VERSION
+// Settings table use karta hai - NO tanks table
+// Auth disabled - no login required
 // =============================================
 (function () {
   'use strict';
+
+  // Agar purana code cached hai to yeh line console mein dikhegi
+  console.log('mobil-management.js FINAL VERSION loaded - no tanks table');
 
   const supabase = window.supabaseClient;
 
@@ -16,204 +19,225 @@
     });
   }
 
-  function showToast(message, type = 'info') {
+  function showToast(message, type) {
+    type = type || 'info';
     const toast = $('liveToast');
     if (!toast) { alert(message); return; }
-    const titles = { success: 'Kamyab!', error: 'Ghalati', warning: 'Khabardar', info: 'Info' };
-    if ($('toast-title')) $('toast-title').textContent = titles[type] || 'Info';
+    var titles = { success: 'Kamyab!', error: 'Ghalati', warning: 'Khabardar', info: 'Info' };
+    if ($('toast-title'))   $('toast-title').textContent   = titles[type] || 'Info';
     if ($('toast-message')) $('toast-message').textContent = message;
-    toast.className = `toast align-items-center border-0 ${
+    toast.className = 'toast align-items-center border-0 ' + (
       type === 'success' ? 'bg-success text-white' :
       type === 'error'   ? 'bg-danger text-white'  :
       type === 'warning' ? 'bg-warning'             : 'bg-secondary text-white'
-    }`;
+    );
     new bootstrap.Toast(toast, { delay: 3500 }).show();
   }
 
-  // ── Settings Load ──────────────────────────────────────────
+  // ── SETTINGS TABLE HELPERS ─────────────────────────────────
+  // Koi bhi tanks query nahi hai — sirf settings table
+
   async function getSettings() {
-    const { data, error } = await supabase
+    var res = await supabase
       .from('settings')
-      .select('*')
+      .select('id, mobil_history, mobil_arrivals, mobil_sales')
       .order('id', { ascending: true })
       .limit(1)
       .maybeSingle();
-    if (error) throw error;
-    return data;
+    if (res.error) throw res.error;
+    return res.data;
   }
 
-  async function updateSettings(id, patch) {
-    const { error } = await supabase
+  async function patchSettings(settingsId, patch) {
+    patch.updated_at = new Date().toISOString();
+    var res = await supabase
       .from('settings')
-      .update({ ...patch, updated_at: new Date().toISOString() })
-      .eq('id', id);
-    if (error) throw error;
+      .update(patch)
+      .eq('id', settingsId);
+    if (res.error) throw res.error;
   }
 
-  // ── Settings se Mobil Prices ───────────────────────────────
+  // ── MOBIL PRICES FROM SETTINGS ─────────────────────────────
   async function getMobilPrices() {
     try {
-      const settings = await getSettings();
-      if (!settings?.mobil_history?.length) return null;
-      const sorted = [...settings.mobil_history].sort(
-        (a, b) => new Date(b.date) - new Date(a.date)
-      );
-      return sorted[0]; // { car_mobil, open_mobil, date }
-    } catch (e) {
+      var s = await getSettings();
+      if (!s || !Array.isArray(s.mobil_history) || !s.mobil_history.length) return null;
+      var sorted = s.mobil_history.slice().sort(function(a,b){
+        return new Date(b.date) - new Date(a.date);
+      });
+      return sorted[0]; // { car_mobil, open_mobil }
+    } catch(e) {
       console.warn('getMobilPrices error:', e);
       return null;
     }
   }
 
-  // ── Current Stock from Settings ────────────────────────────
-  async function getStockFromSettings() {
+  // ── CALCULATE STOCK FROM SETTINGS ─────────────────────────
+  async function calcStock() {
     try {
-      const settings = await getSettings();
-      if (!settings) return { car: 0, open: 0 };
+      var s = await getSettings();
+      if (!s) return { car: 0, open: 0, settingsId: null, arrivals: [], sales: [] };
 
-      const arrivals = Array.isArray(settings.mobil_arrivals) ? settings.mobil_arrivals : [];
-      const sales    = Array.isArray(settings.mobil_sales)    ? settings.mobil_sales    : [];
+      var arrivals = Array.isArray(s.mobil_arrivals) ? s.mobil_arrivals : [];
+      var sales    = Array.isArray(s.mobil_sales)    ? s.mobil_sales    : [];
 
-      const carArrived  = arrivals.filter(r => r.type === 'Car Mobil').reduce((s, r)  => s + (parseFloat(r.qty) || 0), 0);
-      const openArrived = arrivals.filter(r => r.type === 'Open Mobil').reduce((s, r) => s + (parseFloat(r.qty) || 0), 0);
-      const carSold     = sales.filter(r => r.type === 'Car Mobil').reduce((s, r)     => s + (parseFloat(r.qty) || 0), 0);
-      const openSold    = sales.filter(r => r.type === 'Open Mobil').reduce((s, r)    => s + (parseFloat(r.qty) || 0), 0);
+      var carIn   = arrivals.filter(function(r){ return r.type === 'Car Mobil'; })
+                            .reduce(function(t,r){ return t + (parseFloat(r.qty)||0); }, 0);
+      var openIn  = arrivals.filter(function(r){ return r.type === 'Open Mobil'; })
+                            .reduce(function(t,r){ return t + (parseFloat(r.qty)||0); }, 0);
+      var carOut  = sales.filter(function(r){ return r.type === 'Car Mobil'; })
+                         .reduce(function(t,r){ return t + (parseFloat(r.qty)||0); }, 0);
+      var openOut = sales.filter(function(r){ return r.type === 'Open Mobil'; })
+                         .reduce(function(t,r){ return t + (parseFloat(r.qty)||0); }, 0);
 
       return {
-        car:  Math.max(0, carArrived  - carSold),
-        open: Math.max(0, openArrived - openSold),
-        settingsId: settings.id,
-        arrivals,
-        sales
+        car:  Math.max(0, carIn  - carOut),
+        open: Math.max(0, openIn - openOut),
+        settingsId: s.id,
+        arrivals:   arrivals,
+        sales:      sales
       };
-    } catch (e) {
-      console.warn('getStockFromSettings error:', e);
-      return { car: 0, open: 0 };
+    } catch(e) {
+      console.error('calcStock error:', e);
+      return { car: 0, open: 0, settingsId: null, arrivals: [], sales: [] };
     }
   }
 
-  // ── Auto Calculate ─────────────────────────────────────────
-  function setupAutoCalculate(qtyId, rateId, amountId) {
-    const qtyEl = $(qtyId), rateEl = $(rateId), amountEl = $(amountId);
-    if (!qtyEl || !rateEl || !amountEl) return;
-    const calc = () => {
-      amountEl.value = ((parseFloat(qtyEl.value) || 0) * (parseFloat(rateEl.value) || 0)).toFixed(2);
-    };
-    qtyEl.addEventListener('input', calc);
-    rateEl.addEventListener('input', calc);
+  // ── AUTO CALCULATE ─────────────────────────────────────────
+  function setupAutoCalc(qtyId, rateId, amtId) {
+    var q = $(qtyId), r = $(rateId), a = $(amtId);
+    if (!q || !r || !a) return;
+    function calc() {
+      a.value = ((parseFloat(q.value)||0) * (parseFloat(r.value)||0)).toFixed(2);
+    }
+    q.addEventListener('input', calc);
+    r.addEventListener('input', calc);
   }
 
-  // ── Settings se Price Auto-fill ────────────────────────────
-  async function setupSalePriceAutoFill() {
-    const modal           = document.getElementById('saleMobilModal');
-    const mobilTypeSelect = $('sale-mobil-type');
-    const rateInput       = $('sale-rate');
-    const qtyInput        = $('sale-quantity');
-    const amountInput     = $('sale-amount');
-    if (!mobilTypeSelect || !rateInput) return;
+  // ── PRICE AUTO-FILL IN SALE MODAL ─────────────────────────
+  async function setupPriceAutoFill() {
+    var typeEl   = $('sale-mobil-type');
+    var rateEl   = $('sale-rate');
+    var qtyEl    = $('sale-quantity');
+    var amtEl    = $('sale-amount');
+    var modalEl  = document.getElementById('saleMobilModal');
+    if (!typeEl || !rateEl) return;
 
-    const prices = await getMobilPrices();
+    var prices = await getMobilPrices();
+    console.log('Mobil prices from settings:', prices);
 
-    function applyRate() {
+    function apply() {
       if (!prices) return;
-      const type = mobilTypeSelect.value;
-      if (type === 'Car Mobil' && prices.car_mobil) {
-        rateInput.value = prices.car_mobil;
-      } else if (type === 'Open Mobil' && prices.open_mobil) {
-        rateInput.value = prices.open_mobil;
-      }
-      if (qtyInput && amountInput) {
-        amountInput.value = ((parseFloat(qtyInput.value) || 0) * (parseFloat(rateInput.value) || 0)).toFixed(2);
+      var t = typeEl.value;
+      if (t === 'Car Mobil' && prices.car_mobil)   rateEl.value = prices.car_mobil;
+      if (t === 'Open Mobil' && prices.open_mobil)  rateEl.value = prices.open_mobil;
+      if (qtyEl && amtEl) {
+        amtEl.value = ((parseFloat(qtyEl.value)||0) * (parseFloat(rateEl.value)||0)).toFixed(2);
       }
     }
 
-    mobilTypeSelect.addEventListener('change', applyRate);
-    if (modal) {
-      modal.addEventListener('show.bs.modal', () => applyRate());
-    }
-    applyRate();
+    typeEl.addEventListener('change', apply);
+    if (modalEl) modalEl.addEventListener('show.bs.modal', apply);
+    apply();
   }
 
-  // ── Load Stock Display ─────────────────────────────────────
+  // ── LOAD STOCK CARDS ───────────────────────────────────────
   async function loadMobilStock() {
     try {
-      const stock = await getStockFromSettings();
+      var stock = await calcStock();
       if ($('mobil-car-stock-page'))  $('mobil-car-stock-page').textContent  = fmt(stock.car);
       if ($('mobil-open-stock-page')) $('mobil-open-stock-page').textContent = fmt(stock.open);
-    } catch (err) {
-      console.error('loadMobilStock error:', err);
+    } catch(e) {
+      console.error('loadMobilStock error:', e);
     }
   }
 
-  // ── Customer Dropdown ──────────────────────────────────────
+  // ── CUSTOMER DROPDOWN ──────────────────────────────────────
   async function loadCustomerDropdown() {
     try {
-      const { data, error } = await supabase
+      var res = await supabase
         .from('customers')
         .select('id, sr_no, name, category')
         .order('sr_no', { ascending: true });
-      if (error) throw error;
+      if (res.error) throw res.error;
 
-      const select = $('sale-customer');
-      if (!select) return;
-      select.innerHTML = '<option value="">-- Customer Select Karein --</option>';
-      (data || [])
-        .filter(c => (c.category || '').toLowerCase() !== 'owner')
-        .forEach(c => {
-          select.innerHTML += `<option value="${c.id}">${c.sr_no || ''} - ${c.name}</option>`;
+      var sel = $('sale-customer');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">-- Customer Select Karein --</option>';
+      (res.data || [])
+        .filter(function(c){ return (c.category||'').toLowerCase() !== 'owner'; })
+        .forEach(function(c){
+          sel.innerHTML += '<option value="' + c.id + '">' + (c.sr_no||'') + ' - ' + c.name + '</option>';
         });
-    } catch (err) {
-      console.error('loadCustomerDropdown error:', err);
+    } catch(e) {
+      console.error('loadCustomerDropdown error:', e);
     }
   }
 
-  // ── Load Transactions Table ────────────────────────────────
+  // ── LOAD TRANSACTIONS TABLE ────────────────────────────────
   async function loadMobilTransactions() {
-    const tbody = $('mobil-transactions-table');
+    var tbody = $('mobil-transactions-table');
     if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Loading...</td></tr>';
 
     try {
-      const settings = await getSettings();
-      if (!settings) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Settings load nahi hui</td></tr>';
+      var s = await getSettings();
+      if (!s) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-warning py-4">Settings load nahi hui — Supabase check karein</td></tr>';
         return;
       }
 
-      const arrivals = (settings.mobil_arrivals || []).map(r => ({
-        ...r, _type: 'arrival', displayType: 'Purchase', badgeClass: 'bg-primary',
-        customer: r.supplier || 'Supplier'
-      }));
-      const sales = (settings.mobil_sales || []).map(r => ({
-        ...r, _type: 'sale', displayType: 'Sale', badgeClass: 'bg-success'
-      }));
+      var arrivals = (s.mobil_arrivals || []).map(function(r){
+        return Object.assign({}, r, {
+          _kind: 'arrival',
+          _label: 'Purchase',
+          _badge: 'bg-primary',
+          _party: r.supplier || 'Supplier',
+          _amount: r.total
+        });
+      });
 
-      const all = [...arrivals, ...sales].sort((a, b) => new Date(b.date) - new Date(a.date));
+      var sales = (s.mobil_sales || []).map(function(r){
+        return Object.assign({}, r, {
+          _kind: 'sale',
+          _label: 'Sale',
+          _badge: 'bg-success',
+          _party: r.customer || '-',
+          _amount: r.amount
+        });
+      });
+
+      var all = arrivals.concat(sales).sort(function(a,b){
+        return new Date(b.date) - new Date(a.date);
+      });
 
       if (!all.length) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Abhi koi transaction nahi hai</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Koi record nahi hai — pehle stock receive karein</td></tr>';
         return;
       }
 
-      tbody.innerHTML = all.map(r => `<tr>
-        <td>${r.date}</td>
-        <td><span class="badge ${r.badgeClass}">${r.displayType}</span></td>
-        <td><span class="badge ${r.type === 'Car Mobil' ? 'bg-info text-dark' : 'bg-secondary'}">${r.type}</span></td>
-        <td>${r.customer || '-'}</td>
-        <td>${fmt(r.qty)} L</td>
-        <td>Rs. ${fmt(r.rate)}</td>
-        <td><strong>Rs. ${fmt(r._type === 'arrival' ? r.total : r.amount)}</strong></td>
-        <td>
-          ${r._type === 'arrival'
-            ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteMobilArrival('${r.id}')"><i class="bi bi-trash"></i></button>`
-            : `<button class="btn btn-sm btn-outline-danger" onclick="deleteMobilSale('${r.id}')"><i class="bi bi-trash"></i></button>`
-          }
-        </td>
-      </tr>`).join('');
+      tbody.innerHTML = all.map(function(r){
+        var typeBadge = r.type === 'Car Mobil'
+          ? '<span class="badge bg-info text-dark">Car Mobil</span>'
+          : '<span class="badge bg-secondary">Open Mobil</span>';
+        var delBtn = r._kind === 'arrival'
+          ? '<button class="btn btn-sm btn-outline-danger" onclick="deleteMobilArrival(\'' + r.id + '\')"><i class="bi bi-trash"></i></button>'
+          : '<button class="btn btn-sm btn-outline-danger" onclick="deleteMobilSale(\'' + r.id + '\')"><i class="bi bi-trash"></i></button>';
+        return '<tr>' +
+          '<td>' + r.date + '</td>' +
+          '<td><span class="badge ' + r._badge + '">' + r._label + '</span></td>' +
+          '<td>' + typeBadge + '</td>' +
+          '<td>' + r._party + '</td>' +
+          '<td>' + fmt(r.qty) + ' L</td>' +
+          '<td>Rs. ' + fmt(r.rate) + '</td>' +
+          '<td><strong>Rs. ' + fmt(r._amount) + '</strong></td>' +
+          '<td>' + delBtn + '</td>' +
+          '</tr>';
+      }).join('');
 
-    } catch (err) {
-      console.error('loadMobilTransactions error:', err);
-      tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">Error: ${err.message}</td></tr>`;
+    } catch(e) {
+      console.error('loadMobilTransactions error:', e);
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Error: ' + e.message + '</td></tr>';
     }
   }
 
@@ -221,16 +245,16 @@
   // WINDOW FUNCTIONS
   // ══════════════════════════════════════════════════════════
 
-  // 1. RECEIVE STOCK — settings.mobil_arrivals mein save
+  // 1. RECEIVE STOCK
   window.receiveMobilStock = async function () {
-    const mobilType = $('receive-mobil-type')?.value;
-    const supplier  = $('receive-supplier')?.value || '';
-    const qty       = parseFloat($('receive-quantity')?.value);
-    const rate      = parseFloat($('receive-rate')?.value);
-    const total     = parseFloat($('receive-amount')?.value) || (qty * rate);
-    const date      = $('receive-date')?.value;
-    const invoice   = $('receive-invoice')?.value || '';
-    const notes     = $('receive-notes')?.value || '';
+    var mobilType = $('receive-mobil-type') ? $('receive-mobil-type').value : '';
+    var supplier  = $('receive-supplier')   ? $('receive-supplier').value   : '';
+    var qty       = parseFloat($('receive-quantity') ? $('receive-quantity').value : 0);
+    var rate      = parseFloat($('receive-rate')     ? $('receive-rate').value     : 0);
+    var total     = parseFloat($('receive-amount')   ? $('receive-amount').value   : 0) || (qty * rate);
+    var date      = $('receive-date')    ? $('receive-date').value    : '';
+    var invoice   = $('receive-invoice') ? $('receive-invoice').value : '';
+    var notes     = $('receive-notes')   ? $('receive-notes').value   : '';
 
     if (!mobilType || !qty || !rate || !date) {
       showToast('Mobil Type, Quantity, Rate aur Date zaroor bharein', 'error');
@@ -238,45 +262,56 @@
     }
 
     try {
-      const settings = await getSettings();
-      if (!settings) throw new Error('Settings nahi mili');
+      var s = await getSettings();
+      if (!s) throw new Error('Settings row nahi mili — pehle settings page visit karein');
 
-      const arrivals = Array.isArray(settings.mobil_arrivals) ? settings.mobil_arrivals : [];
+      var arrivals = Array.isArray(s.mobil_arrivals) ? s.mobil_arrivals : [];
       arrivals.push({
-        id: Date.now().toString(),
-        date, type: mobilType, supplier, qty, rate, total, invoice, notes,
+        id:         Date.now().toString(),
+        date:       date,
+        type:       mobilType,
+        supplier:   supplier,
+        qty:        qty,
+        rate:       rate,
+        total:      total,
+        invoice:    invoice,
+        notes:      notes,
         created_at: new Date().toISOString()
       });
 
-      await updateSettings(settings.id, { mobil_arrivals: arrivals });
+      await patchSettings(s.id, { mobil_arrivals: arrivals });
 
-      showToast(`${qty} L ${mobilType} stock add ho gaya!`, 'success');
+      showToast(qty + ' L ' + mobilType + ' stock add ho gaya!', 'success');
 
-      const modal = bootstrap.Modal.getInstance($('receiveMobilModal'));
+      var modal = bootstrap.Modal.getInstance($('receiveMobilModal'));
       if (modal) modal.hide();
       if ($('receiveMobilForm')) $('receiveMobilForm').reset();
-      if ($('receive-date')) $('receive-date').value = new Date().toISOString().split('T')[0];
+      var today = new Date().toISOString().split('T')[0];
+      if ($('receive-date')) $('receive-date').value = today;
 
       loadMobilStock();
       loadMobilTransactions();
 
-    } catch (err) {
-      console.error('receiveMobilStock error:', err);
-      showToast('Error: ' + err.message, 'error');
+    } catch(e) {
+      console.error('receiveMobilStock error:', e);
+      showToast('Error: ' + e.message, 'error');
     }
   };
 
-  // 2. SALE — settings.mobil_sales mein save
+  // 2. SALE
   window.saleMobilOil = async function () {
-    const customerId  = $('sale-customer')?.value;
-    const customerName = $('sale-customer')?.options[$('sale-customer')?.selectedIndex]?.text || '';
-    const mobilType   = $('sale-mobil-type')?.value;
-    const qty         = parseFloat($('sale-quantity')?.value);
-    const rate        = parseFloat($('sale-rate')?.value);
-    const amount      = parseFloat($('sale-amount')?.value) || (qty * rate);
-    const date        = $('sale-date')?.value;
-    const paymentType = $('sale-payment-type')?.value || 'cash';
-    const notes       = $('sale-notes')?.value || '';
+    var custSel    = $('sale-customer');
+    var customerId = custSel ? custSel.value : '';
+    var custName   = custSel && custSel.selectedIndex >= 0
+      ? custSel.options[custSel.selectedIndex].text.replace(/^\d+\s*-\s*/, '')
+      : '';
+    var mobilType   = $('sale-mobil-type')    ? $('sale-mobil-type').value    : '';
+    var qty         = parseFloat($('sale-quantity')     ? $('sale-quantity').value     : 0);
+    var rate        = parseFloat($('sale-rate')         ? $('sale-rate').value         : 0);
+    var amount      = parseFloat($('sale-amount')       ? $('sale-amount').value       : 0) || (qty * rate);
+    var date        = $('sale-date')          ? $('sale-date').value          : '';
+    var paymentType = $('sale-payment-type')  ? $('sale-payment-type').value  : 'cash';
+    var notes       = $('sale-notes')         ? $('sale-notes').value         : '';
 
     if (!mobilType || !qty || !rate || !date) {
       showToast('Mobil Type, Quantity, Rate aur Date zaroor bharein', 'error');
@@ -284,128 +319,132 @@
     }
 
     try {
-      const settings = await getSettings();
-      if (!settings) throw new Error('Settings nahi mili');
+      var s = await getSettings();
+      if (!s) throw new Error('Settings row nahi mili');
+
+      var arrivals = Array.isArray(s.mobil_arrivals) ? s.mobil_arrivals : [];
+      var sales    = Array.isArray(s.mobil_sales)    ? s.mobil_sales    : [];
 
       // Stock check
-      const arrivals  = Array.isArray(settings.mobil_arrivals) ? settings.mobil_arrivals : [];
-      const sales     = Array.isArray(settings.mobil_sales)    ? settings.mobil_sales    : [];
-      const arrived   = arrivals.filter(r => r.type === mobilType).reduce((s, r) => s + (parseFloat(r.qty) || 0), 0);
-      const sold      = sales.filter(r => r.type === mobilType).reduce((s, r)    => s + (parseFloat(r.qty) || 0), 0);
-      const currStock = Math.max(0, arrived - sold);
+      var arrived = arrivals.filter(function(r){ return r.type === mobilType; })
+                            .reduce(function(t,r){ return t+(parseFloat(r.qty)||0); }, 0);
+      var sold    = sales.filter(function(r){ return r.type === mobilType; })
+                         .reduce(function(t,r){ return t+(parseFloat(r.qty)||0); }, 0);
+      var available = Math.max(0, arrived - sold);
 
-      if (currStock < qty) {
-        showToast(`Stock kam hai! ${mobilType} sirf ${fmt(currStock)} L available hai`, 'error');
+      if (available < qty) {
+        showToast(mobilType + ' ka stock sirf ' + fmt(available) + ' L hai!', 'error');
         return;
       }
 
       sales.push({
-        id: Date.now().toString(),
-        date, type: mobilType,
-        customer: customerName.replace(/^\d+\s*-\s*/, ''),
+        id:          Date.now().toString(),
+        date:        date,
+        type:        mobilType,
+        customer:    custName,
         customer_id: customerId,
-        qty, rate, amount,
-        payment: paymentType,
-        notes,
-        created_at: new Date().toISOString()
+        qty:         qty,
+        rate:        rate,
+        amount:      amount,
+        payment:     paymentType,
+        notes:       notes,
+        created_at:  new Date().toISOString()
       });
 
-      await updateSettings(settings.id, { mobil_sales: sales });
+      await patchSettings(s.id, { mobil_sales: sales });
 
-      // Agar udhaar hai to customer balance update
+      // Udhaar — customer balance update
       if (paymentType === 'credit' && customerId) {
-        const { data: cust } = await supabase
-          .from('customers').select('balance').eq('id', customerId).maybeSingle();
-        const newBal = (parseFloat(cust?.balance) || 0) + amount;
-        await supabase.from('customers').update({ balance: newBal }).eq('id', customerId);
-        showToast(`Sale! Rs.${fmt(amount)} Udhaar add ho gaya`, 'success');
+        var cRes = await supabase.from('customers').select('balance').eq('id', customerId).maybeSingle();
+        if (!cRes.error && cRes.data) {
+          var newBal = (parseFloat(cRes.data.balance)||0) + amount;
+          await supabase.from('customers').update({ balance: newBal }).eq('id', customerId);
+        }
+        showToast('Sale! Rs.' + fmt(amount) + ' Udhaar add ho gaya', 'success');
       } else {
-        showToast(`Sale! Rs.${fmt(amount)} Cash`, 'success');
+        showToast('Sale! Rs.' + fmt(amount) + ' Cash', 'success');
       }
 
-      const modal = bootstrap.Modal.getInstance($('saleMobilModal'));
+      var modal = bootstrap.Modal.getInstance($('saleMobilModal'));
       if (modal) modal.hide();
       if ($('saleMobilForm')) $('saleMobilForm').reset();
-      if ($('sale-date')) $('sale-date').value = new Date().toISOString().split('T')[0];
+      var today = new Date().toISOString().split('T')[0];
+      if ($('sale-date')) $('sale-date').value = today;
 
-      await setupSalePriceAutoFill();
+      await setupPriceAutoFill();
       loadMobilStock();
       loadMobilTransactions();
 
-    } catch (err) {
-      console.error('saleMobilOil error:', err);
-      showToast('Error: ' + err.message, 'error');
+    } catch(e) {
+      console.error('saleMobilOil error:', e);
+      showToast('Error: ' + e.message, 'error');
     }
   };
 
   // 3. EXPENSE
   window.addMobilExpense = async function () {
-    const expenseType = $('expense-type')?.value;
-    const amount      = parseFloat($('expense-amount-mobil')?.value);
-    const date        = $('expense-date')?.value;
-    const description = $('expense-description-mobil')?.value;
+    var expType = $('expense-type')                ? $('expense-type').value                : '';
+    var amount  = parseFloat($('expense-amount-mobil') ? $('expense-amount-mobil').value : 0);
+    var date    = $('expense-date')                ? $('expense-date').value                : '';
+    var desc    = $('expense-description-mobil')   ? $('expense-description-mobil').value   : '';
 
-    if (!expenseType || !amount || !date || !description) {
+    if (!expType || !amount || !date || !desc) {
       showToast('Tamam fields zaroor bharein', 'error');
       return;
     }
 
     try {
-      // Expense ko transactions table mein save karo
-      const { data: owner } = await supabase
-        .from('customers').select('id').eq('category', 'Owner').maybeSingle();
+      var ownerRes = await supabase.from('customers').select('id').eq('category', 'Owner').maybeSingle();
+      var ownerId  = ownerRes.data ? ownerRes.data.id : null;
 
-      const { error } = await supabase.from('transactions').insert([{
-        customer_id:      owner?.id || null,
+      var txRes = await supabase.from('transactions').insert([{
+        customer_id:      ownerId,
         transaction_type: 'Expense',
         amount:           amount,
         liters:           0,
-        description:      `Mobil Expense - ${expenseType}: ${description}`,
+        description:      'Mobil Expense - ' + expType + ': ' + desc,
         created_at:       new Date(date + 'T00:00:00').toISOString()
       }]);
-      if (error) throw error;
+      if (txRes.error) throw txRes.error;
 
       showToast('Expense save ho gaya!', 'success');
 
-      const modal = bootstrap.Modal.getInstance($('mobilExpenseModal'));
+      var modal = bootstrap.Modal.getInstance($('mobilExpenseModal'));
       if (modal) modal.hide();
       if ($('mobilExpenseForm')) $('mobilExpenseForm').reset();
-      if ($('expense-date')) $('expense-date').value = new Date().toISOString().split('T')[0];
+      var today = new Date().toISOString().split('T')[0];
+      if ($('expense-date')) $('expense-date').value = today;
 
-    } catch (err) {
-      console.error('addMobilExpense error:', err);
-      showToast('Error: ' + err.message, 'error');
+    } catch(e) {
+      console.error('addMobilExpense error:', e);
+      showToast('Error: ' + e.message, 'error');
     }
   };
 
   // 4. DELETE ARRIVAL
   window.deleteMobilArrival = async function (id) {
-    if (!confirm('Yeh arrival delete karein?')) return;
+    if (!confirm('Yeh arrival record delete karein?')) return;
     try {
-      const settings = await getSettings();
-      const arrivals = (settings.mobil_arrivals || []).filter(r => r.id !== id);
-      await updateSettings(settings.id, { mobil_arrivals: arrivals });
+      var s = await getSettings();
+      var arrivals = (s.mobil_arrivals || []).filter(function(r){ return r.id !== id; });
+      await patchSettings(s.id, { mobil_arrivals: arrivals });
       showToast('Arrival delete ho gaya!', 'success');
       loadMobilStock();
       loadMobilTransactions();
-    } catch (err) {
-      showToast('Error: ' + err.message, 'error');
-    }
+    } catch(e) { showToast('Error: ' + e.message, 'error'); }
   };
 
   // 5. DELETE SALE
   window.deleteMobilSale = async function (id) {
-    if (!confirm('Yeh sale delete karein?')) return;
+    if (!confirm('Yeh sale record delete karein?')) return;
     try {
-      const settings = await getSettings();
-      const sales = (settings.mobil_sales || []).filter(r => r.id !== id);
-      await updateSettings(settings.id, { mobil_sales: sales });
+      var s = await getSettings();
+      var sales = (s.mobil_sales || []).filter(function(r){ return r.id !== id; });
+      await patchSettings(s.id, { mobil_sales: sales });
       showToast('Sale delete ho gaya!', 'success');
       loadMobilStock();
       loadMobilTransactions();
-    } catch (err) {
-      showToast('Error: ' + err.message, 'error');
-    }
+    } catch(e) { showToast('Error: ' + e.message, 'error'); }
   };
 
   // 6. VIEW HISTORY
@@ -414,27 +453,467 @@
   };
 
   // ── INIT ───────────────────────────────────────────────────
-  document.addEventListener('DOMContentLoaded', async () => {
+  document.addEventListener('DOMContentLoaded', async function () {
     if (document.body.getAttribute('data-page') !== 'mobil') return;
-    console.log('Mobil Management init...');
+    console.log('Mobil Management FINAL init...');
 
-    const today = new Date().toISOString().split('T')[0];
+    var today = new Date().toISOString().split('T')[0];
     if ($('receive-date')) $('receive-date').value = today;
     if ($('sale-date'))    $('sale-date').value    = today;
     if ($('expense-date')) $('expense-date').value = today;
 
-    setupAutoCalculate('receive-quantity', 'receive-rate', 'receive-amount');
-    setupAutoCalculate('sale-quantity',    'sale-rate',    'sale-amount');
+    setupAutoCalc('receive-quantity', 'receive-rate', 'receive-amount');
+    setupAutoCalc('sale-quantity',    'sale-rate',    'sale-amount');
 
-    await setupSalePriceAutoFill();
+    await setupPriceAutoFill();
     await loadCustomerDropdown();
     await loadMobilStock();
     await loadMobilTransactions();
 
-    console.log('Mobil Management ready!');
+    console.log('Mobil Management FINAL ready!');
   });
 
 })();
+
+// ya code shi work kar rha ha mobil-stock.html ma  
+
+// =============================================
+// // MOBIL OIL MANAGEMENT - js/mobil-management.js
+// // Settings table se kaam karta hai (NO tanks table)
+// // Auth disabled
+// // =============================================
+// (function () {
+//   'use strict';
+
+//   const supabase = window.supabaseClient;
+
+//   function $(id) { return document.getElementById(id); }
+
+//   function fmt(num) {
+//     return Number(num || 0).toLocaleString('en-PK', {
+//       minimumFractionDigits: 2, maximumFractionDigits: 2
+//     });
+//   }
+
+//   function showToast(message, type = 'info') {
+//     const toast = $('liveToast');
+//     if (!toast) { alert(message); return; }
+//     const titles = { success: 'Kamyab!', error: 'Ghalati', warning: 'Khabardar', info: 'Info' };
+//     if ($('toast-title')) $('toast-title').textContent = titles[type] || 'Info';
+//     if ($('toast-message')) $('toast-message').textContent = message;
+//     toast.className = `toast align-items-center border-0 ${
+//       type === 'success' ? 'bg-success text-white' :
+//       type === 'error'   ? 'bg-danger text-white'  :
+//       type === 'warning' ? 'bg-warning'             : 'bg-secondary text-white'
+//     }`;
+//     new bootstrap.Toast(toast, { delay: 3500 }).show();
+//   }
+
+//   // ── Settings Load ──────────────────────────────────────────
+//   async function getSettings() {
+//     const { data, error } = await supabase
+//       .from('settings')
+//       .select('*')
+//       .order('id', { ascending: true })
+//       .limit(1)
+//       .maybeSingle();
+//     if (error) throw error;
+//     return data;
+//   }
+
+//   async function updateSettings(id, patch) {
+//     const { error } = await supabase
+//       .from('settings')
+//       .update({ ...patch, updated_at: new Date().toISOString() })
+//       .eq('id', id);
+//     if (error) throw error;
+//   }
+
+//   // ── Settings se Mobil Prices ───────────────────────────────
+//   async function getMobilPrices() {
+//     try {
+//       const settings = await getSettings();
+//       if (!settings?.mobil_history?.length) return null;
+//       const sorted = [...settings.mobil_history].sort(
+//         (a, b) => new Date(b.date) - new Date(a.date)
+//       );
+//       return sorted[0]; // { car_mobil, open_mobil, date }
+//     } catch (e) {
+//       console.warn('getMobilPrices error:', e);
+//       return null;
+//     }
+//   }
+
+//   // ── Current Stock from Settings ────────────────────────────
+//   async function getStockFromSettings() {
+//     try {
+//       const settings = await getSettings();
+//       if (!settings) return { car: 0, open: 0 };
+
+//       const arrivals = Array.isArray(settings.mobil_arrivals) ? settings.mobil_arrivals : [];
+//       const sales    = Array.isArray(settings.mobil_sales)    ? settings.mobil_sales    : [];
+
+//       const carArrived  = arrivals.filter(r => r.type === 'Car Mobil').reduce((s, r)  => s + (parseFloat(r.qty) || 0), 0);
+//       const openArrived = arrivals.filter(r => r.type === 'Open Mobil').reduce((s, r) => s + (parseFloat(r.qty) || 0), 0);
+//       const carSold     = sales.filter(r => r.type === 'Car Mobil').reduce((s, r)     => s + (parseFloat(r.qty) || 0), 0);
+//       const openSold    = sales.filter(r => r.type === 'Open Mobil').reduce((s, r)    => s + (parseFloat(r.qty) || 0), 0);
+
+//       return {
+//         car:  Math.max(0, carArrived  - carSold),
+//         open: Math.max(0, openArrived - openSold),
+//         settingsId: settings.id,
+//         arrivals,
+//         sales
+//       };
+//     } catch (e) {
+//       console.warn('getStockFromSettings error:', e);
+//       return { car: 0, open: 0 };
+//     }
+//   }
+
+//   // ── Auto Calculate ─────────────────────────────────────────
+//   function setupAutoCalculate(qtyId, rateId, amountId) {
+//     const qtyEl = $(qtyId), rateEl = $(rateId), amountEl = $(amountId);
+//     if (!qtyEl || !rateEl || !amountEl) return;
+//     const calc = () => {
+//       amountEl.value = ((parseFloat(qtyEl.value) || 0) * (parseFloat(rateEl.value) || 0)).toFixed(2);
+//     };
+//     qtyEl.addEventListener('input', calc);
+//     rateEl.addEventListener('input', calc);
+//   }
+
+//   // ── Settings se Price Auto-fill ────────────────────────────
+//   async function setupSalePriceAutoFill() {
+//     const modal           = document.getElementById('saleMobilModal');
+//     const mobilTypeSelect = $('sale-mobil-type');
+//     const rateInput       = $('sale-rate');
+//     const qtyInput        = $('sale-quantity');
+//     const amountInput     = $('sale-amount');
+//     if (!mobilTypeSelect || !rateInput) return;
+
+//     const prices = await getMobilPrices();
+
+//     function applyRate() {
+//       if (!prices) return;
+//       const type = mobilTypeSelect.value;
+//       if (type === 'Car Mobil' && prices.car_mobil) {
+//         rateInput.value = prices.car_mobil;
+//       } else if (type === 'Open Mobil' && prices.open_mobil) {
+//         rateInput.value = prices.open_mobil;
+//       }
+//       if (qtyInput && amountInput) {
+//         amountInput.value = ((parseFloat(qtyInput.value) || 0) * (parseFloat(rateInput.value) || 0)).toFixed(2);
+//       }
+//     }
+
+//     mobilTypeSelect.addEventListener('change', applyRate);
+//     if (modal) {
+//       modal.addEventListener('show.bs.modal', () => applyRate());
+//     }
+//     applyRate();
+//   }
+
+//   // ── Load Stock Display ─────────────────────────────────────
+//   async function loadMobilStock() {
+//     try {
+//       const stock = await getStockFromSettings();
+//       if ($('mobil-car-stock-page'))  $('mobil-car-stock-page').textContent  = fmt(stock.car);
+//       if ($('mobil-open-stock-page')) $('mobil-open-stock-page').textContent = fmt(stock.open);
+//     } catch (err) {
+//       console.error('loadMobilStock error:', err);
+//     }
+//   }
+
+//   // ── Customer Dropdown ──────────────────────────────────────
+//   async function loadCustomerDropdown() {
+//     try {
+//       const { data, error } = await supabase
+//         .from('customers')
+//         .select('id, sr_no, name, category')
+//         .order('sr_no', { ascending: true });
+//       if (error) throw error;
+
+//       const select = $('sale-customer');
+//       if (!select) return;
+//       select.innerHTML = '<option value="">-- Customer Select Karein --</option>';
+//       (data || [])
+//         .filter(c => (c.category || '').toLowerCase() !== 'owner')
+//         .forEach(c => {
+//           select.innerHTML += `<option value="${c.id}">${c.sr_no || ''} - ${c.name}</option>`;
+//         });
+//     } catch (err) {
+//       console.error('loadCustomerDropdown error:', err);
+//     }
+//   }
+
+//   // ── Load Transactions Table ────────────────────────────────
+//   async function loadMobilTransactions() {
+//     const tbody = $('mobil-transactions-table');
+//     if (!tbody) return;
+//     tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Loading...</td></tr>';
+
+//     try {
+//       const settings = await getSettings();
+//       if (!settings) {
+//         tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Settings load nahi hui</td></tr>';
+//         return;
+//       }
+
+//       const arrivals = (settings.mobil_arrivals || []).map(r => ({
+//         ...r, _type: 'arrival', displayType: 'Purchase', badgeClass: 'bg-primary',
+//         customer: r.supplier || 'Supplier'
+//       }));
+//       const sales = (settings.mobil_sales || []).map(r => ({
+//         ...r, _type: 'sale', displayType: 'Sale', badgeClass: 'bg-success'
+//       }));
+
+//       const all = [...arrivals, ...sales].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+//       if (!all.length) {
+//         tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Abhi koi transaction nahi hai</td></tr>';
+//         return;
+//       }
+
+//       tbody.innerHTML = all.map(r => `<tr>
+//         <td>${r.date}</td>
+//         <td><span class="badge ${r.badgeClass}">${r.displayType}</span></td>
+//         <td><span class="badge ${r.type === 'Car Mobil' ? 'bg-info text-dark' : 'bg-secondary'}">${r.type}</span></td>
+//         <td>${r.customer || '-'}</td>
+//         <td>${fmt(r.qty)} L</td>
+//         <td>Rs. ${fmt(r.rate)}</td>
+//         <td><strong>Rs. ${fmt(r._type === 'arrival' ? r.total : r.amount)}</strong></td>
+//         <td>
+//           ${r._type === 'arrival'
+//             ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteMobilArrival('${r.id}')"><i class="bi bi-trash"></i></button>`
+//             : `<button class="btn btn-sm btn-outline-danger" onclick="deleteMobilSale('${r.id}')"><i class="bi bi-trash"></i></button>`
+//           }
+//         </td>
+//       </tr>`).join('');
+
+//     } catch (err) {
+//       console.error('loadMobilTransactions error:', err);
+//       tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">Error: ${err.message}</td></tr>`;
+//     }
+//   }
+
+//   // ══════════════════════════════════════════════════════════
+//   // WINDOW FUNCTIONS
+//   // ══════════════════════════════════════════════════════════
+
+//   // 1. RECEIVE STOCK — settings.mobil_arrivals mein save
+//   window.receiveMobilStock = async function () {
+//     const mobilType = $('receive-mobil-type')?.value;
+//     const supplier  = $('receive-supplier')?.value || '';
+//     const qty       = parseFloat($('receive-quantity')?.value);
+//     const rate      = parseFloat($('receive-rate')?.value);
+//     const total     = parseFloat($('receive-amount')?.value) || (qty * rate);
+//     const date      = $('receive-date')?.value;
+//     const invoice   = $('receive-invoice')?.value || '';
+//     const notes     = $('receive-notes')?.value || '';
+
+//     if (!mobilType || !qty || !rate || !date) {
+//       showToast('Mobil Type, Quantity, Rate aur Date zaroor bharein', 'error');
+//       return;
+//     }
+
+//     try {
+//       const settings = await getSettings();
+//       if (!settings) throw new Error('Settings nahi mili');
+
+//       const arrivals = Array.isArray(settings.mobil_arrivals) ? settings.mobil_arrivals : [];
+//       arrivals.push({
+//         id: Date.now().toString(),
+//         date, type: mobilType, supplier, qty, rate, total, invoice, notes,
+//         created_at: new Date().toISOString()
+//       });
+
+//       await updateSettings(settings.id, { mobil_arrivals: arrivals });
+
+//       showToast(`${qty} L ${mobilType} stock add ho gaya!`, 'success');
+
+//       const modal = bootstrap.Modal.getInstance($('receiveMobilModal'));
+//       if (modal) modal.hide();
+//       if ($('receiveMobilForm')) $('receiveMobilForm').reset();
+//       if ($('receive-date')) $('receive-date').value = new Date().toISOString().split('T')[0];
+
+//       loadMobilStock();
+//       loadMobilTransactions();
+
+//     } catch (err) {
+//       console.error('receiveMobilStock error:', err);
+//       showToast('Error: ' + err.message, 'error');
+//     }
+//   };
+
+//   // 2. SALE — settings.mobil_sales mein save
+//   window.saleMobilOil = async function () {
+//     const customerId  = $('sale-customer')?.value;
+//     const customerName = $('sale-customer')?.options[$('sale-customer')?.selectedIndex]?.text || '';
+//     const mobilType   = $('sale-mobil-type')?.value;
+//     const qty         = parseFloat($('sale-quantity')?.value);
+//     const rate        = parseFloat($('sale-rate')?.value);
+//     const amount      = parseFloat($('sale-amount')?.value) || (qty * rate);
+//     const date        = $('sale-date')?.value;
+//     const paymentType = $('sale-payment-type')?.value || 'cash';
+//     const notes       = $('sale-notes')?.value || '';
+
+//     if (!mobilType || !qty || !rate || !date) {
+//       showToast('Mobil Type, Quantity, Rate aur Date zaroor bharein', 'error');
+//       return;
+//     }
+
+//     try {
+//       const settings = await getSettings();
+//       if (!settings) throw new Error('Settings nahi mili');
+
+//       // Stock check
+//       const arrivals  = Array.isArray(settings.mobil_arrivals) ? settings.mobil_arrivals : [];
+//       const sales     = Array.isArray(settings.mobil_sales)    ? settings.mobil_sales    : [];
+//       const arrived   = arrivals.filter(r => r.type === mobilType).reduce((s, r) => s + (parseFloat(r.qty) || 0), 0);
+//       const sold      = sales.filter(r => r.type === mobilType).reduce((s, r)    => s + (parseFloat(r.qty) || 0), 0);
+//       const currStock = Math.max(0, arrived - sold);
+
+//       if (currStock < qty) {
+//         showToast(`Stock kam hai! ${mobilType} sirf ${fmt(currStock)} L available hai`, 'error');
+//         return;
+//       }
+
+//       sales.push({
+//         id: Date.now().toString(),
+//         date, type: mobilType,
+//         customer: customerName.replace(/^\d+\s*-\s*/, ''),
+//         customer_id: customerId,
+//         qty, rate, amount,
+//         payment: paymentType,
+//         notes,
+//         created_at: new Date().toISOString()
+//       });
+
+//       await updateSettings(settings.id, { mobil_sales: sales });
+
+//       // Agar udhaar hai to customer balance update
+//       if (paymentType === 'credit' && customerId) {
+//         const { data: cust } = await supabase
+//           .from('customers').select('balance').eq('id', customerId).maybeSingle();
+//         const newBal = (parseFloat(cust?.balance) || 0) + amount;
+//         await supabase.from('customers').update({ balance: newBal }).eq('id', customerId);
+//         showToast(`Sale! Rs.${fmt(amount)} Udhaar add ho gaya`, 'success');
+//       } else {
+//         showToast(`Sale! Rs.${fmt(amount)} Cash`, 'success');
+//       }
+
+//       const modal = bootstrap.Modal.getInstance($('saleMobilModal'));
+//       if (modal) modal.hide();
+//       if ($('saleMobilForm')) $('saleMobilForm').reset();
+//       if ($('sale-date')) $('sale-date').value = new Date().toISOString().split('T')[0];
+
+//       await setupSalePriceAutoFill();
+//       loadMobilStock();
+//       loadMobilTransactions();
+
+//     } catch (err) {
+//       console.error('saleMobilOil error:', err);
+//       showToast('Error: ' + err.message, 'error');
+//     }
+//   };
+
+//   // 3. EXPENSE
+//   window.addMobilExpense = async function () {
+//     const expenseType = $('expense-type')?.value;
+//     const amount      = parseFloat($('expense-amount-mobil')?.value);
+//     const date        = $('expense-date')?.value;
+//     const description = $('expense-description-mobil')?.value;
+
+//     if (!expenseType || !amount || !date || !description) {
+//       showToast('Tamam fields zaroor bharein', 'error');
+//       return;
+//     }
+
+//     try {
+//       // Expense ko transactions table mein save karo
+//       const { data: owner } = await supabase
+//         .from('customers').select('id').eq('category', 'Owner').maybeSingle();
+
+//       const { error } = await supabase.from('transactions').insert([{
+//         customer_id:      owner?.id || null,
+//         transaction_type: 'Expense',
+//         amount:           amount,
+//         liters:           0,
+//         description:      `Mobil Expense - ${expenseType}: ${description}`,
+//         created_at:       new Date(date + 'T00:00:00').toISOString()
+//       }]);
+//       if (error) throw error;
+
+//       showToast('Expense save ho gaya!', 'success');
+
+//       const modal = bootstrap.Modal.getInstance($('mobilExpenseModal'));
+//       if (modal) modal.hide();
+//       if ($('mobilExpenseForm')) $('mobilExpenseForm').reset();
+//       if ($('expense-date')) $('expense-date').value = new Date().toISOString().split('T')[0];
+
+//     } catch (err) {
+//       console.error('addMobilExpense error:', err);
+//       showToast('Error: ' + err.message, 'error');
+//     }
+//   };
+
+//   // 4. DELETE ARRIVAL
+//   window.deleteMobilArrival = async function (id) {
+//     if (!confirm('Yeh arrival delete karein?')) return;
+//     try {
+//       const settings = await getSettings();
+//       const arrivals = (settings.mobil_arrivals || []).filter(r => r.id !== id);
+//       await updateSettings(settings.id, { mobil_arrivals: arrivals });
+//       showToast('Arrival delete ho gaya!', 'success');
+//       loadMobilStock();
+//       loadMobilTransactions();
+//     } catch (err) {
+//       showToast('Error: ' + err.message, 'error');
+//     }
+//   };
+
+//   // 5. DELETE SALE
+//   window.deleteMobilSale = async function (id) {
+//     if (!confirm('Yeh sale delete karein?')) return;
+//     try {
+//       const settings = await getSettings();
+//       const sales = (settings.mobil_sales || []).filter(r => r.id !== id);
+//       await updateSettings(settings.id, { mobil_sales: sales });
+//       showToast('Sale delete ho gaya!', 'success');
+//       loadMobilStock();
+//       loadMobilTransactions();
+//     } catch (err) {
+//       showToast('Error: ' + err.message, 'error');
+//     }
+//   };
+
+//   // 6. VIEW HISTORY
+//   window.viewMobilHistory = function () {
+//     window.location.href = 'mobil-stock.html';
+//   };
+
+//   // ── INIT ───────────────────────────────────────────────────
+//   document.addEventListener('DOMContentLoaded', async () => {
+//     if (document.body.getAttribute('data-page') !== 'mobil') return;
+//     console.log('Mobil Management init...');
+
+//     const today = new Date().toISOString().split('T')[0];
+//     if ($('receive-date')) $('receive-date').value = today;
+//     if ($('sale-date'))    $('sale-date').value    = today;
+//     if ($('expense-date')) $('expense-date').value = today;
+
+//     setupAutoCalculate('receive-quantity', 'receive-rate', 'receive-amount');
+//     setupAutoCalculate('sale-quantity',    'sale-rate',    'sale-amount');
+
+//     await setupSalePriceAutoFill();
+//     await loadCustomerDropdown();
+//     await loadMobilStock();
+//     await loadMobilTransactions();
+
+//     console.log('Mobil Management ready!');
+//   });
+
+// })();
 
 // athentication rmove and also the many other error 
 // =============================================
