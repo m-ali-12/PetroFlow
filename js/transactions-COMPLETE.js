@@ -436,22 +436,12 @@
       else totEx+=a;
     });
 
-    // ── Helper: detect fuel from transaction ──────────────────
-    function getFuel(t) {
-      const desc = (t.description||'').toLowerCase();
-      if (t.fuel_type) return t.fuel_type;
-      if (desc.includes('petrol')) return 'Petrol';
-      if (desc.includes('diesel')) return 'Diesel';
-      if (desc.includes('mobil') || desc.includes('oil')) return 'MobilOil';
-      return null;
-    }
-
-    // ── Build rows for detailed table (monthly mode) ──────────
+    // Build table body
     function buildRows(list) {
       return list.map(t => {
         const d    = new Date(t.created_at);
         const desc = t.description||'';
-        const fuel = getFuel(t) || '-';
+        const fuel = desc.toLowerCase().includes('petrol')?'Petrol':desc.toLowerCase().includes('diesel')?'Diesel':'-';
         const ltr  = t.liters>0 ? fmt(t.liters)+' L' : '-';
         const rate = t.unit_price>0 ? 'Rs.'+fmt(t.unit_price) : '-';
         const typeColor = t.transaction_type==='Credit'?'#198754':t.transaction_type==='Debit'?'#0d6efd':'#cc8800';
@@ -524,120 +514,18 @@
             </tfoot>
           </table>`;
       });
-
     } else {
-      // ── SUMMARY MODE: PDF wala pattern (date-wise Petrol/Diesel/MobilOil table) ──
-
-      // Get petrol & diesel rate from fuelPriceHistory
-      const today = new Date().toISOString().split('T')[0];
-      const petrolRate = window.fuelPrices?.Petrol || 0;
-      const dieselRate = window.fuelPrices?.Diesel || 0;
-
-      // Group Credit sales by date → petrol litres / diesel litres / mobil oil amount
-      const dayMap = {};
-      txns.forEach(t => {
-        if (t.transaction_type !== 'Credit') return; // only sales
-        const d   = new Date(t.created_at);
-        const key = d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'2-digit' }).replace(/ /g,'-');
-        if (!dayMap[key]) dayMap[key] = { petrolL:0, dieselL:0, mobilAmt:0, dateObj:d };
-        const fuel  = getFuel(t);
-        const liters = parseFloat(t.liters) || 0;
-        const amt    = parseFloat(t.amount) || 0;
-        if (fuel === 'Petrol')  dayMap[key].petrolL  += liters;
-        else if (fuel === 'Diesel') dayMap[key].dieselL  += liters;
-        else if (fuel === 'MobilOil') dayMap[key].mobilAmt += amt;
-        else {
-          // guess from unit_price if no explicit fuel
-          const up = parseFloat(t.unit_price)||0;
-          if (up > 0 && Math.abs(up - petrolRate) < Math.abs(up - dieselRate)) dayMap[key].petrolL += liters;
-          else if (up > 0) dayMap[key].dieselL += liters;
-        }
-      });
-
-      let totalPetrolL=0, totalDieselL=0, totalMobilAmt=0;
-      const sortedDays = Object.keys(dayMap).sort((a,b)=>dayMap[a].dateObj - dayMap[b].dateObj);
-      sortedDays.forEach(k => {
-        totalPetrolL  += dayMap[k].petrolL;
-        totalDieselL  += dayMap[k].dieselL;
-        totalMobilAmt += dayMap[k].mobilAmt;
-      });
-
-      const petrolAmt = Math.round(totalPetrolL * petrolRate);
-      const dieselAmt = Math.round(totalDieselL * dieselRate);
-      const grandTotal = petrolAmt + dieselAmt + totalMobilAmt;
-
-      // Build date rows
-      const dayRows = sortedDays.map((k, i) => {
-        const row = dayMap[k];
-        const bg  = i%2===0 ? '#fff' : '#f5f5f5';
-        return `<tr style="background:${bg}">
-          <td style="text-align:right;padding:4px 8px;border:1px solid #bbb;font-weight:600">${k}</td>
-          <td style="text-align:right;padding:4px 8px;border:1px solid #bbb">${row.petrolL > 0 ? Math.round(row.petrolL) : 0}</td>
-          <td style="text-align:right;padding:4px 8px;border:1px solid #bbb">${row.dieselL > 0 ? Math.round(row.dieselL) : 0}</td>
-          <td style="text-align:right;padding:4px 8px;border:1px solid #bbb">${row.mobilAmt > 0 ? Math.round(row.mobilAmt) : 0}</td>
-        </tr>`;
-      }).join('');
-
-      bodyHtml = `
-      <table style="width:100%;border-collapse:collapse;font-size:12px;border:2px solid #222;margin-bottom:16px">
-        <thead>
-          <tr>
-            <th colspan="4" style="background:#1a1a1a;color:#fff;text-align:center;padding:8px;font-size:14px;letter-spacing:1px;border:2px solid #222">
-              ${company.toUpperCase()} — PETROL + DIESEL + MOBIL OIL SALE
-            </th>
-          </tr>
-          <tr style="background:#333;color:#fff;font-style:italic">
-            <th style="padding:6px 8px;border:1px solid #555;text-align:left">DATE</th>
-            <th style="padding:6px 8px;border:1px solid #555;text-align:right">PETROL</th>
-            <th style="padding:6px 8px;border:1px solid #555;text-align:right">DIESEL</th>
-            <th style="padding:6px 8px;border:1px solid #555;text-align:right;font-style:normal;font-weight:700">MOBIL OIL</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${dayRows}
-        </tbody>
-        <tfoot>
-          <tr style="background:#e8e8e8">
-            <td style="padding:5px 8px;border:1px solid #bbb"></td>
-            <td style="padding:5px 8px;border:1px solid #bbb;text-align:center;font-weight:700;font-size:10px">PETROL LITRES</td>
-            <td style="padding:5px 8px;border:1px solid #bbb;text-align:center;font-weight:700;font-size:10px">DIESEL LITRES</td>
-            <td style="padding:5px 8px;border:1px solid #bbb;text-align:center;font-weight:700;font-size:10px">MOBILEL</td>
-          </tr>
-          <tr style="background:#d5d5d5;font-weight:700">
-            <td style="padding:6px 8px;border:1px solid #bbb;font-weight:700">TOTAL LTRS.</td>
-            <td style="padding:6px 8px;border:1px solid #bbb;text-align:right">${Math.round(totalPetrolL)}</td>
-            <td style="padding:6px 8px;border:1px solid #bbb;text-align:right">${Math.round(totalDieselL)}</td>
-            <td style="padding:6px 8px;border:1px solid #bbb;text-align:right">${Math.round(totalMobilAmt)}</td>
-          </tr>
-          <tr style="background:#c5c5c5;font-weight:700">
-            <td style="padding:6px 8px;border:1px solid #bbb;font-weight:700">AMOUNT</td>
-            <td style="padding:6px 8px;border:1px solid #bbb;text-align:right">${Math.round(petrolAmt)}</td>
-            <td style="padding:6px 8px;border:1px solid #bbb;text-align:right">${Math.round(dieselAmt)}</td>
-            <td style="padding:6px 8px;border:1px solid #bbb;text-align:right">${Math.round(totalMobilAmt)}</td>
-          </tr>
-          <tr style="background:#1a1a1a;color:#fff">
-            <td colspan="2" style="padding:7px 8px;border:1px solid #555;font-weight:700;font-size:13px">TOTAL</td>
-            <td colspan="2" style="padding:7px 8px;border:1px solid #555;text-align:right;font-weight:700;font-size:14px">${Math.round(grandTotal)}</td>
-          </tr>
-        </tfoot>
-      </table>
-
-      <!-- Rate Table -->
-      <table style="width:auto;min-width:260px;border-collapse:collapse;font-size:12px;border:2px solid #222;margin-bottom:20px">
-        <tr>
-          <td style="padding:6px 14px;border:1px solid #bbb;font-weight:700;background:#e8e8e8">PETROL RATE</td>
-          <td style="padding:6px 20px;border:1px solid #bbb;text-align:center;font-weight:700;font-size:13px">${petrolRate > 0 ? petrolRate.toFixed(2) : '—'}</td>
-        </tr>
-        <tr>
-          <td style="padding:6px 14px;border:1px solid #bbb;font-weight:700;background:#e8e8e8">DIESEL RATE</td>
-          <td style="padding:6px 20px;border:1px solid #bbb;text-align:center;font-weight:700;font-size:13px">${dieselRate > 0 ? dieselRate.toFixed(2) : '—'}</td>
-        </tr>
+      // Summary — all in one
+      bodyHtml = `<table style="width:100%;border-collapse:collapse;font-size:10px">
+        <thead>${THEAD}</thead>
+        <tbody>${buildRows(txns)}</tbody>
+        <tfoot>${TFOOT}</tfoot>
       </table>`;
     }
 
     const html = `<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8">
-<title>${company} - ${mode==='monthly'?'Monthly Report':'Sale Summary'}</title>
+<title>${company} - ${mode==='monthly'?'Monthly Report':'Transaction Report'}</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;font-size:11px;color:#222;background:#fff}
@@ -668,7 +556,7 @@ tr:nth-child(even) td{background:#f8f9fa}
 <div class="header">
   <div>
     <h1>⛽ ${company}</h1>
-    <p>${mode==='monthly'?'Monthly Transaction Report':'Petrol + Diesel + Mobil Oil — Sale Summary'}</p>
+    <p>${mode==='monthly'?'Monthly Transaction Report':'Transaction Receipt / Khata Raseed'}</p>
   </div>
   <div class="header-right">
     <strong>Print Date: ${printDate}</strong><br>
@@ -677,19 +565,12 @@ tr:nth-child(even) td{background:#f8f9fa}
   </div>
 </div>
 
-${mode !== 'monthly' ? `
 <div class="summary">
   <div class="sbox cr"><div class="slabel">Credit (Sales)</div><div class="sval">Rs.${fmt(totCr)}</div></div>
   <div class="sbox db"><div class="slabel">Debit (Received)</div><div class="sval">Rs.${fmt(totDb)}</div></div>
   <div class="sbox ex"><div class="slabel">Expense</div><div class="sval">Rs.${fmt(totEx)}</div></div>
   <div class="sbox nt"><div class="slabel">Net Balance</div><div class="sval">Rs.${fmt(totCr-totDb-totEx)}</div></div>
-</div>` : `
-<div class="summary">
-  <div class="sbox cr"><div class="slabel">Credit (Sales)</div><div class="sval">Rs.${fmt(totCr)}</div></div>
-  <div class="sbox db"><div class="slabel">Debit (Received)</div><div class="sval">Rs.${fmt(totDb)}</div></div>
-  <div class="sbox ex"><div class="slabel">Expense</div><div class="sval">Rs.${fmt(totEx)}</div></div>
-  <div class="sbox nt"><div class="slabel">Net Balance</div><div class="sval">Rs.${fmt(totCr-totDb-totEx)}</div></div>
-</div>`}
+</div>
 
 ${bodyHtml}
 
