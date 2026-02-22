@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mobil Stock | Khalid & Sons Petroleum</title>
+<link rel="icon" type="image/png" href="assets/logo.jfif">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<link rel="stylesheet" href="assets/styles.css">
+<style>
+  .stat-card { border-radius: 12px; transition: transform .2s; }
+  .stat-card:hover { transform: translateY(-3px); }
+  .stock-badge { font-size: 2rem; font-weight: 700; }
+  .section-title { border-left: 4px solid #0d6efd; padding-left: 12px; margin: 24px 0 16px; }
+  @media print {
+    #navbar-placeholder, #footer-placeholder, .no-print { display: none !important; }
+    body { font-size: 11px; }
+  }
+</style>
+</head>
+<body data-page="mobil-stock">
+<div id="navbar-placeholder"></div>
+<div class="container py-4">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0"><i class="bi bi-box-seam me-2 text-primary"></i>Mobil Stock Management</h3>
+    <div class="d-flex gap-2 no-print">
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#arrivalModal">
+        <i class="bi bi-box-arrow-in-down me-1"></i>New Arrival
+      </button>
+      <button class="btn btn-outline-secondary" onclick="window.print()">
+        <i class="bi bi-printer me-1"></i>Print
+      </button>
+    </div>
+  </div>
+
+  <!-- Stock Summary Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="card stat-card shadow-sm border-0 bg-primary text-white">
+        <div class="card-body text-center py-3">
+          <div class="mb-1"><i class="bi bi-droplet-fill fs-3"></i></div>
+          <div class="stock-badge" id="card-car-stock">0</div>
+          <div class="small mt-1">Car Mobil Stock (L)</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card stat-card shadow-sm border-0 bg-success text-white">
+        <div class="card-body text-center py-3">
+          <div class="mb-1"><i class="bi bi-droplet-fill fs-3"></i></div>
+          <div class="stock-badge" id="card-open-stock">0</div>
+          <div class="small mt-1">Open Mobil Stock (L)</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card stat-card shadow-sm border-0 bg-warning">
+        <div class="card-body text-center py-3">
+          <div class="mb-1"><i class="bi bi-cash-stack fs-3"></i></div>
+          <div class="stock-badge" id="card-month-revenue">0</div>
+          <div class="small mt-1">Is Mahine Revenue (Rs.)</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card stat-card shadow-sm border-0 bg-info text-white">
+        <div class="card-body text-center py-3">
+          <div class="mb-1"><i class="bi bi-graph-up-arrow fs-3"></i></div>
+          <div class="stock-badge" id="card-total-revenue">0</div>
+          <div class="small mt-1">Total Revenue (Rs.)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Month Filter -->
+  <div class="card shadow-sm mb-4 no-print">
+    <div class="card-body py-2">
+      <div class="row g-2 align-items-center">
+        <div class="col-auto"><label class="form-label mb-0 fw-bold">Filter by Month:</label></div>
+        <div class="col-auto">
+          <input type="month" id="filter-month" class="form-control form-control-sm" 
+            value="" onchange="applyMonthFilter()">
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-sm btn-secondary" onclick="clearFilter()">
+            <i class="bi bi-x-circle me-1"></i>Clear
+          </button>
+        </div>
+        <div class="col-auto ms-auto text-muted small" id="filter-info"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Arrivals Section -->
+  <h5 class="section-title"><i class="bi bi-box-arrow-in-down me-2 text-primary"></i>Stock Arrivals (Orders Received)</h5>
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-primary">
+            <tr>
+              <th>Date</th>
+              <th>Mobil Type</th>
+              <th>Supplier</th>
+              <th>Qty (L)</th>
+              <th>Rate/L</th>
+              <th>Total Cost</th>
+              <th>Invoice</th>
+              <th class="no-print">Action</th>
+            </tr>
+          </thead>
+          <tbody id="arrivals-table">
+            <tr><td colspan="8" class="text-center text-muted py-4">Loading...</td></tr>
+          </tbody>
+          <tfoot class="table-light fw-bold">
+            <tr>
+              <td colspan="3">Total</td>
+              <td id="arrival-total-qty">0 L</td>
+              <td>—</td>
+              <td id="arrival-total-cost">Rs. 0</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sales Section -->
+  <h5 class="section-title"><i class="bi bi-cart-check me-2 text-success"></i>Mobil Sales</h5>
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-success">
+            <tr>
+              <th>Date</th>
+              <th>Mobil Type</th>
+              <th>Customer</th>
+              <th>Qty (L)</th>
+              <th>Rate/L</th>
+              <th>Amount</th>
+              <th>Payment</th>
+              <th class="no-print">Action</th>
+            </tr>
+          </thead>
+          <tbody id="sales-table">
+            <tr><td colspan="8" class="text-center text-muted py-4">Loading...</td></tr>
+          </tbody>
+          <tfoot class="table-light fw-bold">
+            <tr>
+              <td colspan="3">Total</td>
+              <td id="sale-total-qty">0 L</td>
+              <td>—</td>
+              <td id="sale-total-revenue">Rs. 0</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monthly Revenue Chart Section -->
+  <h5 class="section-title"><i class="bi bi-bar-chart me-2 text-warning"></i>Monthly Summary</h5>
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-warning">
+            <tr>
+              <th>Month</th>
+              <th>Stock Arrived (L)</th>
+              <th>Stock Sold (L)</th>
+              <th>Purchase Cost</th>
+              <th>Sale Revenue</th>
+              <th>Profit</th>
+            </tr>
+          </thead>
+          <tbody id="monthly-table">
+            <tr><td colspan="6" class="text-center text-muted py-4">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ARRIVAL MODAL -->
+<div class="modal fade" id="arrivalModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="arrivalForm" onsubmit="event.preventDefault(); saveArrival();">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title"><i class="bi bi-box-arrow-in-down me-2"></i>New Stock Arrival</h5>
+          <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Mobil Type *</label>
+            <select id="arr-type" class="form-select" required>
+              <option value="">Select Type</option>
+              <option value="Car Mobil">Car Mobil</option>
+              <option value="Open Mobil">Open Mobil</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Supplier Name</label>
+            <input id="arr-supplier" class="form-control" type="text" placeholder="e.g. PSO, Shell">
+          </div>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label fw-bold">Quantity (Liters) *</label>
+              <input id="arr-qty" class="form-control" type="number" step="0.01" min="0.01" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-bold">Rate per Liter *</label>
+              <input id="arr-rate" class="form-control" type="number" step="0.01" min="0" required>
+            </div>
+          </div>
+          <div class="mb-3 mt-2">
+            <label class="form-label">Total Cost</label>
+            <div class="input-group">
+              <span class="input-group-text">Rs.</span>
+              <input id="arr-total" class="form-control bg-light" type="number" readonly>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Arrival Date *</label>
+            <input id="arr-date" class="form-control" type="date" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Invoice / Bill Number</label>
+            <input id="arr-invoice" class="form-control" type="text">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Notes</label>
+            <textarea id="arr-notes" class="form-control" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary" type="submit">
+            <i class="bi bi-check-circle me-1"></i>Save Arrival
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+  <div id="liveToast" class="toast" role="alert">
+    <div class="toast-header">
+      <strong class="me-auto" id="toast-title">Info</strong>
+      <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+    </div>
+    <div class="toast-body" id="toast-message">...</div>
+  </div>
+</div>
+
+<div id="footer-placeholder"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/mobil-stock.js"></script>
+</body>
+</html>

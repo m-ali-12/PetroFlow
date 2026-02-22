@@ -1,6 +1,7 @@
 // =============================================
-// MOBIL OIL MANAGEMENT - NO AUTH VERSION
-// Settings se mobil price auto-load + calculate
+// MOBIL OIL MANAGEMENT - js/mobil-management.js
+// Settings table se kaam karta hai (NO tanks table)
+// Auth disabled
 // =============================================
 (function () {
   'use strict';
@@ -11,18 +12,15 @@
 
   function fmt(num) {
     return Number(num || 0).toLocaleString('en-PK', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      minimumFractionDigits: 2, maximumFractionDigits: 2
     });
   }
 
   function showToast(message, type = 'info') {
     const toast = $('liveToast');
     if (!toast) { alert(message); return; }
-    if ($('toast-title')) {
-      const titles = { success: 'Kamyab!', error: 'Ghalati', warning: 'Khabardar', info: 'Info' };
-      $('toast-title').textContent = titles[type] || 'Info';
-    }
+    const titles = { success: 'Kamyab!', error: 'Ghalati', warning: 'Khabardar', info: 'Info' };
+    if ($('toast-title')) $('toast-title').textContent = titles[type] || 'Info';
     if ($('toast-message')) $('toast-message').textContent = message;
     toast.className = `toast align-items-center border-0 ${
       type === 'success' ? 'bg-success text-white' :
@@ -32,60 +30,89 @@
     new bootstrap.Toast(toast, { delay: 3500 }).show();
   }
 
-  // ─────────────────────────────────────────────────────
-  // SETTINGS SE LATEST MOBIL PRICES LOAD KARO
-  // ─────────────────────────────────────────────────────
-  async function getMobilPricesFromSettings() {
+  // ── Settings Load ──────────────────────────────────────────
+  async function getSettings() {
+    const { data, error } = await supabase
+      .from('settings')
+      .select('*')
+      .order('id', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  }
+
+  async function updateSettings(id, patch) {
+    const { error } = await supabase
+      .from('settings')
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) throw error;
+  }
+
+  // ── Settings se Mobil Prices ───────────────────────────────
+  async function getMobilPrices() {
     try {
-      const { data, error } = await supabase
-        .from('settings')
-        .select('mobil_history')
-        .limit(1)
-        .maybeSingle();
-
-      if (error || !data?.mobil_history?.length) return null;
-
-      const sorted = [...data.mobil_history].sort(
+      const settings = await getSettings();
+      if (!settings?.mobil_history?.length) return null;
+      const sorted = [...settings.mobil_history].sort(
         (a, b) => new Date(b.date) - new Date(a.date)
       );
       return sorted[0]; // { car_mobil, open_mobil, date }
     } catch (e) {
-      console.warn('getMobilPricesFromSettings error:', e);
+      console.warn('getMobilPrices error:', e);
       return null;
     }
   }
 
-  // ─────────────────────────────────────────────────────
-  // AUTO CALCULATE: qty x rate = amount
-  // ─────────────────────────────────────────────────────
+  // ── Current Stock from Settings ────────────────────────────
+  async function getStockFromSettings() {
+    try {
+      const settings = await getSettings();
+      if (!settings) return { car: 0, open: 0 };
+
+      const arrivals = Array.isArray(settings.mobil_arrivals) ? settings.mobil_arrivals : [];
+      const sales    = Array.isArray(settings.mobil_sales)    ? settings.mobil_sales    : [];
+
+      const carArrived  = arrivals.filter(r => r.type === 'Car Mobil').reduce((s, r)  => s + (parseFloat(r.qty) || 0), 0);
+      const openArrived = arrivals.filter(r => r.type === 'Open Mobil').reduce((s, r) => s + (parseFloat(r.qty) || 0), 0);
+      const carSold     = sales.filter(r => r.type === 'Car Mobil').reduce((s, r)     => s + (parseFloat(r.qty) || 0), 0);
+      const openSold    = sales.filter(r => r.type === 'Open Mobil').reduce((s, r)    => s + (parseFloat(r.qty) || 0), 0);
+
+      return {
+        car:  Math.max(0, carArrived  - carSold),
+        open: Math.max(0, openArrived - openSold),
+        settingsId: settings.id,
+        arrivals,
+        sales
+      };
+    } catch (e) {
+      console.warn('getStockFromSettings error:', e);
+      return { car: 0, open: 0 };
+    }
+  }
+
+  // ── Auto Calculate ─────────────────────────────────────────
   function setupAutoCalculate(qtyId, rateId, amountId) {
-    const qtyEl    = $(qtyId);
-    const rateEl   = $(rateId);
-    const amountEl = $(amountId);
+    const qtyEl = $(qtyId), rateEl = $(rateId), amountEl = $(amountId);
     if (!qtyEl || !rateEl || !amountEl) return;
     const calc = () => {
-      const q = parseFloat(qtyEl.value)  || 0;
-      const r = parseFloat(rateEl.value) || 0;
-      amountEl.value = (q * r).toFixed(2);
+      amountEl.value = ((parseFloat(qtyEl.value) || 0) * (parseFloat(rateEl.value) || 0)).toFixed(2);
     };
     qtyEl.addEventListener('input', calc);
     rateEl.addEventListener('input', calc);
   }
 
-  // ─────────────────────────────────────────────────────
-  // SALE MODAL: SETTINGS SE PRICE AUTO-FILL + AUTO-CALC
-  // ─────────────────────────────────────────────────────
+  // ── Settings se Price Auto-fill ────────────────────────────
   async function setupSalePriceAutoFill() {
-    const saleMobilModal  = document.getElementById('saleMobilModal');
+    const modal           = document.getElementById('saleMobilModal');
     const mobilTypeSelect = $('sale-mobil-type');
     const rateInput       = $('sale-rate');
     const qtyInput        = $('sale-quantity');
     const amountInput     = $('sale-amount');
-
     if (!mobilTypeSelect || !rateInput) return;
 
-    // Settings se prices lo
-    const prices = await getMobilPricesFromSettings();
+    const prices = await getMobilPrices();
 
     function applyRate() {
       if (!prices) return;
@@ -95,31 +122,30 @@
       } else if (type === 'Open Mobil' && prices.open_mobil) {
         rateInput.value = prices.open_mobil;
       }
-      // Amount recalculate
       if (qtyInput && amountInput) {
-        const q = parseFloat(qtyInput.value)  || 0;
-        const r = parseFloat(rateInput.value) || 0;
-        amountInput.value = (q * r).toFixed(2);
+        amountInput.value = ((parseFloat(qtyInput.value) || 0) * (parseFloat(rateInput.value) || 0)).toFixed(2);
       }
     }
 
-    // Mobil type change hone par rate set karo
     mobilTypeSelect.addEventListener('change', applyRate);
-
-    // Modal khulte waqt bhi apply karo
-    if (saleMobilModal) {
-      saleMobilModal.addEventListener('show.bs.modal', () => {
-        applyRate();
-      });
+    if (modal) {
+      modal.addEventListener('show.bs.modal', () => applyRate());
     }
-
-    // Pehli dafa bhi chalao
     applyRate();
   }
 
-  // ─────────────────────────────────────────────────────
-  // CUSTOMERS DROPDOWN
-  // ─────────────────────────────────────────────────────
+  // ── Load Stock Display ─────────────────────────────────────
+  async function loadMobilStock() {
+    try {
+      const stock = await getStockFromSettings();
+      if ($('mobil-car-stock-page'))  $('mobil-car-stock-page').textContent  = fmt(stock.car);
+      if ($('mobil-open-stock-page')) $('mobil-open-stock-page').textContent = fmt(stock.open);
+    } catch (err) {
+      console.error('loadMobilStock error:', err);
+    }
+  }
+
+  // ── Customer Dropdown ──────────────────────────────────────
   async function loadCustomerDropdown() {
     try {
       const { data, error } = await supabase
@@ -130,7 +156,6 @@
 
       const select = $('sale-customer');
       if (!select) return;
-
       select.innerHTML = '<option value="">-- Customer Select Karein --</option>';
       (data || [])
         .filter(c => (c.category || '').toLowerCase() !== 'owner')
@@ -142,174 +167,90 @@
     }
   }
 
-  // ─────────────────────────────────────────────────────
-  // OWNER GET / CREATE
-  // ─────────────────────────────────────────────────────
-  async function getOrCreateOwner() {
-    const { data, error } = await supabase
-      .from('customers')
-      .select('*')
-      .eq('category', 'Owner')
-      .maybeSingle();
-
-    if (!error && data) return data;
-
-    const ins = await supabase
-      .from('customers')
-      .insert([{ name: 'Owner', phone: '', category: 'Owner', sr_no: 0, balance: 0 }])
-      .select()
-      .single();
-    if (ins.error) throw ins.error;
-    return ins.data;
-  }
-
-  // ─────────────────────────────────────────────────────
-  // LOAD MOBIL STOCK
-  // ─────────────────────────────────────────────────────
-  async function loadMobilStock() {
-    try {
-      const { data, error } = await supabase
-        .from('tanks')
-        .select('*')
-        .in('name', ['Car Mobil', 'Open Mobil']);
-      if (error) throw error;
-
-      const carTank  = (data || []).find(t => t.name === 'Car Mobil');
-      const openTank = (data || []).find(t => t.name === 'Open Mobil');
-
-      if ($('mobil-car-stock-page'))
-        $('mobil-car-stock-page').textContent = carTank ? fmt(carTank.current_stock) : '0.00';
-      if ($('mobil-open-stock-page'))
-        $('mobil-open-stock-page').textContent = openTank ? fmt(openTank.current_stock) : '0.00';
-    } catch (err) {
-      console.error('loadMobilStock error:', err);
-    }
-  }
-
-  // ─────────────────────────────────────────────────────
-  // LOAD TRANSACTIONS TABLE
-  // ─────────────────────────────────────────────────────
+  // ── Load Transactions Table ────────────────────────────────
   async function loadMobilTransactions() {
     const tbody = $('mobil-transactions-table');
     if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Loading...</td></tr>';
 
     try {
-      const { data: tanks, error: tankErr } = await supabase
-        .from('tanks')
-        .select('id, name')
-        .in('name', ['Car Mobil', 'Open Mobil']);
-      if (tankErr) throw tankErr;
-
-      const tankIds = (tanks || []).map(t => t.id);
-      if (tankIds.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-warning py-4">
-          <i class="bi bi-exclamation-triangle me-2"></i>
-          Koi Mobil tank nahi mila. Supabase <code>tanks</code> table mein
-          "Car Mobil" aur "Open Mobil" naam se rows add karein.
-        </td></tr>`;
+      const settings = await getSettings();
+      if (!settings) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Settings load nahi hui</td></tr>';
         return;
       }
 
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*, customer:customers(name, sr_no), tank:tanks(name)')
-        .in('tank_id', tankIds)
-        .order('created_at', { ascending: false })
-        .limit(100);
-      if (error) throw error;
+      const arrivals = (settings.mobil_arrivals || []).map(r => ({
+        ...r, _type: 'arrival', displayType: 'Purchase', badgeClass: 'bg-primary',
+        customer: r.supplier || 'Supplier'
+      }));
+      const sales = (settings.mobil_sales || []).map(r => ({
+        ...r, _type: 'sale', displayType: 'Sale', badgeClass: 'bg-success'
+      }));
 
-      if (!data || data.length === 0) {
+      const all = [...arrivals, ...sales].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      if (!all.length) {
         tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Abhi koi transaction nahi hai</td></tr>';
         return;
       }
 
-      tbody.innerHTML = data.map(t => {
-        const date = new Date(t.created_at).toLocaleDateString('en-PK');
-        let typeLabel, badgeClass;
-        if (t.transaction_type === 'Credit') {
-          typeLabel = 'Sale'; badgeClass = 'bg-success';
-        } else if (t.liters > 0) {
-          typeLabel = 'Purchase'; badgeClass = 'bg-primary';
-        } else {
-          typeLabel = 'Expense'; badgeClass = 'bg-danger';
-        }
-        return `<tr>
-          <td>${date}</td>
-          <td><span class="badge ${badgeClass}">${typeLabel}</span></td>
-          <td>${t.tank?.name || '-'}</td>
-          <td>${t.customer?.name || '-'}</td>
-          <td>${fmt(t.liters)} L</td>
-          <td>Rs. ${fmt(t.unit_price || 0)}</td>
-          <td><strong>Rs. ${fmt(t.amount)}</strong></td>
-          <td>
-            <button class="btn btn-sm btn-outline-danger"
-              onclick="deleteMobilTransaction('${t.id}')">
-              <i class="bi bi-trash"></i>
-            </button>
-          </td>
-        </tr>`;
-      }).join('');
+      tbody.innerHTML = all.map(r => `<tr>
+        <td>${r.date}</td>
+        <td><span class="badge ${r.badgeClass}">${r.displayType}</span></td>
+        <td><span class="badge ${r.type === 'Car Mobil' ? 'bg-info text-dark' : 'bg-secondary'}">${r.type}</span></td>
+        <td>${r.customer || '-'}</td>
+        <td>${fmt(r.qty)} L</td>
+        <td>Rs. ${fmt(r.rate)}</td>
+        <td><strong>Rs. ${fmt(r._type === 'arrival' ? r.total : r.amount)}</strong></td>
+        <td>
+          ${r._type === 'arrival'
+            ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteMobilArrival('${r.id}')"><i class="bi bi-trash"></i></button>`
+            : `<button class="btn btn-sm btn-outline-danger" onclick="deleteMobilSale('${r.id}')"><i class="bi bi-trash"></i></button>`
+          }
+        </td>
+      </tr>`).join('');
 
     } catch (err) {
       console.error('loadMobilTransactions error:', err);
-      tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">
-        Error: ${err?.message || err}
-      </td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">Error: ${err.message}</td></tr>`;
     }
   }
 
-  // ═══════════════════════════════════════════════════════
-  // WINDOW FUNCTIONS — HTML buttons/forms inhe call karte hain
-  // ═══════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════
+  // WINDOW FUNCTIONS
+  // ══════════════════════════════════════════════════════════
 
-  // 1. RECEIVE STOCK
+  // 1. RECEIVE STOCK — settings.mobil_arrivals mein save
   window.receiveMobilStock = async function () {
     const mobilType = $('receive-mobil-type')?.value;
-    const supplier  = $('receive-supplier')?.value || 'Supplier';
-    const quantity  = parseFloat($('receive-quantity')?.value);
+    const supplier  = $('receive-supplier')?.value || '';
+    const qty       = parseFloat($('receive-quantity')?.value);
     const rate      = parseFloat($('receive-rate')?.value);
-    const amount    = parseFloat($('receive-amount')?.value) || (quantity * rate);
+    const total     = parseFloat($('receive-amount')?.value) || (qty * rate);
     const date      = $('receive-date')?.value;
-    const invoice   = $('receive-invoice')?.value || 'N/A';
+    const invoice   = $('receive-invoice')?.value || '';
     const notes     = $('receive-notes')?.value || '';
 
-    if (!mobilType || !quantity || !rate || !date) {
+    if (!mobilType || !qty || !rate || !date) {
       showToast('Mobil Type, Quantity, Rate aur Date zaroor bharein', 'error');
       return;
     }
 
     try {
-      const { data: tank, error: tankErr } = await supabase
-        .from('tanks').select('*').eq('name', mobilType).maybeSingle();
-      if (tankErr) throw tankErr;
-      if (!tank) {
-        showToast(`Tank nahi mila: "${mobilType}" — Supabase tanks table mein add karein`, 'error');
-        return;
-      }
+      const settings = await getSettings();
+      if (!settings) throw new Error('Settings nahi mili');
 
-      const newStock = (parseFloat(tank.current_stock) || 0) + quantity;
-      const { error: upErr } = await supabase
-        .from('tanks')
-        .update({ current_stock: newStock, last_updated: new Date().toISOString() })
-        .eq('id', tank.id);
-      if (upErr) throw upErr;
+      const arrivals = Array.isArray(settings.mobil_arrivals) ? settings.mobil_arrivals : [];
+      arrivals.push({
+        id: Date.now().toString(),
+        date, type: mobilType, supplier, qty, rate, total, invoice, notes,
+        created_at: new Date().toISOString()
+      });
 
-      const owner = await getOrCreateOwner();
+      await updateSettings(settings.id, { mobil_arrivals: arrivals });
 
-      const { error: txErr } = await supabase.from('transactions').insert([{
-        customer_id:      owner.id,
-        tank_id:          tank.id,
-        transaction_type: 'Expense',
-        amount:           amount,
-        liters:           quantity,
-        unit_price:       rate,
-        description:      `Mobil Purchase: ${mobilType} - ${supplier} - Invoice: ${invoice}${notes ? ' | ' + notes : ''}`,
-        created_at:       new Date(date + 'T00:00:00').toISOString()
-      }]);
-      if (txErr) throw txErr;
-
-      showToast(`${quantity} Ltr ${mobilType} receive hua! Kul stock: ${fmt(newStock)} Ltr`, 'success');
+      showToast(`${qty} L ${mobilType} stock add ho gaya!`, 'success');
 
       const modal = bootstrap.Modal.getInstance($('receiveMobilModal'));
       if (modal) modal.hide();
@@ -321,69 +262,62 @@
 
     } catch (err) {
       console.error('receiveMobilStock error:', err);
-      showToast('Error: ' + (err?.message || err), 'error');
+      showToast('Error: ' + err.message, 'error');
     }
   };
 
-  // 2. SALE
+  // 2. SALE — settings.mobil_sales mein save
   window.saleMobilOil = async function () {
     const customerId  = $('sale-customer')?.value;
+    const customerName = $('sale-customer')?.options[$('sale-customer')?.selectedIndex]?.text || '';
     const mobilType   = $('sale-mobil-type')?.value;
-    const quantity    = parseFloat($('sale-quantity')?.value);
+    const qty         = parseFloat($('sale-quantity')?.value);
     const rate        = parseFloat($('sale-rate')?.value);
-    const amount      = parseFloat($('sale-amount')?.value) || (quantity * rate);
+    const amount      = parseFloat($('sale-amount')?.value) || (qty * rate);
     const date        = $('sale-date')?.value;
     const paymentType = $('sale-payment-type')?.value || 'cash';
     const notes       = $('sale-notes')?.value || '';
 
-    if (!customerId || !mobilType || !quantity || !rate || !date) {
-      showToast('Customer, Mobil Type, Quantity, Rate aur Date zaroor bharein', 'error');
+    if (!mobilType || !qty || !rate || !date) {
+      showToast('Mobil Type, Quantity, Rate aur Date zaroor bharein', 'error');
       return;
     }
 
     try {
-      const { data: tank, error: tankErr } = await supabase
-        .from('tanks').select('*').eq('name', mobilType).maybeSingle();
-      if (tankErr) throw tankErr;
-      if (!tank) {
-        showToast(`Tank nahi mila: "${mobilType}"`, 'error');
+      const settings = await getSettings();
+      if (!settings) throw new Error('Settings nahi mili');
+
+      // Stock check
+      const arrivals  = Array.isArray(settings.mobil_arrivals) ? settings.mobil_arrivals : [];
+      const sales     = Array.isArray(settings.mobil_sales)    ? settings.mobil_sales    : [];
+      const arrived   = arrivals.filter(r => r.type === mobilType).reduce((s, r) => s + (parseFloat(r.qty) || 0), 0);
+      const sold      = sales.filter(r => r.type === mobilType).reduce((s, r)    => s + (parseFloat(r.qty) || 0), 0);
+      const currStock = Math.max(0, arrived - sold);
+
+      if (currStock < qty) {
+        showToast(`Stock kam hai! ${mobilType} sirf ${fmt(currStock)} L available hai`, 'error');
         return;
       }
 
-      const currentStock = parseFloat(tank.current_stock) || 0;
-      if (currentStock < quantity) {
-        showToast(`Stock kam hai! Sirf ${fmt(currentStock)} Ltr available hai`, 'error');
-        return;
-      }
+      sales.push({
+        id: Date.now().toString(),
+        date, type: mobilType,
+        customer: customerName.replace(/^\d+\s*-\s*/, ''),
+        customer_id: customerId,
+        qty, rate, amount,
+        payment: paymentType,
+        notes,
+        created_at: new Date().toISOString()
+      });
 
-      const newStock = currentStock - quantity;
-      const { error: upErr } = await supabase
-        .from('tanks')
-        .update({ current_stock: newStock, last_updated: new Date().toISOString() })
-        .eq('id', tank.id);
-      if (upErr) throw upErr;
+      await updateSettings(settings.id, { mobil_sales: sales });
 
-      const { error: txErr } = await supabase.from('transactions').insert([{
-        customer_id:      parseInt(customerId, 10),
-        tank_id:          tank.id,
-        transaction_type: 'Credit',
-        amount:           amount,
-        liters:           quantity,
-        unit_price:       rate,
-        description:      `Mobil Sale: ${mobilType}${notes ? ' | ' + notes : ''} | ${paymentType.toUpperCase()}`,
-        created_at:       new Date(date + 'T00:00:00').toISOString()
-      }]);
-      if (txErr) throw txErr;
-
-      // Udhaar hai to customer ka balance update karo
-      if (paymentType.toLowerCase() === 'credit') {
-        const { data: cust, error: cErr } = await supabase
+      // Agar udhaar hai to customer balance update
+      if (paymentType === 'credit' && customerId) {
+        const { data: cust } = await supabase
           .from('customers').select('balance').eq('id', customerId).maybeSingle();
-        if (cErr) throw cErr;
         const newBal = (parseFloat(cust?.balance) || 0) + amount;
-        const { error: bErr } = await supabase
-          .from('customers').update({ balance: newBal }).eq('id', customerId);
-        if (bErr) throw bErr;
+        await supabase.from('customers').update({ balance: newBal }).eq('id', customerId);
         showToast(`Sale! Rs.${fmt(amount)} Udhaar add ho gaya`, 'success');
       } else {
         showToast(`Sale! Rs.${fmt(amount)} Cash`, 'success');
@@ -394,14 +328,13 @@
       if ($('saleMobilForm')) $('saleMobilForm').reset();
       if ($('sale-date')) $('sale-date').value = new Date().toISOString().split('T')[0];
 
-      // Form reset ke baad dobara price apply karo
       await setupSalePriceAutoFill();
       loadMobilStock();
       loadMobilTransactions();
 
     } catch (err) {
       console.error('saleMobilOil error:', err);
-      showToast('Error: ' + (err?.message || err), 'error');
+      showToast('Error: ' + err.message, 'error');
     }
   };
 
@@ -418,15 +351,15 @@
     }
 
     try {
-      const owner = await getOrCreateOwner();
+      // Expense ko transactions table mein save karo
+      const { data: owner } = await supabase
+        .from('customers').select('id').eq('category', 'Owner').maybeSingle();
 
       const { error } = await supabase.from('transactions').insert([{
-        customer_id:      owner.id,
-        tank_id:          null,
+        customer_id:      owner?.id || null,
         transaction_type: 'Expense',
         amount:           amount,
         liters:           0,
-        unit_price:       null,
         description:      `Mobil Expense - ${expenseType}: ${description}`,
         created_at:       new Date(date + 'T00:00:00').toISOString()
       }]);
@@ -439,56 +372,61 @@
       if ($('mobilExpenseForm')) $('mobilExpenseForm').reset();
       if ($('expense-date')) $('expense-date').value = new Date().toISOString().split('T')[0];
 
-      loadMobilTransactions();
-
     } catch (err) {
       console.error('addMobilExpense error:', err);
-      showToast('Error: ' + (err?.message || err), 'error');
+      showToast('Error: ' + err.message, 'error');
     }
   };
 
-  // 4. DELETE TRANSACTION
-  window.deleteMobilTransaction = async function (id) {
-    if (!confirm('Yeh transaction delete karni hai?')) return;
+  // 4. DELETE ARRIVAL
+  window.deleteMobilArrival = async function (id) {
+    if (!confirm('Yeh arrival delete karein?')) return;
     try {
-      const { error } = await supabase.from('transactions').delete().eq('id', id);
-      if (error) throw error;
-      showToast('Transaction delete ho gayi!', 'success');
-      loadMobilTransactions();
+      const settings = await getSettings();
+      const arrivals = (settings.mobil_arrivals || []).filter(r => r.id !== id);
+      await updateSettings(settings.id, { mobil_arrivals: arrivals });
+      showToast('Arrival delete ho gaya!', 'success');
       loadMobilStock();
+      loadMobilTransactions();
     } catch (err) {
-      console.error('deleteMobilTransaction error:', err);
-      showToast('Error: ' + (err?.message || err), 'error');
+      showToast('Error: ' + err.message, 'error');
     }
   };
 
-  // 5. VIEW HISTORY
-  window.viewMobilHistory = function () {
-    window.location.href = 'transactions.html?filter=mobil';
+  // 5. DELETE SALE
+  window.deleteMobilSale = async function (id) {
+    if (!confirm('Yeh sale delete karein?')) return;
+    try {
+      const settings = await getSettings();
+      const sales = (settings.mobil_sales || []).filter(r => r.id !== id);
+      await updateSettings(settings.id, { mobil_sales: sales });
+      showToast('Sale delete ho gaya!', 'success');
+      loadMobilStock();
+      loadMobilTransactions();
+    } catch (err) {
+      showToast('Error: ' + err.message, 'error');
+    }
   };
 
-  // ═══════════════════════════════════════════════════════
-  // PAGE INIT
-  // ═══════════════════════════════════════════════════════
+  // 6. VIEW HISTORY
+  window.viewMobilHistory = function () {
+    window.location.href = 'mobil-stock.html';
+  };
+
+  // ── INIT ───────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', async () => {
     if (document.body.getAttribute('data-page') !== 'mobil') return;
+    console.log('Mobil Management init...');
 
-    console.log('Mobil Management init (No Auth)...');
-
-    // Default dates
     const today = new Date().toISOString().split('T')[0];
     if ($('receive-date')) $('receive-date').value = today;
     if ($('sale-date'))    $('sale-date').value    = today;
     if ($('expense-date')) $('expense-date').value = today;
 
-    // Auto calculate
     setupAutoCalculate('receive-quantity', 'receive-rate', 'receive-amount');
     setupAutoCalculate('sale-quantity',    'sale-rate',    'sale-amount');
 
-    // Settings se mobil price auto-fill (Car Mobil / Open Mobil)
     await setupSalePriceAutoFill();
-
-    // Data load karo
     await loadCustomerDropdown();
     await loadMobilStock();
     await loadMobilTransactions();
