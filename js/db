@@ -781,3 +781,79 @@ UNION ALL SELECT 'tanks', COUNT(*) FROM tanks;
 -- 3. Step 4 mein apna USER_ID paste karke update queries run karo
 -- 4. Browser refresh karo (Ctrl + Shift + R)
 -- 5. Customer add karo - koi error nahi aayegi! ✅
+
+-- ============================================================
+-- RENT MANAGEMENT - FIXED SQL (Drop & Recreate)
+-- Run this in Supabase SQL Editor
+-- ============================================================
+
+-- STEP 1: Drop old tables (if they exist) to start fresh
+DROP TABLE IF EXISTS rent_payments CASCADE;
+DROP TABLE IF EXISTS shops CASCADE;
+
+-- STEP 2: Create SHOPS table
+CREATE TABLE shops (
+  id            BIGSERIAL PRIMARY KEY,
+  shop_name     TEXT NOT NULL,
+  tenant_name   TEXT NOT NULL,
+  phone         TEXT,
+  monthly_rent  NUMERIC(12, 2) NOT NULL DEFAULT 0,
+  due_day       INTEGER NOT NULL DEFAULT 1 CHECK (due_day BETWEEN 1 AND 31),
+  start_date    DATE NOT NULL,
+  status        TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive')),
+  notes         TEXT,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- STEP 3: Create RENT PAYMENTS table
+CREATE TABLE rent_payments (
+  id             BIGSERIAL PRIMARY KEY,
+  shop_id        BIGINT NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  rent_month     INTEGER NOT NULL CHECK (rent_month BETWEEN 1 AND 12),
+  rent_year      INTEGER NOT NULL,
+  amount_due     NUMERIC(12, 2) NOT NULL DEFAULT 0,
+  amount_paid    NUMERIC(12, 2),
+  due_date       DATE NOT NULL,
+  paid_date      DATE,
+  payment_method TEXT,
+  status         TEXT NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'Paid', 'Overdue', 'Partial')),
+  notes          TEXT,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(shop_id, rent_month, rent_year)
+);
+
+-- STEP 4: Indexes
+CREATE INDEX idx_shops_status        ON shops(status);
+CREATE INDEX idx_rp_shop_id          ON rent_payments(shop_id);
+CREATE INDEX idx_rp_month_year       ON rent_payments(rent_month, rent_year);
+CREATE INDEX idx_rp_status           ON rent_payments(status);
+
+-- STEP 5: Auto-update trigger
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_shops_updated
+  BEFORE UPDATE ON shops
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trg_rent_payments_updated
+  BEFORE UPDATE ON rent_payments
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- STEP 6: Disable RLS (so app can read/write without auth issues)
+ALTER TABLE shops DISABLE ROW LEVEL SECURITY;
+ALTER TABLE rent_payments DISABLE ROW LEVEL SECURITY;
+
+-- STEP 7: Verify - should show both tables with all columns
+SELECT table_name, column_name, data_type
+FROM information_schema.columns
+WHERE table_name IN ('shops', 'rent_payments')
+  AND table_schema = 'public'
+ORDER BY table_name, ordinal_position;
