@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -186,32 +187,6 @@
   </div>
 
   <style>
-    /* ── Bill Format Styles ── */
-    .bill-format { font-family: Arial, sans-serif; font-size: 13px; }
-    .bill-header { border-bottom: 2px solid #333; margin-bottom: 1rem; padding-bottom: 0.5rem; }
-    .bill-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
-    .bill-logo { font-size: 2rem; font-weight: bold; color: #333; }
-    .bill-logo-section { display: flex; gap: 1rem; align-items: center; }
-    .bill-proprietor { font-size: 11px; line-height: 1.4; }
-    .bill-company { text-align: center; flex: 1; }
-    .bill-company h2 { font-size: 1.8rem; font-weight: 900; margin: 0; font-style: italic; }
-    .bill-company h3 { font-size: 1.2rem; font-weight: 700; margin: 0; font-style: italic; }
-    .bill-company small { font-size: 10px; }
-    .bill-meta { display: flex; justify-content: space-between; border-top: 1px solid #333; border-bottom: 1px solid #333; padding: 4px 0; margin: 0.5rem 0; }
-    .bill-meta-left, .bill-meta-right { font-size: 12px; }
-    .bill-print-date { font-size: 11px; padding: 2px 0; border-bottom: 1px solid #aaa; }
-    .bill-table { font-size: 12px; }
-    .bill-thead th { background: #333 !important; color: white !important; text-align: center; font-size: 11px; padding: 4px !important; }
-    .bill-table td { padding: 3px 6px !important; font-size: 12px; }
-    .bill-total-row td { background: #f0f0f0 !important; font-weight: bold; }
-    .bill-summary { margin-top: 1.5rem; border-top: 2px solid #333; padding-top: 1rem; }
-    .bill-summary h5 { font-weight: bold; margin-bottom: 0.5rem; }
-    .bill-summary-table { width: 50%; font-size: 12px; }
-    .bill-balance { margin-top: 0.5rem; font-size: 13px; }
-    .bill-signature { margin-top: 3rem; text-align: right; }
-    .sig-box { display: inline-block; border-top: 1px solid #333; padding-top: 4px; min-width: 150px; text-align: center; font-size: 11px; }
-
-    /* ── Stat Boxes ── */
     .report-card {
       cursor: pointer;
       transition: all 0.3s ease;
@@ -253,13 +228,7 @@
 
     @media print {
       .no-print { display: none !important; }
-      .report-content { box-shadow: none; padding: 0; }
-      .report-section { display: block !important; }
-      .container { padding: 0 !important; }
-      h3.mb-4, .row.g-3.mb-4 > .col-md-3 > .card.report-card { display: none !important; }
-      .bill-summary-table { width: 60% !important; }
-      body { font-size: 12px; }
-      .stat-box { padding: 6px 8px; margin-bottom: 6px; }
+      .report-content { box-shadow: none; }
     }
   </style>
 
