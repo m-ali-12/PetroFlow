@@ -8,42 +8,29 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="assets/styles.css">
-  <style>
-    .selection-bar {
-      display: none;
-      align-items: center;
-      gap: 10px;
-      background: #1a237e;
-      color: white;
-      padding: 10px 16px;
-      border-radius: 8px;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-    }
-    .selection-bar .sel-info { flex: 1; font-size: 14px; }
-    .entry-chk { width: 16px; height: 16px; cursor: pointer; }
-    #select-all-chk { width: 16px; height: 16px; cursor: pointer; }
-    tr.table-success td { background-color: #d1f0d1 !important; }
-    tr.table-danger td  { background-color: #ffd6d6 !important; }
-  </style>
 </head>
 
 <body data-page="rent">
   <div id="navbar-placeholder"></div>
 
-  <div class="container-fluid py-4 px-3 px-md-4">
-
-    <!-- Header + Month/Year filter -->
+  <div class="container-fluid py-4 px-4">
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
       <h3 class="mb-0"><i class="bi bi-shop me-2"></i>Shop Rent Management</h3>
       <div class="d-flex gap-2 align-items-center">
+        <!-- Month / Year Filter -->
         <select id="month-filter" class="form-select form-select-sm" style="width:130px;">
-          <option value="1">January</option><option value="2">February</option>
-          <option value="3">March</option><option value="4">April</option>
-          <option value="5">May</option><option value="6">June</option>
-          <option value="7">July</option><option value="8">August</option>
-          <option value="9">September</option><option value="10">October</option>
-          <option value="11">November</option><option value="12">December</option>
+          <option value="1">January</option>
+          <option value="2">February</option>
+          <option value="3">March</option>
+          <option value="4">April</option>
+          <option value="5">May</option>
+          <option value="6">June</option>
+          <option value="7">July</option>
+          <option value="8">August</option>
+          <option value="9">September</option>
+          <option value="10">October</option>
+          <option value="11">November</option>
+          <option value="12">December</option>
         </select>
         <select id="year-filter" class="form-select form-select-sm" style="width:100px;"></select>
       </div>
@@ -113,13 +100,15 @@
       </div>
     </div>
 
-    <!-- Shops Table -->
+    <!-- ── SHOPS TABLE ─────────────────────────────────────── -->
     <div class="card shadow-sm mb-4">
       <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
         <h5 class="mb-0"><i class="bi bi-shop me-2 text-primary"></i>Registered Shops</h5>
-        <div class="input-group input-group-sm" style="width:220px;">
-          <span class="input-group-text"><i class="bi bi-search"></i></span>
-          <input id="shop-search" type="text" class="form-control" placeholder="Search shops...">
+        <div class="d-flex gap-2">
+          <div class="input-group input-group-sm" style="width:220px;">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input id="shop-search" type="text" class="form-control" placeholder="Search shops...">
+          </div>
         </div>
       </div>
       <div class="card-body p-0">
@@ -127,8 +116,12 @@
           <table class="table table-hover mb-0 align-middle">
             <thead class="table-light">
               <tr>
-                <th>Shop Name</th><th>Tenant Name</th><th>Monthly Rent</th>
-                <th>Phone</th><th>Status</th><th>Actions</th>
+                <th>Shop Name</th>
+                <th>Tenant Name</th>
+                <th>Monthly Rent</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="shops-table">
@@ -137,21 +130,24 @@
           </table>
         </div>
       </div>
-      <div class="card-footer bg-white"><div id="shops-pagination"></div></div>
+      <div class="card-footer bg-white">
+        <div id="shops-pagination"></div>
+      </div>
     </div>
 
-    <!-- Rent Payment Status -->
+    <!-- ── RENT PAYMENTS TABLE ─────────────────────────────── -->
     <div class="card shadow-sm">
       <div class="card-header bg-white">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-          <h5 class="mb-0"><i class="bi bi-cash-coin me-2 text-success"></i>Rent Payment Status</h5>
-          <div class="d-flex gap-2">
-            <button class="btn btn-outline-secondary btn-sm" onclick="printRentReport()">
-              <i class="bi bi-printer me-1"></i>Print All
-            </button>
-          </div>
+          <h5 class="mb-0">
+            <i class="bi bi-cash-coin me-2 text-success"></i>
+            Rent Payment Status
+          </h5>
+          <button class="btn btn-outline-secondary btn-sm" onclick="printRentReport()">
+            <i class="bi bi-printer me-1"></i>Print Report
+          </button>
         </div>
-        <!-- Search + Filter -->
+        <!-- Search + Filters -->
         <div class="d-flex gap-2 flex-wrap">
           <div class="input-group input-group-sm" style="width:220px;">
             <span class="input-group-text"><i class="bi bi-search"></i></span>
@@ -167,27 +163,9 @@
         </div>
       </div>
 
-      <!-- Unpaid Alert -->
-      <div class="px-3 pt-2"><div id="unpaid-summary"></div></div>
-
-      <!-- ✅ SELECTION ACTION BAR -->
-      <div class="px-3">
-        <div class="selection-bar" id="selection-bar">
-          <div class="sel-info">
-            <i class="bi bi-check2-square me-1"></i>
-            <strong id="sel-count">0</strong> entries selected
-            &nbsp;|&nbsp; Total: <strong>Rs. <span id="sel-total">0.00</span></strong>
-          </div>
-          <button class="btn btn-sm btn-light" onclick="selectAllPages()">
-            <i class="bi bi-check-all me-1"></i>Select All Pages
-          </button>
-          <button class="btn btn-sm btn-warning" onclick="printSelected()">
-            <i class="bi bi-printer me-1"></i>Print Selected
-          </button>
-          <button class="btn btn-sm btn-outline-light" onclick="clearSelection()">
-            <i class="bi bi-x me-1"></i>Clear
-          </button>
-        </div>
+      <!-- Unpaid Summary Alert -->
+      <div class="card-body pb-0 pt-2">
+        <div id="unpaid-summary"></div>
       </div>
 
       <div class="card-body p-0">
@@ -195,11 +173,6 @@
           <table class="table table-hover mb-0 align-middle">
             <thead class="table-light">
               <tr>
-                <!-- Select All checkbox -->
-                <th style="width:40px;" class="text-center">
-                  <input type="checkbox" id="select-all-chk" class="form-check-input"
-                    title="Select all on this page" onchange="toggleSelectAll(this.checked)">
-                </th>
                 <th>Shop / Tenant</th>
                 <th>Month/Year</th>
                 <th>Amount Due</th>
@@ -210,19 +183,20 @@
               </tr>
             </thead>
             <tbody id="rent-payments-table">
-              <tr><td colspan="8" class="text-center py-4 text-muted">Loading...</td></tr>
+              <tr><td colspan="7" class="text-center py-4 text-muted">Loading...</td></tr>
             </tbody>
           </table>
         </div>
       </div>
-      <div class="card-footer bg-white"><div id="pay-pagination"></div></div>
+      <div class="card-footer bg-white">
+        <div id="pay-pagination"></div>
+      </div>
     </div>
+  </div>
 
-  </div><!-- /container -->
-
-  <!-- ══ ADD SHOP MODAL ══════════════════════════════════════ -->
-  <div class="modal fade" id="addShopModal" tabindex="-1" aria-modal="true" role="dialog">
-    <div class="modal-dialog">
+  <!-- ══ ADD SHOP MODAL ═══════════════════════════════════ -->
+  <div class="modal fade" id="addShopModal" tabindex="-1">
+    <div class="modal-dialog modal-md">
       <div class="modal-content">
         <form id="addShopForm" onsubmit="event.preventDefault(); addShop();">
           <div class="modal-header bg-primary text-white">
@@ -245,11 +219,12 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Monthly Rent (Rs.) *</label>
-                <input id="monthly-rent" class="form-control" type="number" step="1" min="1" required>
+                <input id="monthly-rent" class="form-control" type="number" step="1" min="0" required>
               </div>
               <div class="col-md-6">
-                <label class="form-label">Rent Due Day <small class="text-muted">(of month)</small></label>
+                <label class="form-label">Rent Due Day</label>
                 <input id="due-day" class="form-control" type="number" min="1" max="31" value="1">
+                <small class="text-muted">Day of month</small>
               </div>
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Agreement Start Date *</label>
@@ -257,7 +232,7 @@
               </div>
               <div class="col-12">
                 <label class="form-label">Notes</label>
-                <textarea id="shop-notes" class="form-control" rows="2" placeholder="Optional..."></textarea>
+                <textarea id="shop-notes" class="form-control" rows="2" placeholder="Optional notes..."></textarea>
               </div>
             </div>
           </div>
@@ -270,9 +245,9 @@
     </div>
   </div>
 
-  <!-- ══ EDIT SHOP MODAL ════════════════════════════════════ -->
-  <div class="modal fade" id="editShopModal" tabindex="-1" aria-modal="true" role="dialog">
-    <div class="modal-dialog">
+  <!-- ══ EDIT SHOP MODAL ══════════════════════════════════ -->
+  <div class="modal fade" id="editShopModal" tabindex="-1">
+    <div class="modal-dialog modal-md">
       <div class="modal-content">
         <form id="editShopForm" onsubmit="event.preventDefault(); updateShop();">
           <div class="modal-header bg-warning">
@@ -296,7 +271,7 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Monthly Rent (Rs.) *</label>
-                <input id="edit-monthly-rent" class="form-control" type="number" step="1" min="1" required>
+                <input id="edit-monthly-rent" class="form-control" type="number" step="1" min="0" required>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Due Day</label>
@@ -328,8 +303,8 @@
     </div>
   </div>
 
-  <!-- ══ RECORD PAYMENT MODAL ══════════════════════════════ -->
-  <div class="modal fade" id="recordPaymentModal" tabindex="-1" aria-modal="true" role="dialog">
+  <!-- ══ RECORD PAYMENT MODAL ═════════════════════════════ -->
+  <div class="modal fade" id="recordPaymentModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
         <form id="recordPaymentForm" onsubmit="event.preventDefault(); recordPayment();">
@@ -355,7 +330,7 @@
                 <input id="payment-amount" class="form-control" type="number" step="1" required>
               </div>
             </div>
-            <div class="mt-2 mb-3">
+            <div class="mb-3 mt-2">
               <label class="form-label">Payment Method</label>
               <select id="payment-method" class="form-select">
                 <option value="Cash">Cash</option>
@@ -364,7 +339,7 @@
                 <option value="Other">Other</option>
               </select>
             </div>
-            <div class="mb-2">
+            <div class="mb-3">
               <label class="form-label">Notes</label>
               <textarea id="payment-notes" class="form-control" rows="2" placeholder="Optional remarks..."></textarea>
             </div>
@@ -381,7 +356,7 @@
   </div>
 
   <!-- ══ HISTORY MODAL ════════════════════════════════════ -->
-  <div class="modal fade" id="historyModal" tabindex="-1" aria-modal="true" role="dialog">
+  <div class="modal fade" id="historyModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header bg-secondary text-white">
@@ -398,7 +373,7 @@
 
   <!-- Toast -->
   <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999">
-    <div id="liveToast" class="toast" role="alert" aria-live="assertive">
+    <div id="liveToast" class="toast" role="alert">
       <div class="toast-header">
         <strong class="me-auto" id="toast-title">Info</strong>
         <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
