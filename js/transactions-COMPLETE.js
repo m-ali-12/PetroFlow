@@ -150,7 +150,7 @@
     if (!container) {
       // transactions-table ke parent card mein append karo
       const tbody = $('transactions-table');
-      const tableCard = tbody?.closest('.card');
+      const tableCard = document.getElementById('tx-history-card');
       if (tableCard) {
         const div = document.createElement('div');
         div.id = 'pagination-container';
