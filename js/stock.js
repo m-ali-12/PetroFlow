@@ -152,8 +152,7 @@ async function submitStock() {
             .from('tanks')
             .upsert({
                 fuel_type: fuelType,
-                current_stock: newStock,
-                updated_at: new Date().toISOString()
+                current_stock: newStock
             }, { onConflict: 'fuel_type' });
 
         if (tankErr) throw tankErr;
