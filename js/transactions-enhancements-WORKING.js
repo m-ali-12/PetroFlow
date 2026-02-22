@@ -1,158 +1,232 @@
-// js/transactions-enhancements-WORKING.js
+// ============================================
+// transactions-enhancements-WORKING.js
+// FIXED: Prompt NAHI karta - fuelPrices window se leta hai
+// transactions-COMPLETE.js ke baad load hona chahiye
+// ============================================
+(function () {
 
-(function(){
+  // Yeh file sirf extra safety ke liye hai
+  // Asli fuel price logic transactions-COMPLETE.js mein hai
+  // Yahan sirf check karte hain ke functions exist hain
 
-// =====================================================
-// GLOBAL fuel price state
-// =====================================================
+  // Agar COMPLETE.js load nahi hua to fallback define kar do
+  if (typeof window.updateSaleFuelPrice !== 'function') {
+    window.updateSaleFuelPrice = function () {
+      const fuel = document.getElementById('sale-fuel-type')?.value;
+      if (!fuel) return;
+      const price = (window.fuelPrices && window.fuelPrices[fuel]) || 0;
+      const priceEl = document.getElementById('sale-unit-price');
+      if (priceEl) priceEl.value = price;
+      if (typeof window.calcSaleFromLiters === 'function') window.calcSaleFromLiters();
+    };
+  }
 
-window.fuelPrices = {
- Petrol: 0,
- Diesel: 0
-};
+  if (typeof window.calcSaleFromLiters !== 'function') {
+    window.calcSaleFromLiters = function () {
+      const liters = parseFloat(document.getElementById('sale-liters')?.value) || 0;
+      const rate = parseFloat(document.getElementById('sale-unit-price')?.value) || 0;
+      const amountEl = document.getElementById('sale-amount');
+      if (amountEl) amountEl.value = (liters > 0 && rate > 0) ? (liters * rate).toFixed(2) : '';
+    };
+  }
 
-// =====================================================
-// ASK USER FOR PRICE
-// =====================================================
+  if (typeof window.calcSaleFromAmount !== 'function') {
+    window.calcSaleFromAmount = function () {
+      const amount = parseFloat(document.getElementById('sale-amount-direct')?.value) || 0;
+      const rate = parseFloat(document.getElementById('sale-unit-price')?.value) || 0;
+      const amountEl = document.getElementById('sale-amount');
+      const litersEl = document.getElementById('sale-liters');
+      if (amountEl) amountEl.value = amount > 0 ? amount.toFixed(2) : '';
+      if (litersEl && rate > 0 && amount > 0) litersEl.value = (amount / rate).toFixed(2);
+    };
+  }
 
-window.askFuelPricesIfNeeded = function(){
+  if (typeof window.toggleSaleMethod !== 'function') {
+    window.toggleSaleMethod = function (method) {
+      const litersSection = document.getElementById('sale-liters-section');
+      const amountSection = document.getElementById('sale-amount-section');
+      if (method === 'liters') {
+        if (litersSection) litersSection.style.display = 'block';
+        if (amountSection) amountSection.style.display = 'none';
+      } else {
+        if (litersSection) litersSection.style.display = 'none';
+        if (amountSection) amountSection.style.display = 'block';
+      }
+    };
+  }
 
- if(window.fuelPrices.Petrol > 0 && window.fuelPrices.Diesel > 0)
- return;
+  if (typeof window.calculateVasooliAmount !== 'function') {
+    window.calculateVasooliAmount = function () {
+      const fuel = document.getElementById('vasooli-fuel-category')?.value;
+      const liters = parseFloat(document.getElementById('vasooli-liters')?.value) || 0;
+      if (!fuel || !liters) return;
+      const price = (window.fuelPrices && window.fuelPrices[fuel]) || 0;
+      const amountEl = document.getElementById('vasooli-amount');
+      if (amountEl) amountEl.value = (liters * price).toFixed(2);
+    };
+  }
 
- const petrol = prompt("Enter Petrol price per liter:");
-
- if(petrol === null) return;
-
- const diesel = prompt("Enter Diesel price per liter:");
-
- if(diesel === null) return;
-
- window.fuelPrices.Petrol = parseFloat(petrol);
- window.fuelPrices.Diesel = parseFloat(diesel);
-
- console.log("Fuel prices set:", window.fuelPrices);
-
-};
-
-// =====================================================
-// SALE fuel price update
-// =====================================================
-
-window.updateSaleFuelPrice = function(){
-
- const fuel = document.getElementById("sale-fuel-type").value;
-
- if(!fuel) return;
-
- window.askFuelPricesIfNeeded();
-
- document.getElementById("sale-unit-price").value =
- window.fuelPrices[fuel];
-
-};
-
-// =====================================================
-// SALE amount calculate
-// =====================================================
-
-window.calcSaleFromLiters = function(){
-
- const liters = parseFloat(
- document.getElementById("sale-liters").value || 0
- );
-
- const rate = parseFloat(
- document.getElementById("sale-unit-price").value || 0
- );
-
- document.getElementById("sale-amount").value =
- (liters * rate).toFixed(2);
-
-};
-
-// =====================================================
-// VASOOLI amount calculate
-// =====================================================
-
-window.calculateVasooliAmount = function(){
-
- const fuel =
- document.getElementById("vasooli-fuel-category").value;
-
- const liters =
- parseFloat(
- document.getElementById("vasooli-liters").value || 0
- );
-
- if(!fuel || !liters) return;
-
- window.askFuelPricesIfNeeded();
-
- const price = window.fuelPrices[fuel];
-
- document.getElementById("vasooli-amount").value =
- (liters * price).toFixed(2);
-
-};
-
-// =====================================================
-// EVENT HOOKS
-// =====================================================
-
-document.addEventListener("DOMContentLoaded", function(){
-
- const saleFuel =
- document.getElementById("sale-fuel-type");
-
- if(saleFuel){
-
- saleFuel.addEventListener(
- "change",
- updateSaleFuelPrice
- );
-
- }
-
- const saleLiters =
- document.getElementById("sale-liters");
-
- if(saleLiters){
-
- saleLiters.addEventListener(
- "input",
- calcSaleFromLiters
- );
-
- }
-
- const vasFuel =
- document.getElementById("vasooli-fuel-category");
-
- if(vasFuel){
-
- vasFuel.addEventListener(
- "change",
- calculateVasooliAmount
- );
-
- }
-
- const vasLiters =
- document.getElementById("vasooli-liters");
-
- if(vasLiters){
-
- vasLiters.addEventListener(
- "input",
- calculateVasooliAmount
- );
-
- }
-
-});
+  console.log('✅ transactions-enhancements-WORKING.js loaded (no prompts)');
 
 })();
+
+// agian code section changed
+
+// js/transactions-enhancements-WORKING.js
+
+// (function(){
+
+// // =====================================================
+// // GLOBAL fuel price state
+// // =====================================================
+
+// window.fuelPrices = {
+//  Petrol: 0,
+//  Diesel: 0
+// };
+
+// // =====================================================
+// // ASK USER FOR PRICE
+// // =====================================================
+
+// window.askFuelPricesIfNeeded = function(){
+
+//  if(window.fuelPrices.Petrol > 0 && window.fuelPrices.Diesel > 0)
+//  return;
+
+//  const petrol = prompt("Enter Petrol price per liter:");
+
+//  if(petrol === null) return;
+
+//  const diesel = prompt("Enter Diesel price per liter:");
+
+//  if(diesel === null) return;
+
+//  window.fuelPrices.Petrol = parseFloat(petrol);
+//  window.fuelPrices.Diesel = parseFloat(diesel);
+
+//  console.log("Fuel prices set:", window.fuelPrices);
+
+// };
+
+// // =====================================================
+// // SALE fuel price update
+// // =====================================================
+
+// window.updateSaleFuelPrice = function(){
+
+//  const fuel = document.getElementById("sale-fuel-type").value;
+
+//  if(!fuel) return;
+
+//  window.askFuelPricesIfNeeded();
+
+//  document.getElementById("sale-unit-price").value =
+//  window.fuelPrices[fuel];
+
+// };
+
+// // =====================================================
+// // SALE amount calculate
+// // =====================================================
+
+// window.calcSaleFromLiters = function(){
+
+//  const liters = parseFloat(
+//  document.getElementById("sale-liters").value || 0
+//  );
+
+//  const rate = parseFloat(
+//  document.getElementById("sale-unit-price").value || 0
+//  );
+
+//  document.getElementById("sale-amount").value =
+//  (liters * rate).toFixed(2);
+
+// };
+
+// // =====================================================
+// // VASOOLI amount calculate
+// // =====================================================
+
+// window.calculateVasooliAmount = function(){
+
+//  const fuel =
+//  document.getElementById("vasooli-fuel-category").value;
+
+//  const liters =
+//  parseFloat(
+//  document.getElementById("vasooli-liters").value || 0
+//  );
+
+//  if(!fuel || !liters) return;
+
+//  window.askFuelPricesIfNeeded();
+
+//  const price = window.fuelPrices[fuel];
+
+//  document.getElementById("vasooli-amount").value =
+//  (liters * price).toFixed(2);
+
+// };
+
+// // =====================================================
+// // EVENT HOOKS
+// // =====================================================
+
+// document.addEventListener("DOMContentLoaded", function(){
+
+//  const saleFuel =
+//  document.getElementById("sale-fuel-type");
+
+//  if(saleFuel){
+
+//  saleFuel.addEventListener(
+//  "change",
+//  updateSaleFuelPrice
+//  );
+
+//  }
+
+//  const saleLiters =
+//  document.getElementById("sale-liters");
+
+//  if(saleLiters){
+
+//  saleLiters.addEventListener(
+//  "input",
+//  calcSaleFromLiters
+//  );
+
+//  }
+
+//  const vasFuel =
+//  document.getElementById("vasooli-fuel-category");
+
+//  if(vasFuel){
+
+//  vasFuel.addEventListener(
+//  "change",
+//  calculateVasooliAmount
+//  );
+
+//  }
+
+//  const vasLiters =
+//  document.getElementById("vasooli-liters");
+
+//  if(vasLiters){
+
+//  vasLiters.addEventListener(
+//  "input",
+//  calculateVasooliAmount
+//  );
+
+//  }
+
+// });
+
+// })();
 
 
 // // Transactions Enhancements - Complete Working Version
