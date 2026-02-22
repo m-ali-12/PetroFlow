@@ -690,6 +690,23 @@ ${bodyHtml}
     } catch(e) { alert('Error: '+e.message); }
   };
 
+  window.deleteSelected = async function() {
+    if (selectedIds.size === 0) { alert("Pehle transactions select karein"); return; }
+    if (!confirm(selectedIds.size + " transactions delete karein? Yeh wapas nahi aayengi!")) return;
+    const ids = [...selectedIds];
+    try {
+      const batchSize = 50;
+      for (let i = 0; i < ids.length; i += batchSize) {
+        const batch = ids.slice(i, i + batchSize);
+        const { error } = await supabase.from("transactions").delete().in("id", batch);
+        if (error) throw error;
+      }
+      showToast("success", "Delete", ids.length + " transactions delete ho gayi!");
+      selectedIds.clear();
+      await loadTransactions();
+    } catch(e) { alert("Delete error: " + e.message); }
+  };
+
   // ── Sale Modal Helpers ─────────────────────────────────────
   window.updateSaleFuelPrice = function() {
     const fuel  = el('sale-fuel-type')?.value;
@@ -759,6 +776,7 @@ ${bodyHtml}
     // Bulk print buttons
     el('btn-print-selected-summary') ?.addEventListener('click', window.printSelectedSummary);
     el('btn-print-selected-monthly') ?.addEventListener('click', window.printSelectedMonthly);
+    el('btn-delete-selected')         ?.addEventListener('click', window.deleteSelected);
     el('btn-clear-selection')        ?.addEventListener('click', () => {
       selectedIds.clear();
       renderPage();
