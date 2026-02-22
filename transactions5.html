@@ -8,64 +8,10 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet"/>
 <link href="assets/styles.css" rel="stylesheet"/>
-<style>
-  /* Force badge colors - styles.css override se bachne ke liye !important */
-  .tx-badge-credit  { display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;background-color:#198754!important;color:#ffffff!important; }
-  .tx-badge-debit   { display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;background-color:#0d6efd!important;color:#ffffff!important; }
-  .tx-badge-expense { display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;background-color:#ffc107!important;color:#212529!important; }
-  .tx-row-selected td { background-color:#cfe2ff!important; }
-  #filter-search { border:2px solid #0d6efd; }
-  .bulk-bar { display:none; }
-  .bulk-bar.visible { display:flex; }
-
-  /* ===== PRINT CSS — main page Ctrl+P se print ho to sirf table aaye ===== */
-  @media print {
-    /* Hide everything except the transaction table */
-    #navbar-placeholder,
-    #footer-placeholder,
-    .d-flex.justify-content-between.align-items-center.mb-4,
-    .row.g-3.mb-4,
-    .card.shadow-sm.mb-3,
-    #bulk-action-bar,
-    #pagination-container,
-    .card-header,
-    thead .form-check-input,
-    td .d-flex,
-    td button,
-    td input[type="checkbox"],
-    th:first-child,
-    td:first-child,
-    th:last-child,
-    td:last-child
-    { display:none !important; }
-
-    body { font-size:11px; }
-    .container-fluid { padding:0 !important; }
-    .card { border:none !important; box-shadow:none !important; }
-    .card-body { padding:0 !important; }
-    table { font-size:10px; width:100%; border-collapse:collapse; }
-    th { background:#1a5276 !important; color:#fff !important; padding:5px 6px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    td { padding:4px 6px; border-bottom:1px solid #ddd; }
-
-    /* Print header inject karo */
-    #tx-history-card::before {
-      content: "⛽ Khalid & Sons Petroleum — Transaction Report";
-      display:block;
-      font-size:16px;
-      font-weight:700;
-      color:#1a5276;
-      border-bottom:2px solid #1a5276;
-      padding-bottom:6px;
-      margin-bottom:10px;
-    }
-  }
-</style>
 </head>
 <body data-page="transactions">
 <div id="navbar-placeholder"></div>
-<div class="container-fluid py-3 px-4">
-
-  <!-- Header -->
+<div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h3 class="mb-0"><i class="bi bi-receipt me-2"></i>Transactions</h3>
     <div class="btn-group">
@@ -83,63 +29,50 @@
 
   <!-- Summary Cards -->
   <div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-      <div class="card shadow-sm border-success h-100">
-        <div class="card-body text-center py-2">
-          <h6 class="text-muted mb-1">Credit (Sales)</h6>
-          <h4 class="text-success mb-0" id="total-credit">Rs. 0</h4>
+    <div class="col-md-3">
+      <div class="card shadow-sm border-success">
+        <div class="card-body text-center">
+          <h6 class="text-muted">Credit (Sales)</h6>
+          <h4 class="text-success" id="total-credit">Rs. 0</h4>
           <small class="text-muted" id="credit-count">0 transactions</small>
         </div>
       </div>
     </div>
-    <div class="col-6 col-md-3">
-      <div class="card shadow-sm border-primary h-100">
-        <div class="card-body text-center py-2">
-          <h6 class="text-muted mb-1">Debit (Vasooli)</h6>
-          <h4 class="text-primary mb-0" id="total-debit">Rs. 0</h4>
+    <div class="col-md-3">
+      <div class="card shadow-sm border-primary">
+        <div class="card-body text-center">
+          <h6 class="text-muted">Debit (Vasooli)</h6>
+          <h4 class="text-primary" id="total-debit">Rs. 0</h4>
           <small class="text-muted" id="debit-count">0 transactions</small>
         </div>
       </div>
     </div>
-    <div class="col-6 col-md-3">
-      <div class="card shadow-sm border-danger h-100">
-        <div class="card-body text-center py-2">
-          <h6 class="text-muted mb-1">Expenses</h6>
-          <h4 class="text-danger mb-0" id="total-expense">Rs. 0</h4>
+    <div class="col-md-3">
+      <div class="card shadow-sm border-danger">
+        <div class="card-body text-center">
+          <h6 class="text-muted">Expenses</h6>
+          <h4 class="text-danger" id="total-expense">Rs. 0</h4>
           <small class="text-muted" id="expense-count">0 transactions</small>
         </div>
       </div>
     </div>
-    <div class="col-6 col-md-3">
-      <div class="card shadow-sm border-info h-100">
-        <div class="card-body text-center py-2">
-          <h6 class="text-muted mb-1">Net Balance</h6>
-          <h4 class="text-info mb-0" id="net-balance">Rs. 0</h4>
+    <div class="col-md-3">
+      <div class="card shadow-sm border-info">
+        <div class="card-body text-center">
+          <h6 class="text-muted">Net Balance</h6>
+          <h4 class="text-info" id="net-balance">Rs. 0</h4>
           <small class="text-muted">Credit - Expense</small>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ===== FILTERS ===== -->
+  <!-- Filters -->
   <div class="card shadow-sm mb-3">
-    <div class="card-header bg-light py-2">
-      <strong><i class="bi bi-funnel me-1"></i>Search &amp; Filters</strong>
-    </div>
-    <div class="card-body py-3">
-      <div class="row g-3 mb-3">
-        <div class="col-md-5">
-          <label class="form-label small fw-bold"><i class="bi bi-search me-1 text-primary"></i>Search (Customer / Description / Type)</label>
-          <input class="form-control form-control-sm" id="filter-search" type="text" placeholder="e.g. ali, petrol sale, payment..."/>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label small fw-bold"><i class="bi bi-person me-1 text-success"></i>Filter by Customer</label>
-          <select class="form-select form-select-sm" id="filter-customer">
-            <option value="">All Customers</option>
-          </select>
-        </div>
+    <div class="card-body">
+      <div class="row g-3">
         <div class="col-md-3">
-          <label class="form-label small fw-bold">Transaction Type</label>
+          <label class="form-label small">Transaction Type</label>
           <select class="form-select form-select-sm" id="filter-type">
             <option value="">All Types</option>
             <option value="Credit">Credit (Sales)</option>
@@ -147,39 +80,30 @@
             <option value="Expense">Expense</option>
           </select>
         </div>
-      </div>
-      <div class="row g-3">
         <div class="col-md-3">
-          <label class="form-label small fw-bold">Date From</label>
+          <label class="form-label small">Date From</label>
           <input class="form-control form-control-sm" id="filter-date-from" type="date"/>
         </div>
         <div class="col-md-3">
-          <label class="form-label small fw-bold">Date To</label>
+          <label class="form-label small">Date To</label>
           <input class="form-control form-control-sm" id="filter-date-to" type="date"/>
         </div>
-        <div class="col-md-6">
-          <label class="form-label small fw-bold">Quick Actions</label>
-          <div class="d-flex gap-2 flex-wrap">
-            <button class="btn btn-primary btn-sm" id="btn-apply-filter"><i class="bi bi-filter me-1"></i>Apply</button>
-            <button class="btn btn-secondary btn-sm" id="btn-clear-filter"><i class="bi bi-x-circle me-1"></i>Clear</button>
-            <button class="btn btn-outline-dark btn-sm" id="btn-print-all-summary"><i class="bi bi-printer me-1"></i>Print Summary</button>
-            <button class="btn btn-outline-success btn-sm" id="btn-print-all-monthly"><i class="bi bi-calendar3 me-1"></i>Monthly Report</button>
+        <div class="col-md-3">
+          <label class="form-label small">&nbsp;</label>
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary btn-sm flex-fill" id="btn-apply-filter">
+              <i class="bi bi-filter me-1"></i>Apply
+            </button>
+            <button class="btn btn-secondary btn-sm flex-fill" id="btn-clear-filter">
+              <i class="bi bi-x-circle me-1"></i>Clear
+            </button>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ===== SELECTED ROWS BULK ACTIONS (shown when rows selected) ===== -->
-  <div class="alert alert-info py-2 px-3 d-flex align-items-center gap-2 flex-wrap bulk-bar mb-3" id="bulk-action-bar">
-    <span id="bulk-count-label" class="fw-bold me-1">0 selected</span>
-    <button class="btn btn-sm btn-dark" id="btn-print-selected-summary"><i class="bi bi-printer me-1"></i>Print (Summary)</button>
-    <button class="btn btn-sm btn-success" id="btn-print-selected-monthly"><i class="bi bi-calendar3 me-1"></i>Print (Monthly)</button>
-    <button class="btn btn-sm btn-danger" id="btn-delete-selected"><i class="bi bi-trash me-1"></i>Delete Selected</button>
-    <button class="btn btn-sm btn-outline-secondary ms-auto" id="btn-clear-selection"><i class="bi bi-x me-1"></i>Clear Selection</button>
-  </div>
-
-  <!-- ===== TABLE ===== -->
+  <!-- Transactions Table -->
   <div class="card shadow-sm" id="tx-history-card">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
       <h6 class="mb-0">Transaction History</h6>
@@ -187,12 +111,9 @@
     </div>
     <div class="card-body p-0">
       <div class="table-responsive">
-        <table class="table table-hover table-sm mb-0" id="tx-main-table">
-          <thead class="table-dark">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
             <tr>
-              <th style="width:38px">
-                <input type="checkbox" class="form-check-input mt-0" id="select-all-cb" title="Select All on Page">
-              </th>
               <th>Date/Time</th>
               <th>Customer</th>
               <th>Type</th>
@@ -201,20 +122,16 @@
               <th>Unit Price</th>
               <th>Amount</th>
               <th>Description</th>
-              <th style="width:90px">Actions</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="transactions-table">
-            <tr><td class="text-center text-muted py-4" colspan="10">
-              <div class="spinner-border spinner-border-sm text-primary me-2"></div>Loading...
-            </td></tr>
+            <tr><td class="text-center text-muted py-4" colspan="9">Loading...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
-    <div id="pagination-container"></div>
   </div>
-
 </div>
 
 <!-- ==================== NEW SALE MODAL ==================== -->
@@ -229,7 +146,9 @@
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label">Customer *</label>
-            <select class="form-select" id="sale-customer" required><option value="">Select Customer</option></select>
+            <select class="form-select" id="sale-customer" required>
+              <option value="">Select Customer</option>
+            </select>
           </div>
           <div class="mb-3">
             <label class="form-label">Fuel Type *</label>
@@ -239,15 +158,23 @@
               <option value="Diesel">Diesel</option>
             </select>
           </div>
+
+          <!-- Entry Method -->
           <div class="mb-3">
             <label class="form-label">Entry Method</label>
             <div class="btn-group w-100" role="group">
               <input checked class="btn-check" id="sale-by-liters" name="sale-entry-method" type="radio" value="liters"/>
-              <label class="btn btn-outline-primary" for="sale-by-liters" id="lbl-by-liters"><i class="bi bi-droplet me-1"></i>By Liters</label>
+              <label class="btn btn-outline-primary" for="sale-by-liters" id="lbl-by-liters">
+                <i class="bi bi-droplet me-1"></i>By Liters
+              </label>
               <input class="btn-check" id="sale-by-amount" name="sale-entry-method" type="radio" value="amount"/>
-              <label class="btn btn-outline-success" for="sale-by-amount" id="lbl-by-amount"><i class="bi bi-cash me-1"></i>By Amount (Rs.)</label>
+              <label class="btn btn-outline-success" for="sale-by-amount" id="lbl-by-amount">
+                <i class="bi bi-cash me-1"></i>By Amount (Rs.)
+              </label>
             </div>
           </div>
+
+          <!-- Liters Entry Section -->
           <div id="sale-liters-section">
             <div class="row g-2 mb-3">
               <div class="col-md-6">
@@ -255,28 +182,33 @@
                 <input class="form-control" id="sale-liters" step="0.01" type="number" placeholder="0.00"/>
               </div>
               <div class="col-md-6">
-                <label class="form-label">Unit Price (Rs./L)</label>
-                <input class="form-control" id="sale-unit-price" step="0.01" type="number" placeholder="Auto from settings"/>
+                <label class="form-label">Rate per Liter (from Settings)</label>
+                <div class="input-group">
+                  <span class="input-group-text">Rs.</span>
+                  <input class="form-control" id="sale-unit-price" readonly step="0.01" style="background:#f0f0f0" type="number"/>
+                </div>
               </div>
             </div>
           </div>
+
+          <!-- Amount Entry Section -->
           <div id="sale-amount-section" style="display:none">
             <div class="mb-3">
-              <label class="form-label">Amount (Rs.) *</label>
-              <div class="input-group">
-                <span class="input-group-text">Rs.</span>
-                <input class="form-control" id="sale-amount-direct" step="0.01" type="number" placeholder="Enter total amount"/>
-              </div>
+              <label class="form-label">Total Amount (Rs.) *</label>
+              <input class="form-control" id="sale-amount-direct" step="0.01" type="number" placeholder="0.00"/>
             </div>
           </div>
+
+          <!-- Total Amount Display -->
           <div class="mb-3">
-            <label class="form-label fw-bold">Total Amount</label>
+            <label class="form-label">Total Amount</label>
             <div class="input-group">
               <span class="input-group-text bg-success text-white fw-bold">Rs.</span>
               <input class="form-control fw-bold fs-5" id="sale-amount" readonly step="0.01" style="background:#e8f5e9" type="number"/>
             </div>
             <small id="sale-price-source" class="text-muted"></small>
           </div>
+
           <div class="mb-3">
             <label class="form-label">Payment Type *</label>
             <select class="form-select" id="sale-payment-type" required>
@@ -291,7 +223,9 @@
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
-          <button class="btn btn-success" type="submit"><i class="bi bi-check-circle me-1"></i>Save Sale</button>
+          <button class="btn btn-success" type="submit">
+            <i class="bi bi-check-circle me-1"></i>Save Sale
+          </button>
         </div>
       </form>
     </div>
@@ -310,7 +244,9 @@
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label">Customer *</label>
-            <select class="form-select" id="vasooli-customer" required><option value="">Select Customer</option></select>
+            <select class="form-select" id="vasooli-customer" required>
+              <option value="">Select Customer</option>
+            </select>
           </div>
           <div class="mb-3">
             <label class="form-label">Fuel Category (Optional)</label>
@@ -320,6 +256,7 @@
               <option value="Diesel">Diesel</option>
               <option value="Mixed">Mixed (Both)</option>
             </select>
+            <small class="text-muted">Kis fuel ki vasooli hai</small>
           </div>
           <div class="mb-3">
             <label class="form-label">Liters (Optional)</label>
@@ -354,6 +291,7 @@
               <span class="input-group-text">Rs.</span>
               <input class="form-control" id="vasooli-amount" required step="0.01" type="number"/>
             </div>
+            <small class="text-muted">Auto-calculated agar liters enter kiye</small>
           </div>
           <div class="mb-3">
             <label class="form-label">Notes (Optional)</label>
@@ -362,7 +300,9 @@
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
-          <button class="btn btn-primary" type="submit"><i class="bi bi-check-circle me-1"></i>Record Payment</button>
+          <button class="btn btn-primary" type="submit">
+            <i class="bi bi-check-circle me-1"></i>Record Payment
+          </button>
         </div>
       </form>
     </div>
@@ -413,7 +353,9 @@
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
-          <button class="btn btn-warning" type="submit"><i class="bi bi-check-circle me-1"></i>Save Expense</button>
+          <button class="btn btn-warning" type="submit">
+            <i class="bi bi-check-circle me-1"></i>Save Expense
+          </button>
         </div>
       </form>
     </div>
@@ -421,7 +363,7 @@
 </div>
 
 <!-- Toast -->
-<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
   <div class="toast" id="liveToast" role="alert">
     <div class="toast-header">
       <strong class="me-auto" id="toast-title">Info</strong>
@@ -438,7 +380,8 @@
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/app.js"></script>
-<!-- SIRF EK FILE - enhancements file bilkul nahi -->
+<!-- SIRF YEH DO FILES - transactions-page.js BILKUL NAHI -->
 <script src="js/transactions-COMPLETE.js"></script>
+<!-- <script src="js/transactions-enhancements-WORKING.js"></script> -->
 </body>
 </html>
