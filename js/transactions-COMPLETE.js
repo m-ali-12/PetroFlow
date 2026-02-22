@@ -148,8 +148,9 @@
   function renderPagination(total, totalPages) {
     let container = $('pagination-container');
     if (!container) {
-      // Create pagination if not exists
-      const tableCard = document.querySelector('.card.shadow-sm:last-of-type');
+      // transactions-table ke parent card mein append karo
+      const tbody = $('transactions-table');
+      const tableCard = tbody?.closest('.card');
       if (tableCard) {
         const div = document.createElement('div');
         div.id = 'pagination-container';
