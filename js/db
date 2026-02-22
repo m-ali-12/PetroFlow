@@ -857,3 +857,47 @@ FROM information_schema.columns
 WHERE table_name IN ('shops', 'rent_payments')
   AND table_schema = 'public'
 ORDER BY table_name, ordinal_position;
+
+
+-- ============================================
+-- FIX: tanks table unique constraint error
+-- Supabase SQL Editor mein yeh run karein
+-- ============================================
+
+-- Step 1: tanks table banayein (fresh)
+CREATE TABLE IF NOT EXISTS tanks (
+    id SERIAL PRIMARY KEY,
+    fuel_type VARCHAR(20) NOT NULL,
+    current_stock DECIMAL(12,2) DEFAULT 0,
+    capacity DECIMAL(12,2) DEFAULT 25000,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Step 2: UNIQUE constraint add karein (yahi missing tha!)
+ALTER TABLE tanks 
+ADD CONSTRAINT tanks_fuel_type_unique UNIQUE (fuel_type);
+
+-- Step 3: Petrol aur Diesel rows insert karein
+INSERT INTO tanks (fuel_type, current_stock, capacity)
+VALUES 
+    ('Petrol', 0, 25000),
+    ('Diesel', 0, 25000)
+ON CONFLICT (fuel_type) DO NOTHING;
+
+-- Step 4: stock_entries table
+CREATE TABLE IF NOT EXISTS stock_entries (
+    id SERIAL PRIMARY KEY,
+    invoice_number VARCHAR(50) UNIQUE,
+    fuel_type VARCHAR(20) NOT NULL,
+    liters DECIMAL(12,2) NOT NULL,
+    price_per_liter DECIMAL(10,2) NOT NULL,
+    total_amount DECIMAL(14,2) NOT NULL,
+    supplier_name VARCHAR(100),
+    truck_number VARCHAR(50),
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Step 5: Verify
+SELECT * FROM tanks;
+SELECT COUNT(*) as total_entries FROM stock_entries;
