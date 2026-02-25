@@ -1652,10 +1652,6 @@
   'use strict';
   if (document.body.getAttribute('data-page') !== 'transactions') return;
 
-  // Guard against double-loading
-  if (window.TRANSACTIONS_V4_LOADED) return;
-  window.TRANSACTIONS_V4_LOADED = true;
-
   const supabase = window.supabaseClient;
   let allTransactions    = [];
   let filteredTransactions = [];
@@ -1683,25 +1679,6 @@
     const m=el(id); if(m)(bootstrap.Modal.getInstance(m)||new bootstrap.Modal(m)).hide();
     const f=document.querySelector('#'+id+' form'); if(f)f.reset();
     if(id==='newSaleModal'){if(el('sale-unit-price'))el('sale-unit-price').value='';if(el('sale-amount'))el('sale-amount').value='';}
-  }
-
-  // ── Get current user ID — with retry for page load race ────
-  async function getCurrentUserId() {
-    // Wait up to 3 seconds for CURRENT_USER to be set by auth.js
-    for (let i = 0; i < 30; i++) {
-      if (window.CURRENT_USER?.id) return window.CURRENT_USER.id;
-      await new Promise(r => setTimeout(r, 100));
-    }
-    // Fallback: ask Supabase session directly
-    try {
-      const { data } = await supabase.auth.getUser();
-      if (data?.user?.id) {
-        window.CURRENT_USER = data.user;
-        return data.user.id;
-      }
-    } catch(e) { console.error('getCurrentUserId:', e); }
-    console.warn('getCurrentUserId: no user found');
-    return null;
   }
 
   // ── Fuel Prices ────────────────────────────────────────────
@@ -1736,30 +1713,22 @@
     const tbody=el('transactions-table');
     if(tbody)tbody.innerHTML='<tr><td colspan="10" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Loading...</td></tr>';
     try {
-      const userId = await getCurrentUserId();
-      console.log('loadTransactions userId:', userId);
-      let query = supabase.from('transactions').select('*, customers(name, sr_no)').order('created_at',{ascending:false});
-      if (userId) query = query.eq('user_id', userId);
-      const {data,error} = await query;
+      const {data,error}=await supabase.from('transactions').select('*, customers!inner(name, sr_no)').order('created_at',{ascending:false});
       if(error)throw error;
       const seen=new Set();
       allTransactions=(data||[]).filter(t=>{if(seen.has(t.id))return false;seen.add(t.id);return true;});
-      console.log('Loaded transactions:', allTransactions.length);
       selectedIds.clear();
       applyFilters();
     } catch(e){
       console.error('loadTransactions:',e);
       const tb=el('transactions-table');
-      if(tb)tb.innerHTML='<tr><td colspan="10" class="text-center text-danger py-4">Data load error: '+e.message+'</td></tr>';
+      if(tb)tb.innerHTML='<tr><td colspan="10" class="text-center text-danger py-4">Data load error. Page refresh karein.</td></tr>';
     }
   }
 
   async function loadCustomers() {
     try {
-      const userId = await getCurrentUserId();
-      let query = supabase.from('customers').select('*').order('sr_no');
-      if (userId) query = query.eq('user_id', userId);
-      const {data,error} = await query;
+      const {data,error}=await supabase.from('customers').select('*').order('sr_no');
       if(error)throw error;
       allCustomers=data||[];
       ['sale-customer'].forEach(id=>{
@@ -1846,11 +1815,12 @@
     if(e)e.textContent=total>0?`${from}-${to} of ${total} transactions`:'0 transactions';
   }
 
+  // ── Render Rows — INLINE STYLES to beat any CSS override ──
   function renderRows(txns) {
     const tbody=el('transactions-table');
     if(!tbody)return;
     if(!txns.length){
-      tbody.innerHTML='<tr><td colspan="10" class="text-center py-4 text-muted"><i class="bi bi-inbox fs-3 d-block mb-2"></i>No transactions found</td></tr>';
+      tbody.innerHTML='<tr><td colspan="10" class="text-center py-4 text-muted"><i class="bi bi-inbox fs-3 d-block mb-2"></i>Koi transaction nahi mili</td></tr>';
       return;
     }
 
@@ -1859,6 +1829,7 @@
       const dateStr=d.toLocaleDateString('en-PK');
       const timeStr=d.toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'});
 
+      // BADGE — pure inline style, no external CSS dependency
       let badgeStyle, badgeText;
       if(t.transaction_type==='Credit'){
         badgeStyle='display:inline-block;padding:3px 10px;border-radius:4px;font-size:12px;font-weight:700;background:#198754;color:#fff;';
@@ -1911,6 +1882,7 @@
       </tr>`;
     }).join('');
 
+    // Checkbox events
     document.querySelectorAll('.tx-row-cb').forEach(cb=>{
       cb.addEventListener('change',function(){
         const id=parseInt(this.dataset.id);
@@ -1931,6 +1903,7 @@
     cb.indeterminate=!cb.checked&&pageIds.some(id=>selectedIds.has(id));
   }
 
+  // ── Bulk Bar ───────────────────────────────────────────────
   function updateBulkBar(){
     const bar=el('bulk-action-bar'); if(!bar)return;
     if(selectedIds.size>0){
@@ -1942,6 +1915,7 @@
     }
   }
 
+  // ── Pagination ─────────────────────────────────────────────
   function renderPagination(total,totalPages){
     const container=el('pagination-container'); if(!container)return;
     if(total===0){container.innerHTML='';return;}
@@ -1977,17 +1951,16 @@
   window.txGoToPage=function(p){currentPage=Math.max(1,Math.min(p,Math.ceil(filteredTransactions.length/pageSize)));renderPage();};
   window.txChangePageSize=function(s){pageSize=parseInt(s);currentPage=1;renderPage();};
 
-  // ── Print / Invoice ────────────────────────────────────────
+  // ── Print ──────────────────────────────────────────────────
   window.printSingle=function(id){const t=allTransactions.find(x=>x.id===id);if(!t){alert('Transaction nahi mili');return;}openPrint([t],'summary');};
   window.printSelectedSummary=function(){const txns=allTransactions.filter(t=>selectedIds.has(t.id));if(!txns.length){alert('Koi select nahi ki');return;}openPrint(txns,'summary');};
   window.printSelectedMonthly=function(){const txns=allTransactions.filter(t=>selectedIds.has(t.id));if(!txns.length){alert('Koi select nahi ki');return;}openPrint(txns,'monthly');};
   window.printAllSummary=function(){if(!filteredTransactions.length){alert('Koi data nahi');return;}openPrint(filteredTransactions,'summary');};
   window.printAllMonthly=function(){if(!filteredTransactions.length){alert('Koi data nahi');return;}openPrint(filteredTransactions,'monthly');};
 
-  function genInvoiceNo(){const d=new Date();return 'INV-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+String(Math.floor(Math.random()*9000)+1000);}
-
   function openPrint(txns,mode){
-    const company='Khalid & Sons Petroleum Services';
+    const company='Khalid & Sons Petroleum';
+    const printDate=new Date().toLocaleDateString('en-PK',{day:'2-digit',month:'long',year:'numeric'});
     let totCr=0,totDb=0,totEx=0;
     txns.forEach(t=>{const a=parseFloat(t.amount)||0;if(t.transaction_type==='Credit')totCr+=a;else if(t.transaction_type==='Debit')totDb+=a;else totEx+=a;});
 
@@ -2046,7 +2019,7 @@
       });
       Object.keys(map).sort((a,b)=>b.localeCompare(a)).forEach(key=>{
         const m=map[key];
-        bodyHtml+=`<div style="background:#1a5276;color:#fff;padding:7px 10px;font-size:13px;font-weight:700;margin:12px 0 0;border-radius:4px 4px 0 0;-webkit-print-color-adjust:exact;print-color-adjust:exact;">${m.lbl} · ${m.list.length} transactions</div>
+        bodyHtml+=`<div style="background:#1a5276;color:#fff;padding:7px 10px;font-size:14px;font-weight:700;margin:14px 0 0;border-radius:4px 4px 0 0;-webkit-print-color-adjust:exact;print-color-adjust:exact;">${m.lbl} &nbsp;·&nbsp; ${m.list.length} transactions</div>
         <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:8px;">
           <thead>${THEAD}</thead>
           <tbody>${buildRows(m.list)}</tbody>
@@ -2065,95 +2038,49 @@
       </table>`;
     }
 
-    const invoiceNo=genInvoiceNo();
-    const printDate=new Date().toLocaleDateString('en-PK',{day:'2-digit',month:'long',year:'numeric'});
-    const printTime=new Date().toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'});
-    const dates=txns.map(t=>new Date(t.created_at)).sort((a,b)=>a-b);
-    const fromDate=dates[0]?.toLocaleDateString('en-PK',{day:'2-digit',month:'short',year:'numeric'})||'-';
-    const toDate=dates[dates.length-1]?.toLocaleDateString('en-PK',{day:'2-digit',month:'short',year:'numeric'})||'-';
-
     const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>${company}</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;font-size:11px;color:#222;background:#fff}
-.page{padding:14px 18px}
-.inv-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px double #1a5276;padding-bottom:12px;margin-bottom:12px}
-.company-name{font-size:20px;font-weight:900;color:#1a5276}
-.inv-title{font-size:16px;font-weight:700;color:#1a5276;letter-spacing:1px}
-.info-bar{display:flex;gap:10px;margin-bottom:12px}
-.info-cell{flex:1;border:1px solid #ddd;border-radius:4px;padding:6px 10px}
-.sum-row{display:flex;gap:8px;margin-bottom:12px}
-.sum-card{flex:1;border-radius:6px;padding:8px 10px;text-align:center}
+body{font-family:Arial,sans-serif;font-size:11px;color:#222}
+.page{padding:16px}
+.hdr{display:flex;justify-content:space-between;border-bottom:2px solid #1a5276;padding-bottom:10px;margin-bottom:12px}
+.hdr h1{font-size:18px;color:#1a5276}
+.sumbox{display:flex;gap:8px;margin-bottom:14px}
+.sb{flex:1;border-radius:6px;padding:8px 10px}
 table td{padding:4px 6px;border-bottom:1px solid #eee;vertical-align:top}
-thead tr{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-tr:nth-child(even) td{background:#f4f8fc}
-.sig-row{display:flex;justify-content:space-around;margin-top:30px;padding-top:10px;border-top:1px dashed #ccc}
-.sig{text-align:center;width:160px}
-.sig-line{border-top:1px solid #444;padding-top:5px;font-size:10px;color:#555;margin-top:35px}
-.inv-footer{display:flex;justify-content:space-between;margin-top:14px;padding-top:8px;border-top:1px solid #ccc;font-size:9px;color:#999}
-@media print{.page{padding:6px}@page{margin:8mm;size:A4}}
+tr:nth-child(even) td{background:#f8f9fa}
+.sig-row{display:flex;justify-content:space-around;margin-top:30px}
+.sig{text-align:center;width:180px}
+.sig-line{border-top:1px solid #555;padding-top:4px;font-size:10px;color:#555;margin-top:30px}
+.footer{display:flex;justify-content:space-between;border-top:1px solid #ccc;margin-top:14px;padding-top:8px;font-size:10px;color:#888}
+@media print{.page{padding:8px}@page{margin:10mm}}
 </style></head><body><div class="page">
-
-<div class="inv-header">
-  <div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <span style="font-size:28px">⛽</span>
-      <div>
-        <div class="company-name">${company}</div>
-        <div style="font-size:11px;color:#555">Petroleum Management System</div>
-      </div>
-    </div>
-    <div style="font-size:10px;color:#777;margin-top:6px;line-height:1.6">
-      Proprietor: Muhammad Khalid &nbsp;|&nbsp; 0321-6901173 &nbsp;|&nbsp; 0345-1666696<br>
-      Kacha Paka Noor Shah, Faridia Park Road, Bilal Colony, Sahiwal
-    </div>
-  </div>
-  <div style="text-align:right">
-    <div class="inv-title">${mode==='monthly'?'MONTHLY REPORT':'TRANSACTION INVOICE'}</div>
-    <div style="font-size:10px;color:#555;margin-top:6px;line-height:1.8">
-      <strong>Invoice #:</strong> ${invoiceNo}<br>
-      <strong>Print Date:</strong> ${printDate}<br>
-      <strong>Time:</strong> ${printTime}
-    </div>
-  </div>
+<div class="hdr">
+  <div><h1>⛽ ${company}</h1><p style="color:#555;font-size:11px">${mode==='monthly'?'Monthly Transaction Report':'Transaction Receipt'}</p></div>
+  <div style="text-align:right;font-size:11px;color:#555"><strong>Date: ${printDate}</strong><br>Entries: ${txns.length}<br>${new Date().toLocaleTimeString('en-PK')}</div>
 </div>
-
-<div class="info-bar">
-  <div class="info-cell"><div style="font-size:9px;color:#888;text-transform:uppercase">Period From</div><div style="font-weight:700;font-size:12px;color:#1a5276">${fromDate}</div></div>
-  <div class="info-cell"><div style="font-size:9px;color:#888;text-transform:uppercase">Period To</div><div style="font-weight:700;font-size:12px;color:#1a5276">${toDate}</div></div>
-  <div class="info-cell"><div style="font-size:9px;color:#888;text-transform:uppercase">Total Entries</div><div style="font-weight:700;font-size:12px;color:#1a5276">${txns.length}</div></div>
-  <div class="info-cell"><div style="font-size:9px;color:#888;text-transform:uppercase">Report Type</div><div style="font-weight:700;font-size:12px;color:#1a5276">${mode==='monthly'?'Monthly':'Summary'}</div></div>
+<div class="sumbox">
+  <div class="sb" style="background:#d4edda;border:1px solid #28a745"><div style="font-size:10px;color:#555">Credit (Sales)</div><div style="font-size:14px;font-weight:700">Rs.${fmt(totCr)}</div></div>
+  <div class="sb" style="background:#cce5ff;border:1px solid #0069d9"><div style="font-size:10px;color:#555">Debit (Received)</div><div style="font-size:14px;font-weight:700">Rs.${fmt(totDb)}</div></div>
+  <div class="sb" style="background:#fff3cd;border:1px solid #ffc107"><div style="font-size:10px;color:#555">Expense</div><div style="font-size:14px;font-weight:700">Rs.${fmt(totEx)}</div></div>
+  <div class="sb" style="background:#e2e3e5;border:1px solid #6c757d"><div style="font-size:10px;color:#555">Net Balance</div><div style="font-size:14px;font-weight:700">Rs.${fmt(totCr-totDb-totEx)}</div></div>
 </div>
-
-<div class="sum-row">
-  <div class="sum-card" style="background:#d4edda;border:1px solid #28a745"><div style="font-size:9px;color:#555;text-transform:uppercase">Credit (Sales)</div><div style="font-size:14px;font-weight:800;color:#155724">Rs.${fmt(totCr)}</div></div>
-  <div class="sum-card" style="background:#cce5ff;border:1px solid #0069d9"><div style="font-size:9px;color:#555;text-transform:uppercase">Debit (Vasooli)</div><div style="font-size:14px;font-weight:800;color:#004085">Rs.${fmt(totDb)}</div></div>
-  <div class="sum-card" style="background:#fff3cd;border:1px solid #ffc107"><div style="font-size:9px;color:#555;text-transform:uppercase">Expenses</div><div style="font-size:14px;font-weight:800;color:#856404">Rs.${fmt(totEx)}</div></div>
-  <div class="sum-card" style="background:#d1ecf1;border:1px solid #17a2b8"><div style="font-size:9px;color:#555;text-transform:uppercase">Net Balance</div><div style="font-size:14px;font-weight:800;color:#0c5460">Rs.${fmt(totCr-totDb-totEx)}</div></div>
-</div>
-
 ${bodyHtml}
-
 <div class="sig-row">
   <div class="sig"><div class="sig-line">Authorized Signature</div></div>
   <div class="sig"><div class="sig-line">Customer Signature</div></div>
   <div class="sig"><div class="sig-line">Accountant</div></div>
 </div>
-
-<div class="inv-footer">
-  <span>${company} — Official Invoice — ${invoiceNo}</span>
-  <span>Generated: ${new Date().toLocaleString('en-PK')}</span>
-</div>
-
+<div class="footer"><span>${company} — Official Receipt</span><span>Generated: ${new Date().toLocaleString('en-PK')}</span></div>
 </div><script>window.onload=function(){window.print();}<\/script></body></html>`;
 
-    const w=window.open('','_blank','width=1100,height=800');
+    const w=window.open('','_blank','width=1080,height=750');
     if(w){w.document.write(html);w.document.close();}
     else alert('Popup blocked! Browser mein popup allow karein.');
   }
 
-  // ── Form Handlers (with user_id) ───────────────────────────
+  // ── Form Handlers ──────────────────────────────────────────
   async function handleNewSale(){
     const customerId=el('sale-customer')?.value;
     const fuelType=el('sale-fuel-type')?.value;
@@ -2166,9 +2093,7 @@ ${bodyHtml}
     if(!fuelType){alert('Fuel type select karein');return;}
     if(!amount){alert('Amount enter karein');return;}
     try{
-      const userId=await getCurrentUserId();
       const{error}=await supabase.from('transactions').insert([{
-        user_id:userId,
         customer_id:parseInt(customerId),
         transaction_type:paymentType==='cash'?'Debit':'Credit',
         amount,liters:liters||null,unit_price:unitPrice||null,
@@ -2194,8 +2119,7 @@ ${bodyHtml}
     if(fuelCat)fullDesc+=` (${fuelCat})`;
     if(desc)fullDesc+=` - ${desc}`;
     try{
-      const userId=await getCurrentUserId();
-      const{error}=await supabase.from('transactions').insert([{user_id:userId,customer_id:parseInt(customerId),transaction_type:'Debit',amount,description:fullDesc}]);
+      const{error}=await supabase.from('transactions').insert([{customer_id:parseInt(customerId),transaction_type:'Debit',amount,description:fullDesc}]);
       if(error)throw error;
       showToast('success','Kamyab!','Payment record ho gayi!');
       closeModal('vasooliModal');
@@ -2213,17 +2137,14 @@ ${bodyHtml}
     if(!expType){alert('Type select karein');return;}
     if(!account){alert('Account select karein');return;}
     try{
-      const userId=await getCurrentUserId();
       let custId=null;
-      let ownerQ=supabase.from('customers').select('id').eq('category','Owner');
-      if(userId)ownerQ=ownerQ.eq('user_id',userId);
-      const{data:owner}=await ownerQ.maybeSingle();
+      const{data:owner}=await supabase.from('customers').select('id').eq('category','Owner').maybeSingle();
       if(owner){custId=owner.id;}
       else{
-        const{data:no,error:ce}=await supabase.from('customers').insert([{sr_no:0,name:'Owner',category:'Owner',balance:0,user_id:userId}]).select().single();
+        const{data:no,error:ce}=await supabase.from('customers').insert([{sr_no:0,name:'Owner',category:'Owner',balance:0}]).select().single();
         if(ce)throw ce; custId=no.id;
       }
-      const{error}=await supabase.from('transactions').insert([{user_id:userId,customer_id:custId,transaction_type:'Expense',amount,description:`${expType}: ${description} (From: ${account})`}]);
+      const{error}=await supabase.from('transactions').insert([{customer_id:custId,transaction_type:'Expense',amount,description:`${expType}: ${description} (From: ${account})`}]);
       if(error)throw error;
       showToast('success','Kamyab!','Expense record ho gaya!');
       closeModal('expenseModal');
@@ -2243,7 +2164,7 @@ ${bodyHtml}
 
   window.deleteSelected=async function(){
     if(selectedIds.size===0){alert('Pehle transactions select karein');return;}
-    if(!confirm(selectedIds.size+' transactions delete karein?'))return;
+    if(!confirm(selectedIds.size+' transactions delete karein? Yeh wapas nahi aayengi!'))return;
     const ids=[...selectedIds];
     try{
       for(let i=0;i<ids.length;i+=50){
@@ -2263,7 +2184,7 @@ ${bodyHtml}
     const price=window.fuelPrices[fuel]||0;
     if(el('sale-unit-price'))el('sale-unit-price').value=price;
     const s=el('sale-price-source');
-    if(s){if(price>0){s.textContent=`Settings: ${fuel} = Rs.${price}`;s.className='text-success small';}else{s.textContent='Settings page par price set karein';s.className='text-danger small fw-bold';}}
+    if(s){if(price>0){s.textContent=`Settings: ${fuel} = Rs.${price}`;s.className='text-success small';}else{s.textContent='⚠️ Settings page par price set karein';s.className='text-danger small fw-bold';}}
     window.calcSaleFromLiters();
   };
   window.calcSaleFromLiters=function(){const l=parseFloat(el('sale-liters')?.value)||0;const r=parseFloat(el('sale-unit-price')?.value)||0;if(el('sale-amount'))el('sale-amount').value=(l>0&&r>0)?(l*r).toFixed(2):'';};
@@ -2273,13 +2194,6 @@ ${bodyHtml}
 
   // ── Events ─────────────────────────────────────────────────
   function setupEvents(){
-    // Clone forms to remove all listeners added by app.js (prevents duplicate insert)
-    ['newSaleForm','vasooliForm','expenseForm'].forEach(id=>{
-      const old=el(id); if(!old)return;
-      const clone=old.cloneNode(true);
-      old.parentNode.replaceChild(clone,old);
-    });
-
     el('newSaleForm') ?.addEventListener('submit',e=>{e.preventDefault();handleNewSale();});
     el('vasooliForm') ?.addEventListener('submit',e=>{e.preventDefault();handleVasooli();});
     el('expenseForm') ?.addEventListener('submit',e=>{e.preventDefault();handleExpense();});
@@ -2321,4 +2235,4 @@ ${bodyHtml}
   window.loadInitialTransactions=loadTransactions;
 
 })();
-// END transactions-COMPLETE.js
+// 1646 changes

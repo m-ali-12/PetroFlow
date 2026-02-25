@@ -1,7 +1,7 @@
 // =============================================
 // FILE: js/config.js
 // SINGLE SOURCE OF TRUTH FOR SUPABASE
-// + USER AUTH HELPER (uses window.CURRENT_USER)
+// FINAL FIX FOR INVALID API KEY ERROR
 // =============================================
 
 (function () {
@@ -14,25 +14,31 @@
 
     window.PETRO_CONFIG_LOADED = true;
 
+    // ✅ MUST MATCH PROJECT REF INSIDE YOUR API KEY
     const SUPABASE_URL = 'https://ycoxgzplqkqqhzqrclvt.supabase.co';
+
+    // ✅ COPY EXACT FROM SUPABASE DASHBOARD → SETTINGS → API → anon public
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljb3hnenBscWtxcWh6cXJjbHZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2NTE2MjEsImV4cCI6MjA4NjIyNzYyMX0.wYQN_c-LVl949E1Hp0AAeyHtvDEpo92Llpo4b21cHN8";
 
     function initSupabase() {
+
         if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+
             console.error('Supabase library not loaded!');
             setTimeout(initSupabase, 100);
             return;
         }
 
         if (!window.supabaseClient) {
+
             window.supabaseClient = window.supabase.createClient(
                 SUPABASE_URL,
                 SUPABASE_ANON_KEY,
                 {
                     auth: {
-                        persistSession: true,       // ✅ Session yaad rakhe
-                        autoRefreshToken: true,     // ✅ Token refresh kare
-                        detectSessionInUrl: true    // ✅ OAuth redirect handle kare
+                        persistSession: false,
+                        autoRefreshToken: false,
+                        detectSessionInUrl: false
                     },
                     global: {
                         headers: {
@@ -48,12 +54,6 @@
 
     initSupabase();
 
-    // ✅ KEY HELPER: app.js getAuthUser() ye use karta hai
-    // auth.js ne window.CURRENT_USER set kar di hoti hai login ke baad
-    window.getCurrentUserId = function() {
-        return window.CURRENT_USER?.id || null;
-    };
-
     window.TABLES = {
         tanks: 'tanks',
         customers: 'customers',
@@ -67,6 +67,7 @@
     };
 
     window.formatNumber = function (num) {
+
         return parseFloat(num || 0).toLocaleString('en-PK', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
@@ -74,15 +75,20 @@
     };
 
     window.formatCurrency = function (amount) {
+
         return 'Rs. ' + window.formatNumber(amount);
     };
 
     window.getPrice = function (fuelType) {
+
         const prices = {
             petrol: parseFloat(localStorage.getItem('petrol_price')) || 276.50,
             diesel: parseFloat(localStorage.getItem('diesel_price')) || 289.75
         };
-        return fuelType === 'Petrol' ? prices.petrol : prices.diesel;
+
+        return fuelType === 'Petrol'
+            ? prices.petrol
+            : prices.diesel;
     };
 
     console.log('✅ Config loaded successfully');
