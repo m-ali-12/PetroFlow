@@ -1652,6 +1652,10 @@
   'use strict';
   if (document.body.getAttribute('data-page') !== 'transactions') return;
 
+  // Guard against double-loading
+  if (window.TRANSACTIONS_V4_LOADED) return;
+  window.TRANSACTIONS_V4_LOADED = true;
+
   const supabase = window.supabaseClient;
   let allTransactions    = [];
   let filteredTransactions = [];
@@ -1679,6 +1683,25 @@
     const m=el(id); if(m)(bootstrap.Modal.getInstance(m)||new bootstrap.Modal(m)).hide();
     const f=document.querySelector('#'+id+' form'); if(f)f.reset();
     if(id==='newSaleModal'){if(el('sale-unit-price'))el('sale-unit-price').value='';if(el('sale-amount'))el('sale-amount').value='';}
+  }
+
+  // ── Get current user ID — with retry for page load race ────
+  async function getCurrentUserId() {
+    // Wait up to 3 seconds for CURRENT_USER to be set by auth.js
+    for (let i = 0; i < 30; i++) {
+      if (window.CURRENT_USER?.id) return window.CURRENT_USER.id;
+      await new Promise(r => setTimeout(r, 100));
+    }
+    // Fallback: ask Supabase session directly
+    try {
+      const { data } = await supabase.auth.getUser();
+      if (data?.user?.id) {
+        window.CURRENT_USER = data.user;
+        return data.user.id;
+      }
+    } catch(e) { console.error('getCurrentUserId:', e); }
+    console.warn('getCurrentUserId: no user found');
+    return null;
   }
 
   // ── Fuel Prices ────────────────────────────────────────────
@@ -1709,38 +1732,25 @@
   }
 
   // ── Load Data ──────────────────────────────────────────────
-  // ── Get current logged-in user ID (with retry for page load race) ────
-  async function getCurrentUserId() {
-    // Try up to 10 times (1 second total) waiting for CURRENT_USER
-    for (let i = 0; i < 10; i++) {
-      if (window.CURRENT_USER?.id) return window.CURRENT_USER.id;
-      await new Promise(r => setTimeout(r, 100));
-    }
-    // Last resort: ask Supabase directly
-    try {
-      const { data } = await supabase.auth.getUser();
-      if (data?.user?.id) { window.CURRENT_USER = data.user; return data.user.id; }
-    } catch(e) { console.error('getCurrentUserId:', e); }
-    return null;
-  }
-
   async function loadTransactions() {
     const tbody=el('transactions-table');
     if(tbody)tbody.innerHTML='<tr><td colspan="10" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Loading...</td></tr>';
     try {
       const userId = await getCurrentUserId();
+      console.log('loadTransactions userId:', userId);
       let query = supabase.from('transactions').select('*, customers!inner(name, sr_no)').order('created_at',{ascending:false});
       if (userId) query = query.eq('user_id', userId);
       const {data,error} = await query;
       if(error)throw error;
       const seen=new Set();
       allTransactions=(data||[]).filter(t=>{if(seen.has(t.id))return false;seen.add(t.id);return true;});
+      console.log('Loaded transactions:', allTransactions.length);
       selectedIds.clear();
       applyFilters();
     } catch(e){
       console.error('loadTransactions:',e);
       const tb=el('transactions-table');
-      if(tb)tb.innerHTML='<tr><td colspan="10" class="text-center text-danger py-4">Data load error. Page refresh karein.</td></tr>';
+      if(tb)tb.innerHTML='<tr><td colspan="10" class="text-center text-danger py-4">Data load error: '+e.message+'</td></tr>';
     }
   }
 
@@ -1836,12 +1846,11 @@
     if(e)e.textContent=total>0?`${from}-${to} of ${total} transactions`:'0 transactions';
   }
 
-  // ── Render Rows — INLINE STYLES to beat any CSS override ──
   function renderRows(txns) {
     const tbody=el('transactions-table');
     if(!tbody)return;
     if(!txns.length){
-      tbody.innerHTML='<tr><td colspan="10" class="text-center py-4 text-muted"><i class="bi bi-inbox fs-3 d-block mb-2"></i>Koi transaction nahi mili</td></tr>';
+      tbody.innerHTML='<tr><td colspan="10" class="text-center py-4 text-muted"><i class="bi bi-inbox fs-3 d-block mb-2"></i>No transactions found</td></tr>';
       return;
     }
 
@@ -1850,7 +1859,6 @@
       const dateStr=d.toLocaleDateString('en-PK');
       const timeStr=d.toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'});
 
-      // BADGE — pure inline style, no external CSS dependency
       let badgeStyle, badgeText;
       if(t.transaction_type==='Credit'){
         badgeStyle='display:inline-block;padding:3px 10px;border-radius:4px;font-size:12px;font-weight:700;background:#198754;color:#fff;';
@@ -1903,7 +1911,6 @@
       </tr>`;
     }).join('');
 
-    // Checkbox events
     document.querySelectorAll('.tx-row-cb').forEach(cb=>{
       cb.addEventListener('change',function(){
         const id=parseInt(this.dataset.id);
@@ -1924,7 +1931,6 @@
     cb.indeterminate=!cb.checked&&pageIds.some(id=>selectedIds.has(id));
   }
 
-  // ── Bulk Bar ───────────────────────────────────────────────
   function updateBulkBar(){
     const bar=el('bulk-action-bar'); if(!bar)return;
     if(selectedIds.size>0){
@@ -1936,7 +1942,6 @@
     }
   }
 
-  // ── Pagination ─────────────────────────────────────────────
   function renderPagination(total,totalPages){
     const container=el('pagination-container'); if(!container)return;
     if(total===0){container.innerHTML='';return;}
@@ -1972,18 +1977,14 @@
   window.txGoToPage=function(p){currentPage=Math.max(1,Math.min(p,Math.ceil(filteredTransactions.length/pageSize)));renderPage();};
   window.txChangePageSize=function(s){pageSize=parseInt(s);currentPage=1;renderPage();};
 
-  // ── Print ──────────────────────────────────────────────────
+  // ── Print / Invoice ────────────────────────────────────────
   window.printSingle=function(id){const t=allTransactions.find(x=>x.id===id);if(!t){alert('Transaction nahi mili');return;}openPrint([t],'summary');};
   window.printSelectedSummary=function(){const txns=allTransactions.filter(t=>selectedIds.has(t.id));if(!txns.length){alert('Koi select nahi ki');return;}openPrint(txns,'summary');};
   window.printSelectedMonthly=function(){const txns=allTransactions.filter(t=>selectedIds.has(t.id));if(!txns.length){alert('Koi select nahi ki');return;}openPrint(txns,'monthly');};
   window.printAllSummary=function(){if(!filteredTransactions.length){alert('Koi data nahi');return;}openPrint(filteredTransactions,'summary');};
   window.printAllMonthly=function(){if(!filteredTransactions.length){alert('Koi data nahi');return;}openPrint(filteredTransactions,'monthly');};
 
-  // ── Invoice Number Generator ───────────────────────────────
-  function genInvoiceNo() {
-    const d = new Date();
-    return 'INV-' + d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') + '-' + String(Math.floor(Math.random()*9000)+1000);
-  }
+  function genInvoiceNo(){const d=new Date();return 'INV-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+String(Math.floor(Math.random()*9000)+1000);}
 
   function openPrint(txns,mode){
     const company='Khalid & Sons Petroleum Services';
@@ -2045,15 +2046,15 @@
       });
       Object.keys(map).sort((a,b)=>b.localeCompare(a)).forEach(key=>{
         const m=map[key];
-        bodyHtml+=`<div class="month-header">${m.lbl} &nbsp;&middot;&nbsp; ${m.list.length} transactions</div>
-        <table>
+        bodyHtml+=`<div style="background:#1a5276;color:#fff;padding:7px 10px;font-size:13px;font-weight:700;margin:12px 0 0;border-radius:4px 4px 0 0;-webkit-print-color-adjust:exact;print-color-adjust:exact;">${m.lbl} · ${m.list.length} transactions</div>
+        <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:8px;">
           <thead>${THEAD}</thead>
           <tbody>${buildRows(m.list)}</tbody>
-          <tfoot><tr>
-            <td colspan="6" style="text-align:right">Month Total:</td>
-            <td>Rs.${fmt(m.cr+m.db+m.ex)}</td>
-            <td style="color:#198754">Rs.${fmt(m.cr)}</td>
-            <td style="color:#0d6efd">Rs.${fmt(m.db+m.ex)}</td>
+          <tfoot><tr style="background:#eaf0fb;font-weight:700;border-top:2px solid #1a5276">
+            <td colspan="6" style="padding:4px 6px;text-align:right">Month Total:</td>
+            <td style="padding:4px 6px;text-align:right">Rs.${fmt(m.cr+m.db+m.ex)}</td>
+            <td style="padding:4px 6px;text-align:right;color:#198754">Rs.${fmt(m.cr)}</td>
+            <td style="padding:4px 6px;text-align:right;color:#0d6efd">Rs.${fmt(m.db+m.ex)}</td>
             <td></td>
           </tr></tfoot>
         </table>`;
@@ -2064,146 +2065,95 @@
       </table>`;
     }
 
-    const invoiceNo = genInvoiceNo();
-    const printDate = new Date().toLocaleDateString('en-PK',{day:'2-digit',month:'long',year:'numeric'});
-    const printTime = new Date().toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'});
-
-    // Date range for report
-    const dates = txns.map(t=>new Date(t.created_at)).sort((a,b)=>a-b);
-    const fromDate = dates[0]?.toLocaleDateString('en-PK',{day:'2-digit',month:'short',year:'numeric'}) || '-';
-    const toDate = dates[dates.length-1]?.toLocaleDateString('en-PK',{day:'2-digit',month:'short',year:'numeric'}) || '-';
+    const invoiceNo=genInvoiceNo();
+    const printDate=new Date().toLocaleDateString('en-PK',{day:'2-digit',month:'long',year:'numeric'});
+    const printTime=new Date().toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'});
+    const dates=txns.map(t=>new Date(t.created_at)).sort((a,b)=>a-b);
+    const fromDate=dates[0]?.toLocaleDateString('en-PK',{day:'2-digit',month:'short',year:'numeric'})||'-';
+    const toDate=dates[dates.length-1]?.toLocaleDateString('en-PK',{day:'2-digit',month:'short',year:'numeric'})||'-';
 
     const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
-<title>${company} — ${mode==='monthly'?'Monthly Report':'Invoice'}</title>
+<title>${company}</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;font-size:11px;color:#222;background:#fff}
 .page{padding:14px 18px}
-
-/* Header */
-.invoice-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px double #1a5276;padding-bottom:12px;margin-bottom:12px}
-.company-left .logo-line{display:flex;align-items:center;gap:8px}
-.company-name{font-size:20px;font-weight:900;color:#1a5276;line-height:1.1}
-.company-sub{font-size:11px;color:#555;margin-top:2px}
-.company-addr{font-size:10px;color:#777;margin-top:4px;line-height:1.5}
-.invoice-right{text-align:right}
-.invoice-right .inv-title{font-size:16px;font-weight:700;color:#1a5276;letter-spacing:1px}
-.inv-meta{font-size:10px;color:#555;margin-top:6px;line-height:1.8}
-.inv-meta strong{color:#222}
-
-/* Info Bar */
+.inv-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px double #1a5276;padding-bottom:12px;margin-bottom:12px}
+.company-name{font-size:20px;font-weight:900;color:#1a5276}
+.inv-title{font-size:16px;font-weight:700;color:#1a5276;letter-spacing:1px}
 .info-bar{display:flex;gap:10px;margin-bottom:12px}
-.info-cell{flex:1;border:1px solid #ddd;border-radius:4px;padding:6px 10px;font-size:10px}
-.info-cell .lbl{color:#888;font-size:9px;text-transform:uppercase;letter-spacing:.5px}
-.info-cell .val{font-weight:700;font-size:12px;color:#1a5276;margin-top:1px}
-
-/* Summary Cards */
+.info-cell{flex:1;border:1px solid #ddd;border-radius:4px;padding:6px 10px}
 .sum-row{display:flex;gap:8px;margin-bottom:12px}
 .sum-card{flex:1;border-radius:6px;padding:8px 10px;text-align:center}
-.sum-card .s-lbl{font-size:9px;color:#555;text-transform:uppercase;letter-spacing:.5px}
-.sum-card .s-val{font-size:14px;font-weight:800;margin-top:2px}
-.sum-card .s-cnt{font-size:9px;color:#777;margin-top:1px}
-
-/* Table */
-table{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:10px}
-thead tr{background:#1a5276;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-thead th{padding:6px 6px;font-weight:700;white-space:nowrap}
-tbody tr:nth-child(even) td{background:#f4f8fc}
-tbody tr:hover td{background:#e8f0fe}
-td{padding:5px 6px;border-bottom:1px solid #e5e5e5;vertical-align:top}
-tfoot td{background:#eaf0fb!important;font-weight:700;border-top:2px solid #1a5276;padding:6px}
-
-/* Monthly group header */
-.month-header{background:#1a5276;color:#fff;padding:7px 10px;font-size:12px;font-weight:700;margin:14px 0 0;border-radius:4px 4px 0 0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-
-/* Signature */
-.sig-section{display:flex;justify-content:space-around;margin-top:30px;padding-top:10px;border-top:1px dashed #ccc}
-.sig-box{text-align:center;width:160px}
+table td{padding:4px 6px;border-bottom:1px solid #eee;vertical-align:top}
+thead tr{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+tr:nth-child(even) td{background:#f4f8fc}
+.sig-row{display:flex;justify-content:space-around;margin-top:30px;padding-top:10px;border-top:1px dashed #ccc}
+.sig{text-align:center;width:160px}
 .sig-line{border-top:1px solid #444;padding-top:5px;font-size:10px;color:#555;margin-top:35px}
-
-/* Footer */
 .inv-footer{display:flex;justify-content:space-between;margin-top:14px;padding-top:8px;border-top:1px solid #ccc;font-size:9px;color:#999}
-
 @media print{.page{padding:6px}@page{margin:8mm;size:A4}}
 </style></head><body><div class="page">
 
-<!-- HEADER -->
-<div class="invoice-header">
-  <div class="company-left">
-    <div class="logo-line">
+<div class="inv-header">
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;">
       <span style="font-size:28px">⛽</span>
       <div>
         <div class="company-name">${company}</div>
-        <div class="company-sub">Petroleum Management System</div>
+        <div style="font-size:11px;color:#555">Petroleum Management System</div>
       </div>
     </div>
-    <div class="company-addr">
+    <div style="font-size:10px;color:#777;margin-top:6px;line-height:1.6">
       Proprietor: Muhammad Khalid &nbsp;|&nbsp; 0321-6901173 &nbsp;|&nbsp; 0345-1666696<br>
       Kacha Paka Noor Shah, Faridia Park Road, Bilal Colony, Sahiwal
     </div>
   </div>
-  <div class="invoice-right">
+  <div style="text-align:right">
     <div class="inv-title">${mode==='monthly'?'MONTHLY REPORT':'TRANSACTION INVOICE'}</div>
-    <div class="inv-meta">
+    <div style="font-size:10px;color:#555;margin-top:6px;line-height:1.8">
       <strong>Invoice #:</strong> ${invoiceNo}<br>
       <strong>Print Date:</strong> ${printDate}<br>
-      <strong>Print Time:</strong> ${printTime}
+      <strong>Time:</strong> ${printTime}
     </div>
   </div>
 </div>
 
-<!-- INFO BAR -->
 <div class="info-bar">
-  <div class="info-cell"><div class="lbl">Period From</div><div class="val">${fromDate}</div></div>
-  <div class="info-cell"><div class="lbl">Period To</div><div class="val">${toDate}</div></div>
-  <div class="info-cell"><div class="lbl">Total Entries</div><div class="val">${txns.length}</div></div>
-  <div class="info-cell"><div class="lbl">Report Type</div><div class="val">${mode==='monthly'?'Monthly':'Summary'}</div></div>
+  <div class="info-cell"><div style="font-size:9px;color:#888;text-transform:uppercase">Period From</div><div style="font-weight:700;font-size:12px;color:#1a5276">${fromDate}</div></div>
+  <div class="info-cell"><div style="font-size:9px;color:#888;text-transform:uppercase">Period To</div><div style="font-weight:700;font-size:12px;color:#1a5276">${toDate}</div></div>
+  <div class="info-cell"><div style="font-size:9px;color:#888;text-transform:uppercase">Total Entries</div><div style="font-weight:700;font-size:12px;color:#1a5276">${txns.length}</div></div>
+  <div class="info-cell"><div style="font-size:9px;color:#888;text-transform:uppercase">Report Type</div><div style="font-weight:700;font-size:12px;color:#1a5276">${mode==='monthly'?'Monthly':'Summary'}</div></div>
 </div>
 
-<!-- SUMMARY CARDS -->
 <div class="sum-row">
-  <div class="sum-card" style="background:#d4edda;border:1px solid #28a745">
-    <div class="s-lbl">Credit (Sales)</div>
-    <div class="s-val" style="color:#155724">Rs.${fmt(totCr)}</div>
-  </div>
-  <div class="sum-card" style="background:#cce5ff;border:1px solid #0069d9">
-    <div class="s-lbl">Debit (Vasooli)</div>
-    <div class="s-val" style="color:#004085">Rs.${fmt(totDb)}</div>
-  </div>
-  <div class="sum-card" style="background:#fff3cd;border:1px solid #ffc107">
-    <div class="s-lbl">Expenses</div>
-    <div class="s-val" style="color:#856404">Rs.${fmt(totEx)}</div>
-  </div>
-  <div class="sum-card" style="background:#d1ecf1;border:1px solid #17a2b8">
-    <div class="s-lbl">Net Balance</div>
-    <div class="s-val" style="color:#0c5460">Rs.${fmt(totCr-totDb-totEx)}</div>
-  </div>
+  <div class="sum-card" style="background:#d4edda;border:1px solid #28a745"><div style="font-size:9px;color:#555;text-transform:uppercase">Credit (Sales)</div><div style="font-size:14px;font-weight:800;color:#155724">Rs.${fmt(totCr)}</div></div>
+  <div class="sum-card" style="background:#cce5ff;border:1px solid #0069d9"><div style="font-size:9px;color:#555;text-transform:uppercase">Debit (Vasooli)</div><div style="font-size:14px;font-weight:800;color:#004085">Rs.${fmt(totDb)}</div></div>
+  <div class="sum-card" style="background:#fff3cd;border:1px solid #ffc107"><div style="font-size:9px;color:#555;text-transform:uppercase">Expenses</div><div style="font-size:14px;font-weight:800;color:#856404">Rs.${fmt(totEx)}</div></div>
+  <div class="sum-card" style="background:#d1ecf1;border:1px solid #17a2b8"><div style="font-size:9px;color:#555;text-transform:uppercase">Net Balance</div><div style="font-size:14px;font-weight:800;color:#0c5460">Rs.${fmt(totCr-totDb-totEx)}</div></div>
 </div>
 
-<!-- TABLE DATA -->
 ${bodyHtml}
 
-<!-- SIGNATURE -->
-<div class="sig-section">
-  <div class="sig-box"><div class="sig-line">Authorized Signature</div></div>
-  <div class="sig-box"><div class="sig-line">Customer Signature</div></div>
-  <div class="sig-box"><div class="sig-line">Accountant</div></div>
+<div class="sig-row">
+  <div class="sig"><div class="sig-line">Authorized Signature</div></div>
+  <div class="sig"><div class="sig-line">Customer Signature</div></div>
+  <div class="sig"><div class="sig-line">Accountant</div></div>
 </div>
 
-<!-- FOOTER -->
 <div class="inv-footer">
-  <span>${company} &mdash; Official Invoice &mdash; ${invoiceNo}</span>
+  <span>${company} — Official Invoice — ${invoiceNo}</span>
   <span>Generated: ${new Date().toLocaleString('en-PK')}</span>
 </div>
 
 </div><script>window.onload=function(){window.print();}<\/script></body></html>`;
 
-    const w=window.open('','_blank','width=1080,height=750');
+    const w=window.open('','_blank','width=1100,height=800');
     if(w){w.document.write(html);w.document.close();}
     else alert('Popup blocked! Browser mein popup allow karein.');
   }
 
-  // ── Form Handlers ──────────────────────────────────────────
+  // ── Form Handlers (with user_id) ───────────────────────────
   async function handleNewSale(){
     const customerId=el('sale-customer')?.value;
     const fuelType=el('sale-fuel-type')?.value;
@@ -2216,9 +2166,9 @@ ${bodyHtml}
     if(!fuelType){alert('Fuel type select karein');return;}
     if(!amount){alert('Amount enter karein');return;}
     try{
-      const userId = await getCurrentUserId();
+      const userId=await getCurrentUserId();
       const{error}=await supabase.from('transactions').insert([{
-        user_id: userId,
+        user_id:userId,
         customer_id:parseInt(customerId),
         transaction_type:paymentType==='cash'?'Debit':'Credit',
         amount,liters:liters||null,unit_price:unitPrice||null,
@@ -2244,7 +2194,7 @@ ${bodyHtml}
     if(fuelCat)fullDesc+=` (${fuelCat})`;
     if(desc)fullDesc+=` - ${desc}`;
     try{
-      const userId = await getCurrentUserId();
+      const userId=await getCurrentUserId();
       const{error}=await supabase.from('transactions').insert([{user_id:userId,customer_id:parseInt(customerId),transaction_type:'Debit',amount,description:fullDesc}]);
       if(error)throw error;
       showToast('success','Kamyab!','Payment record ho gayi!');
@@ -2263,9 +2213,11 @@ ${bodyHtml}
     if(!expType){alert('Type select karein');return;}
     if(!account){alert('Account select karein');return;}
     try{
-      const userId = await getCurrentUserId();
+      const userId=await getCurrentUserId();
       let custId=null;
-      const{data:owner}=await supabase.from('customers').select('id').eq('category','Owner').eq('user_id',userId).maybeSingle();
+      let ownerQ=supabase.from('customers').select('id').eq('category','Owner');
+      if(userId)ownerQ=ownerQ.eq('user_id',userId);
+      const{data:owner}=await ownerQ.maybeSingle();
       if(owner){custId=owner.id;}
       else{
         const{data:no,error:ce}=await supabase.from('customers').insert([{sr_no:0,name:'Owner',category:'Owner',balance:0,user_id:userId}]).select().single();
@@ -2291,7 +2243,7 @@ ${bodyHtml}
 
   window.deleteSelected=async function(){
     if(selectedIds.size===0){alert('Pehle transactions select karein');return;}
-    if(!confirm(selectedIds.size+' transactions delete karein? Yeh wapas nahi aayengi!'))return;
+    if(!confirm(selectedIds.size+' transactions delete karein?'))return;
     const ids=[...selectedIds];
     try{
       for(let i=0;i<ids.length;i+=50){
@@ -2311,7 +2263,7 @@ ${bodyHtml}
     const price=window.fuelPrices[fuel]||0;
     if(el('sale-unit-price'))el('sale-unit-price').value=price;
     const s=el('sale-price-source');
-    if(s){if(price>0){s.textContent=`Settings: ${fuel} = Rs.${price}`;s.className='text-success small';}else{s.textContent='⚠️ Settings page par price set karein';s.className='text-danger small fw-bold';}}
+    if(s){if(price>0){s.textContent=`Settings: ${fuel} = Rs.${price}`;s.className='text-success small';}else{s.textContent='Settings page par price set karein';s.className='text-danger small fw-bold';}}
     window.calcSaleFromLiters();
   };
   window.calcSaleFromLiters=function(){const l=parseFloat(el('sale-liters')?.value)||0;const r=parseFloat(el('sale-unit-price')?.value)||0;if(el('sale-amount'))el('sale-amount').value=(l>0&&r>0)?(l*r).toFixed(2):'';};
@@ -2321,8 +2273,7 @@ ${bodyHtml}
 
   // ── Events ─────────────────────────────────────────────────
   function setupEvents(){
-    // ✅ Replace app.js form handlers with our own (prevents duplicate submissions)
-    // Clone forms to remove all existing listeners attached by app.js
+    // Clone forms to remove all listeners added by app.js (prevents duplicate insert)
     ['newSaleForm','vasooliForm','expenseForm'].forEach(id=>{
       const old=el(id); if(!old)return;
       const clone=old.cloneNode(true);
@@ -2370,4 +2321,4 @@ ${bodyHtml}
   window.loadInitialTransactions=loadTransactions;
 
 })();
-// 1646 changes
+// END transactions-COMPLETE.js
