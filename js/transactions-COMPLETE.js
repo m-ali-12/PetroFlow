@@ -1738,7 +1738,7 @@
     try {
       const userId = await getCurrentUserId();
       console.log('loadTransactions userId:', userId);
-      let query = supabase.from('transactions').select('*, customers!inner(name, sr_no)').order('created_at',{ascending:false});
+      let query = supabase.from('transactions').select('*, customers(name, sr_no)').order('created_at',{ascending:false});
       if (userId) query = query.eq('user_id', userId);
       const {data,error} = await query;
       if(error)throw error;
