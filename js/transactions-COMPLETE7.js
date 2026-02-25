@@ -1709,24 +1709,11 @@
   }
 
   // ── Load Data ──────────────────────────────────────────────
-  // ── Get current logged-in user ID ──────────────────────────
-  async function getCurrentUserId() {
-    if (window.CURRENT_USER?.id) return window.CURRENT_USER.id;
-    try {
-      const { data } = await supabase.auth.getUser();
-      if (data?.user?.id) { window.CURRENT_USER = data.user; return data.user.id; }
-    } catch(e) { console.error('getCurrentUserId:', e); }
-    return null;
-  }
-
   async function loadTransactions() {
     const tbody=el('transactions-table');
     if(tbody)tbody.innerHTML='<tr><td colspan="10" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Loading...</td></tr>';
     try {
-      const userId = await getCurrentUserId();
-      let query = supabase.from('transactions').select('*, customers!inner(name, sr_no)').order('created_at',{ascending:false});
-      if (userId) query = query.eq('user_id', userId);
-      const {data,error} = await query;
+      const {data,error}=await supabase.from('transactions').select('*, customers!inner(name, sr_no)').order('created_at',{ascending:false});
       if(error)throw error;
       const seen=new Set();
       allTransactions=(data||[]).filter(t=>{if(seen.has(t.id))return false;seen.add(t.id);return true;});
@@ -1741,10 +1728,7 @@
 
   async function loadCustomers() {
     try {
-      const userId = await getCurrentUserId();
-      let query = supabase.from('customers').select('*').order('sr_no');
-      if (userId) query = query.eq('user_id', userId);
-      const {data,error} = await query;
+      const {data,error}=await supabase.from('customers').select('*').order('sr_no');
       if(error)throw error;
       allCustomers=data||[];
       ['sale-customer'].forEach(id=>{
@@ -1974,14 +1958,9 @@
   window.printAllSummary=function(){if(!filteredTransactions.length){alert('Koi data nahi');return;}openPrint(filteredTransactions,'summary');};
   window.printAllMonthly=function(){if(!filteredTransactions.length){alert('Koi data nahi');return;}openPrint(filteredTransactions,'monthly');};
 
-  // ── Invoice Number Generator ───────────────────────────────
-  function genInvoiceNo() {
-    const d = new Date();
-    return 'INV-' + d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') + '-' + String(Math.floor(Math.random()*9000)+1000);
-  }
-
   function openPrint(txns,mode){
-    const company='Khalid & Sons Petroleum Services';
+    const company='Khalid & Sons Petroleum';
+    const printDate=new Date().toLocaleDateString('en-PK',{day:'2-digit',month:'long',year:'numeric'});
     let totCr=0,totDb=0,totEx=0;
     txns.forEach(t=>{const a=parseFloat(t.amount)||0;if(t.transaction_type==='Credit')totCr+=a;else if(t.transaction_type==='Debit')totDb+=a;else totEx+=a;});
 
@@ -2040,15 +2019,15 @@
       });
       Object.keys(map).sort((a,b)=>b.localeCompare(a)).forEach(key=>{
         const m=map[key];
-        bodyHtml+=`<div class="month-header">${m.lbl} &nbsp;&middot;&nbsp; ${m.list.length} transactions</div>
-        <table>
+        bodyHtml+=`<div style="background:#1a5276;color:#fff;padding:7px 10px;font-size:14px;font-weight:700;margin:14px 0 0;border-radius:4px 4px 0 0;-webkit-print-color-adjust:exact;print-color-adjust:exact;">${m.lbl} &nbsp;·&nbsp; ${m.list.length} transactions</div>
+        <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:8px;">
           <thead>${THEAD}</thead>
           <tbody>${buildRows(m.list)}</tbody>
-          <tfoot><tr>
-            <td colspan="6" style="text-align:right">Month Total:</td>
-            <td>Rs.${fmt(m.cr+m.db+m.ex)}</td>
-            <td style="color:#198754">Rs.${fmt(m.cr)}</td>
-            <td style="color:#0d6efd">Rs.${fmt(m.db+m.ex)}</td>
+          <tfoot><tr style="background:#eaf0fb;font-weight:700;border-top:2px solid #1a5276">
+            <td colspan="6" style="padding:4px 6px;text-align:right">Month Total:</td>
+            <td style="padding:4px 6px;text-align:right">Rs.${fmt(m.cr+m.db+m.ex)}</td>
+            <td style="padding:4px 6px;text-align:right;color:#198754">Rs.${fmt(m.cr)}</td>
+            <td style="padding:4px 6px;text-align:right;color:#0d6efd">Rs.${fmt(m.db+m.ex)}</td>
             <td></td>
           </tr></tfoot>
         </table>`;
@@ -2059,138 +2038,41 @@
       </table>`;
     }
 
-    const invoiceNo = genInvoiceNo();
-    const printDate = new Date().toLocaleDateString('en-PK',{day:'2-digit',month:'long',year:'numeric'});
-    const printTime = new Date().toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'});
-
-    // Date range for report
-    const dates = txns.map(t=>new Date(t.created_at)).sort((a,b)=>a-b);
-    const fromDate = dates[0]?.toLocaleDateString('en-PK',{day:'2-digit',month:'short',year:'numeric'}) || '-';
-    const toDate = dates[dates.length-1]?.toLocaleDateString('en-PK',{day:'2-digit',month:'short',year:'numeric'}) || '-';
-
     const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
-<title>${company} — ${mode==='monthly'?'Monthly Report':'Invoice'}</title>
+<title>${company}</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;font-size:11px;color:#222;background:#fff}
-.page{padding:14px 18px}
-
-/* Header */
-.invoice-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px double #1a5276;padding-bottom:12px;margin-bottom:12px}
-.company-left .logo-line{display:flex;align-items:center;gap:8px}
-.company-name{font-size:20px;font-weight:900;color:#1a5276;line-height:1.1}
-.company-sub{font-size:11px;color:#555;margin-top:2px}
-.company-addr{font-size:10px;color:#777;margin-top:4px;line-height:1.5}
-.invoice-right{text-align:right}
-.invoice-right .inv-title{font-size:16px;font-weight:700;color:#1a5276;letter-spacing:1px}
-.inv-meta{font-size:10px;color:#555;margin-top:6px;line-height:1.8}
-.inv-meta strong{color:#222}
-
-/* Info Bar */
-.info-bar{display:flex;gap:10px;margin-bottom:12px}
-.info-cell{flex:1;border:1px solid #ddd;border-radius:4px;padding:6px 10px;font-size:10px}
-.info-cell .lbl{color:#888;font-size:9px;text-transform:uppercase;letter-spacing:.5px}
-.info-cell .val{font-weight:700;font-size:12px;color:#1a5276;margin-top:1px}
-
-/* Summary Cards */
-.sum-row{display:flex;gap:8px;margin-bottom:12px}
-.sum-card{flex:1;border-radius:6px;padding:8px 10px;text-align:center}
-.sum-card .s-lbl{font-size:9px;color:#555;text-transform:uppercase;letter-spacing:.5px}
-.sum-card .s-val{font-size:14px;font-weight:800;margin-top:2px}
-.sum-card .s-cnt{font-size:9px;color:#777;margin-top:1px}
-
-/* Table */
-table{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:10px}
-thead tr{background:#1a5276;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-thead th{padding:6px 6px;font-weight:700;white-space:nowrap}
-tbody tr:nth-child(even) td{background:#f4f8fc}
-tbody tr:hover td{background:#e8f0fe}
-td{padding:5px 6px;border-bottom:1px solid #e5e5e5;vertical-align:top}
-tfoot td{background:#eaf0fb!important;font-weight:700;border-top:2px solid #1a5276;padding:6px}
-
-/* Monthly group header */
-.month-header{background:#1a5276;color:#fff;padding:7px 10px;font-size:12px;font-weight:700;margin:14px 0 0;border-radius:4px 4px 0 0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-
-/* Signature */
-.sig-section{display:flex;justify-content:space-around;margin-top:30px;padding-top:10px;border-top:1px dashed #ccc}
-.sig-box{text-align:center;width:160px}
-.sig-line{border-top:1px solid #444;padding-top:5px;font-size:10px;color:#555;margin-top:35px}
-
-/* Footer */
-.inv-footer{display:flex;justify-content:space-between;margin-top:14px;padding-top:8px;border-top:1px solid #ccc;font-size:9px;color:#999}
-
-@media print{.page{padding:6px}@page{margin:8mm;size:A4}}
+body{font-family:Arial,sans-serif;font-size:11px;color:#222}
+.page{padding:16px}
+.hdr{display:flex;justify-content:space-between;border-bottom:2px solid #1a5276;padding-bottom:10px;margin-bottom:12px}
+.hdr h1{font-size:18px;color:#1a5276}
+.sumbox{display:flex;gap:8px;margin-bottom:14px}
+.sb{flex:1;border-radius:6px;padding:8px 10px}
+table td{padding:4px 6px;border-bottom:1px solid #eee;vertical-align:top}
+tr:nth-child(even) td{background:#f8f9fa}
+.sig-row{display:flex;justify-content:space-around;margin-top:30px}
+.sig{text-align:center;width:180px}
+.sig-line{border-top:1px solid #555;padding-top:4px;font-size:10px;color:#555;margin-top:30px}
+.footer{display:flex;justify-content:space-between;border-top:1px solid #ccc;margin-top:14px;padding-top:8px;font-size:10px;color:#888}
+@media print{.page{padding:8px}@page{margin:10mm}}
 </style></head><body><div class="page">
-
-<!-- HEADER -->
-<div class="invoice-header">
-  <div class="company-left">
-    <div class="logo-line">
-      <span style="font-size:28px">⛽</span>
-      <div>
-        <div class="company-name">${company}</div>
-        <div class="company-sub">Petroleum Management System</div>
-      </div>
-    </div>
-    <div class="company-addr">
-      Proprietor: Muhammad Khalid &nbsp;|&nbsp; 0321-6901173 &nbsp;|&nbsp; 0345-1666696<br>
-      Kacha Paka Noor Shah, Faridia Park Road, Bilal Colony, Sahiwal
-    </div>
-  </div>
-  <div class="invoice-right">
-    <div class="inv-title">${mode==='monthly'?'MONTHLY REPORT':'TRANSACTION INVOICE'}</div>
-    <div class="inv-meta">
-      <strong>Invoice #:</strong> ${invoiceNo}<br>
-      <strong>Print Date:</strong> ${printDate}<br>
-      <strong>Print Time:</strong> ${printTime}
-    </div>
-  </div>
+<div class="hdr">
+  <div><h1>⛽ ${company}</h1><p style="color:#555;font-size:11px">${mode==='monthly'?'Monthly Transaction Report':'Transaction Receipt'}</p></div>
+  <div style="text-align:right;font-size:11px;color:#555"><strong>Date: ${printDate}</strong><br>Entries: ${txns.length}<br>${new Date().toLocaleTimeString('en-PK')}</div>
 </div>
-
-<!-- INFO BAR -->
-<div class="info-bar">
-  <div class="info-cell"><div class="lbl">Period From</div><div class="val">${fromDate}</div></div>
-  <div class="info-cell"><div class="lbl">Period To</div><div class="val">${toDate}</div></div>
-  <div class="info-cell"><div class="lbl">Total Entries</div><div class="val">${txns.length}</div></div>
-  <div class="info-cell"><div class="lbl">Report Type</div><div class="val">${mode==='monthly'?'Monthly':'Summary'}</div></div>
+<div class="sumbox">
+  <div class="sb" style="background:#d4edda;border:1px solid #28a745"><div style="font-size:10px;color:#555">Credit (Sales)</div><div style="font-size:14px;font-weight:700">Rs.${fmt(totCr)}</div></div>
+  <div class="sb" style="background:#cce5ff;border:1px solid #0069d9"><div style="font-size:10px;color:#555">Debit (Received)</div><div style="font-size:14px;font-weight:700">Rs.${fmt(totDb)}</div></div>
+  <div class="sb" style="background:#fff3cd;border:1px solid #ffc107"><div style="font-size:10px;color:#555">Expense</div><div style="font-size:14px;font-weight:700">Rs.${fmt(totEx)}</div></div>
+  <div class="sb" style="background:#e2e3e5;border:1px solid #6c757d"><div style="font-size:10px;color:#555">Net Balance</div><div style="font-size:14px;font-weight:700">Rs.${fmt(totCr-totDb-totEx)}</div></div>
 </div>
-
-<!-- SUMMARY CARDS -->
-<div class="sum-row">
-  <div class="sum-card" style="background:#d4edda;border:1px solid #28a745">
-    <div class="s-lbl">Credit (Sales)</div>
-    <div class="s-val" style="color:#155724">Rs.${fmt(totCr)}</div>
-  </div>
-  <div class="sum-card" style="background:#cce5ff;border:1px solid #0069d9">
-    <div class="s-lbl">Debit (Vasooli)</div>
-    <div class="s-val" style="color:#004085">Rs.${fmt(totDb)}</div>
-  </div>
-  <div class="sum-card" style="background:#fff3cd;border:1px solid #ffc107">
-    <div class="s-lbl">Expenses</div>
-    <div class="s-val" style="color:#856404">Rs.${fmt(totEx)}</div>
-  </div>
-  <div class="sum-card" style="background:#d1ecf1;border:1px solid #17a2b8">
-    <div class="s-lbl">Net Balance</div>
-    <div class="s-val" style="color:#0c5460">Rs.${fmt(totCr-totDb-totEx)}</div>
-  </div>
-</div>
-
-<!-- TABLE DATA -->
 ${bodyHtml}
-
-<!-- SIGNATURE -->
-<div class="sig-section">
-  <div class="sig-box"><div class="sig-line">Authorized Signature</div></div>
-  <div class="sig-box"><div class="sig-line">Customer Signature</div></div>
-  <div class="sig-box"><div class="sig-line">Accountant</div></div>
+<div class="sig-row">
+  <div class="sig"><div class="sig-line">Authorized Signature</div></div>
+  <div class="sig"><div class="sig-line">Customer Signature</div></div>
+  <div class="sig"><div class="sig-line">Accountant</div></div>
 </div>
-
-<!-- FOOTER -->
-<div class="inv-footer">
-  <span>${company} &mdash; Official Invoice &mdash; ${invoiceNo}</span>
-  <span>Generated: ${new Date().toLocaleString('en-PK')}</span>
-</div>
-
+<div class="footer"><span>${company} — Official Receipt</span><span>Generated: ${new Date().toLocaleString('en-PK')}</span></div>
 </div><script>window.onload=function(){window.print();}<\/script></body></html>`;
 
     const w=window.open('','_blank','width=1080,height=750');
