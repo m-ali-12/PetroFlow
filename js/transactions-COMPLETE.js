@@ -1709,9 +1709,14 @@
   }
 
   // ── Load Data ──────────────────────────────────────────────
-  // ── Get current logged-in user ID ──────────────────────────
+  // ── Get current logged-in user ID (with retry for page load race) ────
   async function getCurrentUserId() {
-    if (window.CURRENT_USER?.id) return window.CURRENT_USER.id;
+    // Try up to 10 times (1 second total) waiting for CURRENT_USER
+    for (let i = 0; i < 10; i++) {
+      if (window.CURRENT_USER?.id) return window.CURRENT_USER.id;
+      await new Promise(r => setTimeout(r, 100));
+    }
+    // Last resort: ask Supabase directly
     try {
       const { data } = await supabase.auth.getUser();
       if (data?.user?.id) { window.CURRENT_USER = data.user; return data.user.id; }
@@ -2211,7 +2216,9 @@ ${bodyHtml}
     if(!fuelType){alert('Fuel type select karein');return;}
     if(!amount){alert('Amount enter karein');return;}
     try{
+      const userId = await getCurrentUserId();
       const{error}=await supabase.from('transactions').insert([{
+        user_id: userId,
         customer_id:parseInt(customerId),
         transaction_type:paymentType==='cash'?'Debit':'Credit',
         amount,liters:liters||null,unit_price:unitPrice||null,
@@ -2237,7 +2244,8 @@ ${bodyHtml}
     if(fuelCat)fullDesc+=` (${fuelCat})`;
     if(desc)fullDesc+=` - ${desc}`;
     try{
-      const{error}=await supabase.from('transactions').insert([{customer_id:parseInt(customerId),transaction_type:'Debit',amount,description:fullDesc}]);
+      const userId = await getCurrentUserId();
+      const{error}=await supabase.from('transactions').insert([{user_id:userId,customer_id:parseInt(customerId),transaction_type:'Debit',amount,description:fullDesc}]);
       if(error)throw error;
       showToast('success','Kamyab!','Payment record ho gayi!');
       closeModal('vasooliModal');
@@ -2255,14 +2263,15 @@ ${bodyHtml}
     if(!expType){alert('Type select karein');return;}
     if(!account){alert('Account select karein');return;}
     try{
+      const userId = await getCurrentUserId();
       let custId=null;
-      const{data:owner}=await supabase.from('customers').select('id').eq('category','Owner').maybeSingle();
+      const{data:owner}=await supabase.from('customers').select('id').eq('category','Owner').eq('user_id',userId).maybeSingle();
       if(owner){custId=owner.id;}
       else{
-        const{data:no,error:ce}=await supabase.from('customers').insert([{sr_no:0,name:'Owner',category:'Owner',balance:0}]).select().single();
+        const{data:no,error:ce}=await supabase.from('customers').insert([{sr_no:0,name:'Owner',category:'Owner',balance:0,user_id:userId}]).select().single();
         if(ce)throw ce; custId=no.id;
       }
-      const{error}=await supabase.from('transactions').insert([{customer_id:custId,transaction_type:'Expense',amount,description:`${expType}: ${description} (From: ${account})`}]);
+      const{error}=await supabase.from('transactions').insert([{user_id:userId,customer_id:custId,transaction_type:'Expense',amount,description:`${expType}: ${description} (From: ${account})`}]);
       if(error)throw error;
       showToast('success','Kamyab!','Expense record ho gaya!');
       closeModal('expenseModal');
@@ -2312,6 +2321,14 @@ ${bodyHtml}
 
   // ── Events ─────────────────────────────────────────────────
   function setupEvents(){
+    // ✅ Replace app.js form handlers with our own (prevents duplicate submissions)
+    // Clone forms to remove all existing listeners attached by app.js
+    ['newSaleForm','vasooliForm','expenseForm'].forEach(id=>{
+      const old=el(id); if(!old)return;
+      const clone=old.cloneNode(true);
+      old.parentNode.replaceChild(clone,old);
+    });
+
     el('newSaleForm') ?.addEventListener('submit',e=>{e.preventDefault();handleNewSale();});
     el('vasooliForm') ?.addEventListener('submit',e=>{e.preventDefault();handleVasooli();});
     el('expenseForm') ?.addEventListener('submit',e=>{e.preventDefault();handleExpense();});
