@@ -258,7 +258,24 @@
           <div class="mb-3">
             <label class="form-label">Customer *</label>
             <input type="hidden" id="sale-customer-hidden">
-            <div id="sale-customer-container"></div>
+            <div style="position:relative;">
+              <input type="text" id="sale-cust-search" class="form-control"
+                placeholder="🔍 Sr# ya naam likhein... (e.g. 5 ya Ali)"
+                autocomplete="off">
+              <div id="sale-cust-list"
+                style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;
+                  background:#fff;border:1px solid #198754;border-radius:6px;
+                  max-height:200px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.15);">
+              </div>
+            </div>
+            <div id="sale-cust-selected"
+              style="display:none;background:#eafaf1;border:1px solid #198754;border-radius:6px;
+                padding:8px 12px;margin-top:4px;justify-content:space-between;align-items:center;">
+              <span id="sale-cust-selected-text" style="font-weight:600;color:#198754;"></span>
+              <span id="sale-cust-balance" style="font-size:12px;font-weight:700;margin-left:8px;"></span>
+              <button type="button" onclick="window.clear_sd_sale()"
+                style="background:none;border:none;color:#dc3545;font-size:16px;cursor:pointer;padding:0 4px;margin-left:auto;">✕</button>
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Fuel Type *</label>
@@ -339,7 +356,24 @@
         <div class="modal-body">
           <div class="mb-3"><label class="form-label">Customer *</label>
             <input type="hidden" id="vasooli-customer-hidden">
-            <div id="vasooli-customer-container"></div>
+            <div style="position:relative;">
+              <input type="text" id="vasooli-cust-search" class="form-control"
+                placeholder="🔍 Sr# ya naam likhein... (e.g. 5 ya Ali)"
+                autocomplete="off">
+              <div id="vasooli-cust-list"
+                style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;
+                  background:#fff;border:1px solid #0d6efd;border-radius:6px;
+                  max-height:200px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.15);">
+              </div>
+            </div>
+            <div id="vasooli-cust-selected"
+              style="display:none;background:#e8f0fe;border:1px solid #0d6efd;border-radius:6px;
+                padding:8px 12px;margin-top:4px;justify-content:space-between;align-items:center;">
+              <span id="vasooli-cust-selected-text" style="font-weight:600;color:#0d6efd;"></span>
+              <span id="vasooli-cust-balance" style="font-size:12px;font-weight:700;margin-left:8px;"></span>
+              <button type="button" onclick="window.clear_sd_vasooli()"
+                style="background:none;border:none;color:#dc3545;font-size:16px;cursor:pointer;padding:0 4px;margin-left:auto;">✕</button>
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Fuel Category (Optional)</label>
@@ -418,26 +452,23 @@
           <div class="mb-3">
             <label class="form-label fw-semibold">Customer <span class="text-danger">*</span></label>
             <input type="hidden" id="advance-customer-hidden">
-            <!-- Search box -->
             <div style="position:relative;">
-              <input type="text" id="advance-cust-search"
-                class="form-control mb-1"
+              <input type="text" id="advance-cust-search" class="form-control"
                 placeholder="🔍 Sr# ya naam likhein... (e.g. 5 ya Ali)"
-                autocomplete="off"
-                style="border:2px solid #6f42c1;">
-              <!-- Dropdown list — always built by JS -->
+                autocomplete="off">
               <div id="advance-cust-list"
                 style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;
                   background:#fff;border:1px solid #6f42c1;border-radius:6px;
-                  max-height:200px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,0.15);">
+                  max-height:200px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.15);">
               </div>
             </div>
-            <!-- Selected customer display -->
-            <div id="advance-cust-selected" style="display:none;background:#f3eeff;border:1px solid #6f42c1;
-              border-radius:6px;padding:8px 12px;margin-top:4px;display:none;justify-content:space-between;align-items:center;">
+            <div id="advance-cust-selected"
+              style="display:none;background:#f3eeff;border:1px solid #6f42c1;border-radius:6px;
+                padding:8px 12px;margin-top:4px;justify-content:space-between;align-items:center;">
               <span id="advance-cust-selected-text" style="font-weight:600;color:#6f42c1;"></span>
-              <span id="advance-cust-balance" style="font-size:12px;font-weight:700;"></span>
-              <button type="button" onclick="window.clearAdvanceCustomer()" style="background:none;border:none;color:#dc3545;font-size:16px;cursor:pointer;padding:0 4px;">✕</button>
+              <span id="advance-cust-balance" style="font-size:12px;font-weight:700;margin-left:8px;"></span>
+              <button type="button" onclick="window.clear_sd_advance()"
+                style="background:none;border:none;color:#dc3545;font-size:16px;cursor:pointer;padding:0 4px;margin-left:auto;">✕</button>
             </div>
           </div>
 

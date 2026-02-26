@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Customer Khata | Khalid & Sons Petroleum</title>
+<link href="assets/logo.jfif" rel="icon" type="image/png"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet"/>
+<link href="assets/styles.css" rel="stylesheet"/>
+<style>
+  .cust-card { cursor:pointer; transition:all .2s; border:2px solid transparent; }
+  .cust-card:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,.12); }
+  .cust-card.selected { border-color:#0d6efd !important; }
+  .pending-badge { font-size:13px; font-weight:700; padding:4px 10px; border-radius:12px; }
+  .month-row:hover td { background:#f0f4ff; }
+  @media print {
+    #navbar-placeholder,#footer-placeholder,.no-print{display:none!important;}
+    body{font-size:11px;}
+  }
+</style>
+</head>
+<body data-page="khata">
+<div id="navbar-placeholder"></div>
+
+<div class="container-fluid py-3 px-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="mb-0"><i class="bi bi-journal-text me-2 text-primary"></i>Customer Khata — Pending Ledger</h3>
+      <small class="text-muted">Customer-wise total pending + monthly breakdown</small>
+    </div>
+    <div class="d-flex gap-2 no-print">
+      <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#oldBalanceModal">
+        <i class="bi bi-pencil-square me-1"></i>Old Pending Daakhil Karein
+      </button>
+      <button class="btn btn-outline-primary" onclick="window.print()">
+        <i class="bi bi-printer me-1"></i>Print
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Bar -->
+  <div class="row g-3 mb-4" id="summary-bar">
+    <div class="col-6 col-md-3">
+      <div class="card border-danger shadow-sm">
+        <div class="card-body text-center py-2">
+          <div class="text-muted small">Total Pending (Sab)</div>
+          <div class="text-danger fw-bold fs-5" id="sum-total-pending">Rs. 0</div>
+          <small class="text-muted" id="sum-pending-count">0 customers</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-success shadow-sm">
+        <div class="card-body text-center py-2">
+          <div class="text-muted small">Total Vasooli (Aayi)</div>
+          <div class="text-success fw-bold fs-5" id="sum-total-vasooli">Rs. 0</div>
+          <small class="text-muted" id="sum-vasooli-count">Collected</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-warning shadow-sm">
+        <div class="card-body text-center py-2">
+          <div class="text-muted small">Cash Advances (Pending)</div>
+          <div class="text-warning fw-bold fs-5" id="sum-total-advance">Rs. 0</div>
+          <small class="text-muted">Wapas nahi aaya</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-primary shadow-sm">
+        <div class="card-body text-center py-2">
+          <div class="text-muted small">Total Sale (Credit)</div>
+          <div class="text-primary fw-bold fs-5" id="sum-total-sale">Rs. 0</div>
+          <small class="text-muted">Udhaar sales</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- LEFT: Customer List -->
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <strong><i class="bi bi-people me-1"></i>Customers</strong>
+          <span class="badge bg-secondary" id="cust-list-count">0</span>
+        </div>
+        <div class="card-body p-2">
+          <input type="text" id="cust-search" class="form-control form-control-sm mb-2"
+            placeholder="🔍 Naam ya Sr# search karein...">
+          <!-- Filter Tabs -->
+          <div class="btn-group w-100 mb-2" role="group">
+            <button type="button" class="btn btn-sm btn-outline-danger active" onclick="filterCusts('pending',this)">Pending</button>
+            <button type="button" class="btn btn-sm btn-outline-success" onclick="filterCusts('clear',this)">Clear</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="filterCusts('all',this)">Sab</button>
+          </div>
+          <div id="cust-list" style="max-height:60vh;overflow-y:auto;">
+            <div class="text-center py-4 text-muted">
+              <div class="spinner-border spinner-border-sm me-2"></div>Loading...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Customer Detail -->
+    <div class="col-md-8">
+      <div id="detail-placeholder" class="card shadow-sm">
+        <div class="card-body text-center py-5 text-muted">
+          <i class="bi bi-arrow-left-circle fs-1 d-block mb-3 text-primary opacity-50"></i>
+          <h5>Koi customer select karein</h5>
+          <p class="small">Left side se customer click karein — us ka pura khata yahan dikhega</p>
+        </div>
+      </div>
+
+      <div id="detail-card" style="display:none;">
+        <!-- Customer Header -->
+        <div class="card shadow-sm mb-3" id="detail-header"></div>
+
+        <!-- Monthly Breakdown -->
+        <div class="card shadow-sm">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <strong><i class="bi bi-calendar3 me-1"></i>Monthly Breakdown</strong>
+            <div class="d-flex gap-2 align-items-center no-print">
+              <select class="form-select form-select-sm" id="year-filter" style="width:100px;" onchange="renderMonthly()">
+                <option value="">Sab Saal</option>
+              </select>
+              <button class="btn btn-sm btn-outline-primary" onclick="printCustomerKhata()">
+                <i class="bi bi-printer me-1"></i>Print Khata
+              </button>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover mb-0">
+                <thead>
+                  <tr style="background:#f8f9fa;">
+                    <th style="padding:10px 14px;">Mahina</th>
+                    <th style="padding:10px 14px;text-align:right;">Sale (Udhaar)</th>
+                    <th style="padding:10px 14px;text-align:right;">Vasooli</th>
+                    <th style="padding:10px 14px;text-align:right;">Advance</th>
+                    <th style="padding:10px 14px;text-align:right;">Month Pending</th>
+                    <th style="padding:10px 14px;text-align:center;">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="monthly-tbody">
+                  <tr><td colspan="6" class="text-center py-3 text-muted">Customer select karein</td></tr>
+                </tbody>
+                <tfoot id="monthly-tfoot"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transaction Detail -->
+        <div class="card shadow-sm mt-3">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <strong id="tx-detail-title"><i class="bi bi-list-ul me-1"></i>Transactions</strong>
+            <select class="form-select form-select-sm no-print" id="tx-month-filter" style="width:160px;" onchange="renderTxDetail()">
+              <option value="">Sab Transactions</option>
+            </select>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <thead>
+                  <tr style="background:#f8f9fa;">
+                    <th style="padding:8px 12px;">Date</th>
+                    <th style="padding:8px 12px;">Type</th>
+                    <th style="padding:8px 12px;">Amount</th>
+                    <th style="padding:8px 12px;">Description</th>
+                  </tr>
+                </thead>
+                <tbody id="tx-detail-tbody">
+                  <tr><td colspan="4" class="text-center py-3 text-muted">—</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── OLD BALANCE MODAL ─────────────────────────────────── -->
+<div class="modal fade" id="oldBalanceModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Old Pending / Purana Khata Daakhil Karein</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info py-2 mb-3" style="font-size:13px;">
+          <i class="bi bi-info-circle me-1"></i>
+          <strong>Yeh kab use karein:</strong> Agar kisi customer ka system se pehle ka khata/pending tha jo abhi system mein nahi hai. Woh amount yahan enter karein.
+        </div>
+
+        <!-- Customer Search for old balance -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Customer <span class="text-danger">*</span></label>
+          <input type="hidden" id="ob-customer-hidden">
+          <div style="position:relative;">
+            <input type="text" id="ob-cust-search" class="form-control"
+              placeholder="🔍 Sr# ya naam likhein..." autocomplete="off"
+              style="border:2px solid #ffc107;">
+            <div id="ob-cust-list"
+              style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;
+                background:#fff;border:1px solid #ffc107;border-radius:6px;
+                max-height:220px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.15);">
+            </div>
+          </div>
+          <div id="ob-cust-selected"
+            style="display:none;background:#fffbea;border:1px solid #ffc107;border-radius:6px;
+              padding:8px 12px;margin-top:4px;justify-content:space-between;align-items:center;">
+            <span id="ob-cust-text" style="font-weight:600;color:#856404;"></span>
+            <span id="ob-cust-bal" style="font-size:12px;font-weight:700;margin-left:8px;"></span>
+            <button type="button" onclick="clearObCust()"
+              style="background:none;border:none;color:#dc3545;font-size:16px;cursor:pointer;padding:0 4px;margin-left:auto;">✕</button>
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Purana Pending Amount (Rs.) <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text">Rs.</span>
+              <input type="number" id="ob-amount" class="form-control" placeholder="0.00" step="0.01" min="0">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Entry Method</label>
+            <select id="ob-method" class="form-select">
+              <option value="add">➕ Add to Balance (Baqi hai)</option>
+              <option value="set">📌 Set as Balance (Fixed amount)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mb-3 mt-3">
+          <label class="form-label">Note / Wajah (Optional)</label>
+          <input type="text" id="ob-note" class="form-control" placeholder="e.g. Jan 2025 tak ka pending, old system se transfer...">
+        </div>
+
+        <!-- Bulk Entry Table -->
+        <hr>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <strong><i class="bi bi-table me-1"></i>Bulk Entry — Sabka ek baar</strong>
+          <small class="text-muted">Sirf jinka pending hai woh fill karein</small>
+        </div>
+        <div style="max-height:300px;overflow-y:auto;">
+          <table class="table table-sm table-hover" id="bulk-balance-table">
+            <thead>
+              <tr style="background:#fff3cd;position:sticky;top:0;">
+                <th>Sr#</th>
+                <th>Customer Naam</th>
+                <th>Current Balance</th>
+                <th>Naya Balance (Rs.)</th>
+              </tr>
+            </thead>
+            <tbody id="bulk-balance-tbody">
+              <tr><td colspan="4" class="text-center text-muted py-2">Loading customers...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="text-end mt-2 no-print">
+          <button class="btn btn-warning" onclick="saveBulkBalances()">
+            <i class="bi bi-save me-1"></i>Sab Save Karein
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-warning" onclick="saveOldBalance()">
+          <i class="bi bi-check-circle me-1"></i>Is Customer ka Balance Save Karein
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+  <div class="toast" id="liveToast" role="alert">
+    <div class="toast-header">
+      <strong class="me-auto" id="toast-title">Info</strong>
+      <button class="btn-close" data-bs-dismiss="toast"></button>
+    </div>
+    <div class="toast-body" id="toast-message">...</div>
+  </div>
+</div>
+
+<div id="footer-placeholder"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+(function(){
+  const supabase = window.supabaseClient;
+  let allCustomers = [];
+  let allTransactions = [];
+  let selectedCust = null;
+  let custTxns = [];
+  let custFilter = 'pending';
+
+  function el(id){ return document.getElementById(id); }
+  function fmt(n){ return Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+  function showToast(type,title,msg){
+    const t=el('liveToast'); if(!t){alert(title+': '+msg);return;}
+    el('toast-title').textContent=title; el('toast-message').textContent=msg;
+    t.className='toast '+(type==='success'?'bg-success text-white':type==='error'?'bg-danger text-white':'bg-warning text-dark');
+    new bootstrap.Toast(t,{delay:3500}).show();
+  }
+
+  // ── Load all data ─────────────────────────────────────────
+  async function loadAll(){
+    try{
+      const [{data:custs},{data:txns}] = await Promise.all([
+        supabase.from('customers').select('*').order('sr_no'),
+        supabase.from('transactions').select('*, customers(name,sr_no)').order('id',{ascending:false}).limit(2000)
+      ]);
+      allCustomers = (custs||[]).filter(c => c.category !== 'Owner');
+      allTransactions = txns||[];
+      computeSummary();
+      renderCustList();
+      buildBulkTable();
+    }catch(e){console.error(e);}
+  }
+
+  function computeSummary(){
+    let totPending=0,pendCount=0,totVasooli=0,totAdv=0,totSale=0;
+    allCustomers.forEach(c=>{
+      const bal=parseFloat(c.balance)||0;
+      if(bal>0){totPending+=bal;pendCount++;}
+    });
+    allTransactions.forEach(t=>{
+      const a=parseFloat(t.amount)||0;
+      if(t.transaction_type==='Credit')totSale+=a;
+      else if(t.transaction_type==='Debit')totVasooli+=a;
+      else if(t.transaction_type==='Advance')totAdv+=a;
+    });
+    if(el('sum-total-pending'))el('sum-total-pending').textContent='Rs. '+fmt(totPending);
+    if(el('sum-pending-count'))el('sum-pending-count').textContent=pendCount+' customers have pending';
+    if(el('sum-total-vasooli'))el('sum-total-vasooli').textContent='Rs. '+fmt(totVasooli);
+    if(el('sum-total-advance'))el('sum-total-advance').textContent='Rs. '+fmt(totAdv);
+    if(el('sum-total-sale'))el('sum-total-sale').textContent='Rs. '+fmt(totSale);
+  }
+
+  // ── Customer List ─────────────────────────────────────────
+  window.filterCusts=function(mode,btn){
+    custFilter=mode;
+    document.querySelectorAll('.btn-group button').forEach(b=>b.classList.remove('active'));
+    if(btn)btn.classList.add('active');
+    renderCustList();
+  };
+
+  function renderCustList(){
+    const q=(el('cust-search')?.value||'').toLowerCase();
+    let list=allCustomers.filter(c=>{
+      if(q && !c.name.toLowerCase().includes(q) && !String(c.sr_no).includes(q))return false;
+      const bal=parseFloat(c.balance)||0;
+      if(custFilter==='pending')return bal>0;
+      if(custFilter==='clear')return bal<=0;
+      return true;
+    });
+    el('cust-list-count').textContent=list.length;
+    const container=el('cust-list');
+    if(!list.length){
+      container.innerHTML=`<div class="text-center py-4 text-muted"><i class="bi bi-inbox fs-3 d-block mb-2"></i>Koi customer nahi</div>`;
+      return;
+    }
+    // Sort: highest pending first
+    list.sort((a,b)=>(parseFloat(b.balance)||0)-(parseFloat(a.balance)||0));
+    container.innerHTML=list.map(c=>{
+      const bal=parseFloat(c.balance)||0;
+      const isSelected=selectedCust?.id===c.id;
+      return `<div class="cust-card card mb-2 ${isSelected?'selected':''}" onclick="selectCust(${c.id})"
+        style="padding:10px 12px;border-radius:8px;${isSelected?'border-color:#0d6efd!important;background:#f0f4ff;':''}">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <span style="background:#0d6efd;color:#fff;border-radius:4px;padding:1px 6px;font-size:11px;margin-right:6px;">#${c.sr_no||'-'}</span>
+            <strong style="font-size:14px;">${c.name}</strong>
+            ${c.phone?`<br><small style="color:#888;padding-left:40px;">${c.phone}</small>`:''}
+          </div>
+          <div class="text-end">
+            <div style="font-weight:800;font-size:15px;color:${bal>0?'#dc3545':'#198754'};">Rs.${fmt(bal)}</div>
+            <small style="color:${bal>0?'#dc3545':'#198754'};">${bal>0?'Baqi':'Saaf'}</small>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Select Customer ───────────────────────────────────────
+  window.selectCust=function(custId){
+    selectedCust=allCustomers.find(c=>c.id===custId);
+    if(!selectedCust)return;
+    custTxns=allTransactions.filter(t=>t.customer_id===custId);
+    renderCustList(); // re-render to highlight selected
+    renderDetail();
+  };
+
+  function renderDetail(){
+    el('detail-placeholder').style.display='none';
+    el('detail-card').style.display='block';
+    const c=selectedCust;
+    const bal=parseFloat(c.balance)||0;
+    const txCount=custTxns.length;
+    const totalSale=custTxns.filter(t=>t.transaction_type==='Credit').reduce((s,t)=>s+(parseFloat(t.amount)||0),0);
+    const totalVasooli=custTxns.filter(t=>t.transaction_type==='Debit').reduce((s,t)=>s+(parseFloat(t.amount)||0),0);
+    const totalAdv=custTxns.filter(t=>t.transaction_type==='Advance').reduce((s,t)=>s+(parseFloat(t.amount)||0),0);
+
+    el('detail-header').innerHTML=`<div class="card-body">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div>
+          <h4 class="mb-1"><i class="bi bi-person-circle me-2 text-primary"></i>${c.name}
+            <span class="badge bg-secondary ms-2">#${c.sr_no||'-'}</span></h4>
+          ${c.phone?`<div><i class="bi bi-telephone me-1 text-muted"></i>${c.phone}</div>`:''}
+          <small class="text-muted">${txCount} transactions total</small>
+        </div>
+        <div class="text-end">
+          <div style="font-size:28px;font-weight:900;color:${bal>0?'#dc3545':'#198754'};">Rs.${fmt(bal)}</div>
+          <div style="color:${bal>0?'#dc3545':'#198754'};font-weight:600;">${bal>0?'KHATA BAQI':'✅ Account Saaf'}</div>
+          <button class="btn btn-sm btn-outline-warning mt-1 no-print" onclick="quickEditBalance(${c.id})">
+            <i class="bi bi-pencil me-1"></i>Balance Edit
+          </button>
+        </div>
+      </div>
+      <div class="row g-2 mt-2">
+        <div class="col-6 col-md-3">
+          <div style="background:#d4edda;border-radius:8px;padding:8px 12px;text-align:center;">
+            <div style="font-size:11px;color:#555;">Total Sale (Credit)</div>
+            <div style="font-weight:700;color:#198754;">Rs.${fmt(totalSale)}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div style="background:#cce5ff;border-radius:8px;padding:8px 12px;text-align:center;">
+            <div style="font-size:11px;color:#555;">Total Vasooli</div>
+            <div style="font-weight:700;color:#0d6efd;">Rs.${fmt(totalVasooli)}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div style="background:#ede7f6;border-radius:8px;padding:8px 12px;text-align:center;">
+            <div style="font-size:11px;color:#555;">Cash Advances</div>
+            <div style="font-weight:700;color:#6f42c1;">Rs.${fmt(totalAdv)}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div style="background:${bal>0?'#fdecea':'#eafaf1'};border-radius:8px;padding:8px 12px;text-align:center;border:2px solid ${bal>0?'#dc3545':'#198754'};">
+            <div style="font-size:11px;color:#555;">Net Pending</div>
+            <div style="font-weight:800;color:${bal>0?'#dc3545':'#198754'};">Rs.${fmt(Math.abs(bal))}</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+    // Populate year filter
+    const years=new Set();
+    custTxns.forEach(t=>{ if(t.created_at) years.add(new Date(t.created_at).getFullYear()); });
+    const yearSel=el('year-filter');
+    yearSel.innerHTML='<option value="">Sab Saal</option>'+
+      [...years].sort((a,b)=>b-a).map(y=>`<option value="${y}">${y}</option>`).join('');
+
+    // Populate month filter for transactions
+    const months=new Set();
+    custTxns.forEach(t=>{ if(t.created_at){ const d=new Date(t.created_at); months.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`); }});
+    const mSel=el('tx-month-filter');
+    mSel.innerHTML='<option value="">Sab Transactions</option>'+
+      [...months].sort((a,b)=>b.localeCompare(a)).map(m=>{
+        const d=new Date(m+'-01');
+        return `<option value="${m}">${d.toLocaleDateString('en-PK',{month:'long',year:'numeric'})}</option>`;
+      }).join('');
+
+    renderMonthly();
+    renderTxDetail();
+  }
+
+  // ── Monthly Breakdown ─────────────────────────────────────
+  window.renderMonthly=function(){
+    const yearF=el('year-filter')?.value||'';
+    const map={};
+    custTxns.forEach(t=>{
+      if(!t.created_at)return;
+      const d=new Date(t.created_at);
+      if(yearF && String(d.getFullYear())!==yearF)return;
+      const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      const lbl=d.toLocaleDateString('en-PK',{month:'long',year:'numeric'});
+      if(!map[key])map[key]={lbl,sale:0,vasooli:0,adv:0};
+      const a=parseFloat(t.amount)||0;
+      if(t.transaction_type==='Credit')map[key].sale+=a;
+      else if(t.transaction_type==='Debit')map[key].vasooli+=a;
+      else if(t.transaction_type==='Advance')map[key].adv+=a;
+    });
+
+    const sorted=Object.keys(map).sort((a,b)=>b.localeCompare(a));
+    if(!sorted.length){
+      el('monthly-tbody').innerHTML='<tr><td colspan="6" class="text-center text-muted py-3">Koi transactions nahi is period mein</td></tr>';
+      el('monthly-tfoot').innerHTML=''; return;
+    }
+
+    let totSale=0,totVas=0,totAdv=0;
+    el('monthly-tbody').innerHTML=sorted.map(key=>{
+      const m=map[key];
+      const pending=m.sale+m.adv-m.vasooli;
+      totSale+=m.sale; totVas+=m.vasooli; totAdv+=m.adv;
+      return `<tr class="month-row" onclick="filterByMonth('${key}')" style="cursor:pointer;">
+        <td style="padding:10px 14px;font-weight:600;">${m.lbl}</td>
+        <td style="padding:10px 14px;text-align:right;color:#198754;font-weight:600;">Rs.${fmt(m.sale)}</td>
+        <td style="padding:10px 14px;text-align:right;color:#0d6efd;font-weight:600;">Rs.${fmt(m.vasooli)}</td>
+        <td style="padding:10px 14px;text-align:right;color:#6f42c1;font-weight:600;">${m.adv>0?'Rs.'+fmt(m.adv):'-'}</td>
+        <td style="padding:10px 14px;text-align:right;font-weight:800;color:${pending>0?'#dc3545':pending<0?'#198754':'#555'};">
+          Rs.${fmt(Math.abs(pending))}
+        </td>
+        <td style="padding:10px 14px;text-align:center;">
+          ${pending>0
+            ?`<span style="background:#fdecea;color:#dc3545;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;">⏳ Pending</span>`
+            :pending<0
+            ?`<span style="background:#eafaf1;color:#198754;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;">✅ Over-paid</span>`
+            :`<span style="background:#e2e3e5;color:#555;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;">✓ Clear</span>`
+          }
+        </td>
+      </tr>`;
+    }).join('');
+
+    const totPend=totSale+totAdv-totVas;
+    el('monthly-tfoot').innerHTML=`<tr style="background:#f0f4ff;font-weight:800;border-top:2px solid #0d6efd;">
+      <td style="padding:10px 14px;">TOTAL</td>
+      <td style="padding:10px 14px;text-align:right;color:#198754;">Rs.${fmt(totSale)}</td>
+      <td style="padding:10px 14px;text-align:right;color:#0d6efd;">Rs.${fmt(totVas)}</td>
+      <td style="padding:10px 14px;text-align:right;color:#6f42c1;">Rs.${fmt(totAdv)}</td>
+      <td style="padding:10px 14px;text-align:right;color:${totPend>0?'#dc3545':'#198754'};font-size:16px;">Rs.${fmt(Math.abs(totPend))}</td>
+      <td style="padding:10px 14px;text-align:center;color:${totPend>0?'#dc3545':'#198754'};font-weight:800;">${totPend>0?'BAQI':'SAAF'}</td>
+    </tr>`;
+  };
+
+  window.filterByMonth=function(key){
+    el('tx-month-filter').value=key;
+    renderTxDetail();
+    el('tx-detail-title').innerHTML=`<i class="bi bi-list-ul me-1"></i>Transactions — ${new Date(key+'-01').toLocaleDateString('en-PK',{month:'long',year:'numeric'})}`;
+  };
+
+  // ── Transaction Detail ────────────────────────────────────
+  window.renderTxDetail=function(){
+    const mFilter=el('tx-month-filter')?.value||'';
+    let txns=custTxns;
+    if(mFilter){
+      txns=txns.filter(t=>{
+        if(!t.created_at)return false;
+        const d=new Date(t.created_at);
+        const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        return key===mFilter;
+      });
+    }
+    const tbody=el('tx-detail-tbody');
+    if(!txns.length){
+      tbody.innerHTML='<tr><td colspan="4" class="text-center text-muted py-3">Koi transaction nahi</td></tr>';
+      return;
+    }
+    const tStyles={'Credit':'background:#198754;','Debit':'background:#0d6efd;','Advance':'background:#6f42c1;','Expense':'background:#ffc107;color:#212529;'};
+    const tLabels={Credit:'Sale',Debit:'Vasooli',Advance:'Advance',Expense:'Expense'};
+    tbody.innerHTML=txns.map(t=>{
+      const d=t.created_at?new Date(t.created_at).toLocaleDateString('en-PK'):'—';
+      const s=tStyles[t.transaction_type]||'background:#6c757d;';
+      const lbl=tLabels[t.transaction_type]||t.transaction_type;
+      const amt=parseFloat(t.amount)||0;
+      return `<tr>
+        <td style="padding:8px 12px;">${d}</td>
+        <td style="padding:8px 12px;"><span style="${s}color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;">${lbl}</span></td>
+        <td style="padding:8px 12px;font-weight:700;color:${t.transaction_type==='Debit'?'#0d6efd':t.transaction_type==='Credit'?'#dc3545':'#555'};">
+          ${t.transaction_type==='Debit'?'−':'+'} Rs.${fmt(amt)}
+        </td>
+        <td style="padding:8px 12px;font-size:12px;color:#555;">${t.description||'—'}</td>
+      </tr>`;
+    }).join('');
+  };
+
+  // ── Quick Edit Balance ────────────────────────────────────
+  window.quickEditBalance=async function(custId){
+    const c=allCustomers.find(x=>x.id===custId);
+    if(!c)return;
+    const current=parseFloat(c.balance)||0;
+    const val=prompt(`${c.name} ka balance change karein\nMojuda balance: Rs.${fmt(current)}\n\nNaya balance enter karein (Rs.):`, current);
+    if(val===null)return;
+    const nb=parseFloat(val)||0;
+    try{
+      const{error}=await supabase.from('customers').update({balance:nb}).eq('id',custId);
+      if(error)throw error;
+      c.balance=nb;
+      showToast('success','Done!',`${c.name} ka balance Rs.${fmt(nb)} ho gaya!`);
+      computeSummary(); renderCustList(); renderDetail();
+    }catch(e){alert('Error: '+e.message);}
+  };
+
+  // ── Print Customer Khata ──────────────────────────────────
+  window.printCustomerKhata=function(){
+    const c=selectedCust; if(!c)return;
+    const bal=parseFloat(c.balance)||0;
+    const yearF=el('year-filter')?.value||'';
+    const company='Khalid & Sons Petroleum';
+    const pDate=new Date().toLocaleDateString('en-PK',{day:'2-digit',month:'long',year:'numeric'});
+    const txns=custTxns.filter(t=>{
+      if(!yearF)return true;
+      if(!t.created_at)return false;
+      return String(new Date(t.created_at).getFullYear())===yearF;
+    });
+    const tStyles={Credit:'color:#198754',Debit:'color:#0d6efd',Advance:'color:#6f42c1',Expense:'color:#cc8800'};
+    const rows=txns.map(t=>{
+      const d=t.created_at?new Date(t.created_at).toLocaleDateString('en-PK'):'—';
+      const a=parseFloat(t.amount)||0;
+      return `<tr>
+        <td>${d}</td><td style="${tStyles[t.transaction_type]||''};font-weight:700">${t.transaction_type}</td>
+        <td style="text-align:right;color:${t.transaction_type==='Credit'?'#dc3545':t.transaction_type==='Debit'?'#198754':'#555'};font-weight:700">
+          ${t.transaction_type==='Debit'?'− ':'+ '}Rs.${fmt(a)}</td>
+        <td>${t.description||'—'}</td>
+      </tr>`;
+    }).join('');
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Khata — ${c.name}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;padding:16px}
+.hdr{display:flex;justify-content:space-between;border-bottom:2px solid #1a5276;padding-bottom:10px;margin-bottom:14px}
+h1{font-size:18px;color:#1a5276}h2{font-size:15px;color:#2c3e50}
+.info{display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap}.info-box{flex:1;min-width:120px;padding:8px;border-radius:6px;text-align:center}
+table{width:100%;border-collapse:collapse;margin-bottom:20px}th{background:#1a5276;color:#fff;padding:6px 8px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+td{padding:5px 8px;border-bottom:1px solid #eee}tr:nth-child(even) td{background:#f9f9f9}
+.sig-row{display:flex;justify-content:space-between;margin-top:30px}
+.sig-box{text-align:center;width:180px}.sig-line{border-top:1px solid #555;padding-top:4px;font-size:10px;color:#555;margin-top:30px}
+@media print{body{padding:8px}@page{margin:10mm}}</style></head><body>
+<div class="hdr"><div><h1>⛽ ${company}</h1><p style="color:#666">Customer Khata — Account Statement</p></div>
+<div style="text-align:right;font-size:11px;color:#666"><strong>${pDate}</strong></div></div>
+<h2 style="margin-bottom:10px">${c.name} — Account Statement ${yearF?'('+yearF+')':'(Sab)'}</h2>
+<div class="info">
+<div class="info-box" style="background:#d4edda;border:1px solid #28a745"><div style="font-size:10px">Customer</div><div style="font-weight:700">#${c.sr_no||'-'} | ${c.name}</div></div>
+${c.phone?`<div class="info-box" style="background:#cce5ff;border:1px solid #0069d9"><div style="font-size:10px">Phone</div><div style="font-weight:700">${c.phone}</div></div>`:''}
+<div class="info-box" style="background:${bal>0?'#fdecea':'#eafaf1'};border:1px solid ${bal>0?'#e74c3c':'#27ae60'}">
+<div style="font-size:10px">Net Pending</div><div style="font-weight:900;font-size:16px;color:${bal>0?'#c0392b':'#27ae60'}">Rs.${fmt(Math.abs(bal))}</div>
+<div style="font-size:10px;color:${bal>0?'#c0392b':'#27ae60'}">${bal>0?'BAQI':'SAAF'}</div></div>
+</div>
+<table><thead><tr><th>Date</th><th>Type</th><th style="text-align:right">Amount</th><th>Description</th></tr></thead>
+<tbody>${rows||'<tr><td colspan="4" style="text-align:center;color:#888">Koi transaction nahi</td></tr>'}</tbody></table>
+<div class="sig-row"><div class="sig-box"><div class="sig-line">Customer Signature<br>دستخط</div></div>
+<div class="sig-box"><div class="sig-line">Prepared By</div></div>
+<div class="sig-box"><div class="sig-line">Verified By</div></div></div>
+</body><script>window.onload=function(){window.print();}<\/script></html>`;
+    const w=window.open('','_blank','width=1000,height=700');
+    if(w){w.document.write(html);w.document.close();}
+  };
+
+  // ── Old Balance — Single Customer ─────────────────────────
+  function buildObDropdown(){
+    const searchEl=el('ob-cust-search'), listEl=el('ob-cust-list');
+    let selCust=null;
+    function render(q){
+      const f=q?allCustomers.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())||String(c.sr_no).includes(q)):allCustomers;
+      listEl.innerHTML=f.map(c=>{
+        const b=parseFloat(c.balance)||0;
+        return `<div class="ob-item" data-id="${c.id}"
+          style="padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;border-bottom:1px solid #f5f5f5;font-size:14px;">
+          <span><span style="background:#ffc107;color:#212529;border-radius:4px;padding:1px 7px;font-size:11px;font-weight:700;margin-right:8px;">#${c.sr_no||'-'}</span>${c.name}</span>
+          <span style="font-size:12px;font-weight:700;color:${b>0?'#dc3545':'#198754'};">Rs.${fmt(b)}</span>
+        </div>`;
+      }).join('') || '<div style="padding:12px;text-align:center;color:#888">Nahi mila</div>';
+      listEl.style.display='block';
+      listEl.querySelectorAll('.ob-item').forEach(item=>{
+        item.addEventListener('mouseenter',()=>item.style.background='#fffbea');
+        item.addEventListener('mouseleave',()=>item.style.background='');
+        item.addEventListener('mousedown',e=>{
+          e.preventDefault();
+          selCust=allCustomers.find(c=>c.id==item.dataset.id);
+          el('ob-customer-hidden').value=selCust.id;
+          searchEl.value=''; searchEl.style.display='none'; listEl.style.display='none';
+          el('ob-cust-text').textContent=`#${selCust.sr_no||'-'} — ${selCust.name}`;
+          const b=parseFloat(selCust.balance)||0;
+          el('ob-cust-bal').textContent=b>0?`Mojuda baqi: Rs.${fmt(b)}`:'Account saaf';
+          el('ob-cust-bal').style.color=b>0?'#dc3545':'#198754';
+          el('ob-cust-selected').style.display='flex';
+        });
+      });
+    }
+    searchEl.addEventListener('input',()=>render(searchEl.value));
+    searchEl.addEventListener('focus',()=>render(searchEl.value));
+    searchEl.addEventListener('blur',()=>setTimeout(()=>listEl.style.display='none',200));
+    window.clearObCust=function(){
+      selCust=null; el('ob-customer-hidden').value='';
+      searchEl.value=''; searchEl.style.display='block';
+      el('ob-cust-selected').style.display='none'; listEl.style.display='none'; searchEl.focus();
+    };
+  }
+
+  window.saveOldBalance=async function(){
+    const custId=el('ob-customer-hidden')?.value;
+    const amount=parseFloat(el('ob-amount')?.value)||0;
+    const method=el('ob-method')?.value||'add';
+    const note=el('ob-note')?.value||'Old pending balance';
+    if(!custId){alert('Customer select karein');return;}
+    if(!amount){alert('Amount enter karein');return;}
+    const cust=allCustomers.find(c=>c.id==custId);
+    if(!cust)return;
+    const currentBal=parseFloat(cust.balance)||0;
+    const newBal=method==='set'?amount:(currentBal+amount);
+    try{
+      const{error}=await supabase.from('customers').update({balance:newBal}).eq('id',custId);
+      if(error)throw error;
+      // Also save as transaction for record
+      await supabase.from('transactions').insert([{
+        customer_id:parseInt(custId),
+        transaction_type:'Credit',
+        amount:amount,
+        description:`Opening Balance: ${note}`
+      }]);
+      cust.balance=newBal;
+      showToast('success','Saved!',`${cust.name} — Balance Rs.${fmt(newBal)} set ho gaya!`);
+      computeSummary(); renderCustList();
+      if(selectedCust?.id==custId)renderDetail();
+    }catch(e){alert('Error: '+e.message);}
+  };
+
+  // ── Bulk Balance Table ────────────────────────────────────
+  function buildBulkTable(){
+    const tbody=el('bulk-balance-tbody');
+    if(!tbody)return;
+    tbody.innerHTML=allCustomers.map(c=>{
+      const bal=parseFloat(c.balance)||0;
+      return `<tr>
+        <td>${c.sr_no||'-'}</td>
+        <td>${c.name}</td>
+        <td style="color:${bal>0?'#dc3545':'#198754'};font-weight:700;">Rs.${fmt(bal)}</td>
+        <td><input type="number" class="form-control form-control-sm bulk-bal-input" data-id="${c.id}"
+          placeholder="0.00" step="0.01" value="${bal>0?bal:''}"
+          style="border:1px solid ${bal>0?'#dc3545':'#ccc'};"></td>
+      </tr>`;
+    }).join('');
+  }
+
+  window.saveBulkBalances=async function(){
+    const inputs=document.querySelectorAll('.bulk-bal-input');
+    const updates=[];
+    inputs.forEach(inp=>{
+      const val=parseFloat(inp.value);
+      if(!isNaN(val)&&val>=0){
+        const cust=allCustomers.find(c=>c.id==inp.dataset.id);
+        if(cust&&val!==parseFloat(cust.balance)) updates.push({id:parseInt(inp.dataset.id),balance:val});
+      }
+    });
+    if(!updates.length){alert('Koi change nahi hua');return;}
+    if(!confirm(updates.length+' customers ka balance update karein?'))return;
+    try{
+      for(const u of updates){
+        const{error}=await supabase.from('customers').update({balance:u.balance}).eq('id',u.id);
+        if(error)throw error;
+        const lc=allCustomers.find(c=>c.id===u.id);
+        if(lc)lc.balance=u.balance;
+      }
+      showToast('success','Saved!',updates.length+' customers updated!');
+      computeSummary(); renderCustList(); buildBulkTable();
+    }catch(e){alert('Error: '+e.message);}
+  };
+
+  // ── Init ──────────────────────────────────────────────────
+  el('cust-search')?.addEventListener('input',renderCustList);
+  el('oldBalanceModal')?.addEventListener('show.bs.modal',buildObDropdown);
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    loadAll();
+  });
+})();
+</script>
+</body>
+</html>

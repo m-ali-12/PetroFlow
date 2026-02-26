@@ -78,7 +78,7 @@
 <body>
 
 <!-- Sidebar -->
-<div class="sidebar">
+<!-- <div class="sidebar">
   <div class="logo">
     <h6>⛽ Khalid & Sons</h6>
     <small>Petroleum Management</small>
@@ -91,8 +91,8 @@
     <a href="profit-loss.html" class="active"><i class="bi bi-graph-up-arrow"></i> Profit & Loss</a>
     <a href="settings.html"><i class="bi bi-gear"></i> Settings</a>
   </nav>
-</div>
-
+</div> -->
+  <div id="navbar-placeholder"></div>
 <!-- Main Content -->
 <div class="main">
 
@@ -238,16 +238,20 @@
   </div>
 </div>
 
+<div id="footer-placeholder"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <!-- Load your existing config/auth/supabase setup -->
-<script src="config.js"></script>
-<script src="auth.js"></script>
-<script src="app.js"></script>
+<script src="/js/config.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/app.js"></script>
 
 <script>
 (function(){
   'use strict';
-  const supabase = window.supabaseClient;
+
+  // Safe supabase getter — avoids "Cannot read properties of undefined" if scripts load late
+  function getSupabase() { return window.supabaseClient; }
 
   function fmt(n){ return Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2}); }
   function el(id){ return document.getElementById(id); }
@@ -305,13 +309,15 @@
     el('report-label').textContent = getPeriodLabel();
 
     try {
-      const userId = (await supabase.auth.getUser()).data?.user?.id;
+      const sb = getSupabase();
+      if(!sb) throw new Error('Supabase client not ready. Please refresh.');
+      const userId = (await sb.auth.getUser()).data?.user?.id;
       const { from, to } = getDateRange();
       const fromStr = from.toISOString();
       const toStr   = new Date(to.setHours(23,59,59,999)).toISOString();
 
       // Load transactions in range
-      const { data: txns, error: txErr } = await supabase
+      const { data: txns, error: txErr } = await sb
         .from('transactions')
         .select('*, customers(name, sr_no)')
         .eq('user_id', userId)
@@ -322,7 +328,7 @@
       if(txErr) throw txErr;
 
       // Load cash advances
-      const { data: advances } = await supabase
+      const { data: advances } = await sb
         .from('cash_advances')
         .select('*, customers(name, sr_no)')
         .eq('user_id', userId)
@@ -660,10 +666,16 @@
 
     // Wait for auth to be ready
     const checkAuth = setInterval(async () => {
-      const { data } = await supabase.auth.getUser();
-      if(data?.user){
-        clearInterval(checkAuth);
-        await loadReport();
+      const sb = getSupabase();
+      if(!sb) return; // still loading
+      try {
+        const { data } = await sb.auth.getUser();
+        if(data?.user){
+          clearInterval(checkAuth);
+          await loadReport();
+        }
+      } catch(e) {
+        console.warn('Auth check error:', e);
       }
     }, 300);
 
@@ -674,6 +686,25 @@
   window.loadReport = loadReport;
 })();
 </script>
+
+<!-- Footer -->
+<!-- <footer class="no-print" style="margin-left:240px; background:#fff; border-top:1px solid #e0e6ed; padding:18px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:13px; color:#7f8c8d;">
+  <div>
+    <strong style="color:#1a5276;">⛽ Khalid &amp; Sons Petroleum</strong>
+    &nbsp;|&nbsp; Profit &amp; Loss Management System
+  </div>
+  <div>
+    &copy; <script>document.write(new Date().getFullYear())</script> All rights reserved &nbsp;|&nbsp;
+    <a href="dashboard.html" style="color:#1a5276;text-decoration:none;">Dashboard</a> &nbsp;|&nbsp;
+    <a href="transactions.html" style="color:#1a5276;text-decoration:none;">Transactions</a> &nbsp;|&nbsp;
+    <a href="reports.html" style="color:#1a5276;text-decoration:none;">Reports</a>
+  </div>
+</footer> -->
+<!-- <style>
+  @media (max-width: 768px) {
+    footer { margin-left: 0 !important; justify-content: center; text-align: center; }
+  }
+</style> -->
 </body>
 </html>
 <!-- 
