@@ -162,11 +162,14 @@
 .navbar.bg-gradient {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
     box-shadow: 0 2px 20px rgba(102, 126, 234, 0.3) !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    min-height: 56px;
 }
-.navbar-brand { color: white !important; }
-.brand-title   { font-size: 1rem; font-weight: 700; line-height: 1.2; color: white; }
-.brand-subtitle{ font-size: 0.7rem; opacity: 0.9; color: rgba(255,255,255,0.9); }
-.navbar-brand img { box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+.navbar-brand { color: white !important; padding: 0.4rem 0 !important; }
+.brand-title   { font-size: 0.92rem; font-weight: 700; line-height: 1.2; color: white; }
+.brand-subtitle{ font-size: 0.65rem; opacity: 0.85; color: rgba(255,255,255,0.9); }
+.navbar-brand img { box-shadow: 0 2px 8px rgba(0,0,0,0.2); height: 34px !important; }
 .navbar-toggler { border-color: rgba(255,255,255,0.3); }
 .navbar-toggler-icon {
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255,255,255,1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
@@ -176,13 +179,18 @@
 .navbar .nav-link {
     color: rgba(255,255,255,0.85) !important;
     font-weight: 500;
-    padding: 0.5rem 0.75rem !important;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    margin: 0 0.1rem;
-    font-size: 0.88rem;
+    padding: 0.38rem 0.5rem !important;
+    border-radius: 7px;
+    transition: all 0.25s ease;
+    margin: 0;
+    font-size: 0.8rem;
     white-space: nowrap;
+    line-height: 1.4;
 }
+/* Hide icons on desktop to save space — show on mobile */
+.navbar .nav-link i.nav-icon,
+.navbar .nav-link .nav-icon { display: none; }
+
 .navbar .nav-link:hover,
 .navbar .nav-link:focus {
     background: rgba(255,255,255,0.15);
@@ -192,14 +200,15 @@
 .navbar .nav-link.active {
     background: white !important;
     color: #667eea !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.12);
     font-weight: 600;
 }
 
 /* ═══ Dropdown Menus ══════════════════════════════════════════ */
 .navbar .dropdown-toggle::after {
-    vertical-align: 0.15em;
-    opacity: 0.8;
+    vertical-align: 0.12em;
+    opacity: 0.7;
+    margin-left: 3px;
 }
 .navbar .dropdown-menu {
     background: #fff;
@@ -207,8 +216,8 @@
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(102,126,234,0.18);
     padding: 0.5rem;
-    min-width: 190px;
-    margin-top: 6px !important;
+    min-width: 185px;
+    margin-top: 4px !important;
     animation: dropFade 0.18s ease;
 }
 @keyframes dropFade {
@@ -217,8 +226,8 @@
 }
 .navbar .dropdown-item {
     border-radius: 8px;
-    padding: 0.55rem 1rem;
-    font-size: 0.88rem;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.84rem;
     font-weight: 500;
     color: #444;
     display: flex;
@@ -237,34 +246,57 @@
     color: white;
 }
 .navbar .dropdown-item i {
-    width: 18px;
+    width: 16px;
     text-align: center;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     opacity: 0.8;
 }
-.navbar .dropdown-divider {
-    margin: 0.35rem 0.5rem;
-    border-color: #f0f0f0;
-}
+.navbar .dropdown-divider { margin: 0.3rem 0.5rem; border-color: #f0f0f0; }
 .dropdown-header-label {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    color: #999;
-    padding: 0.4rem 1rem 0.2rem;
+    color: #aaa;
+    padding: 0.35rem 0.9rem 0.15rem;
+    display: block;
 }
 
 /* ═══ Badge / Time ══════════════════════════════════════════ */
-.navbar-user-info .badge { padding: 0.45rem 0.8rem; font-weight: 500; font-size: 0.82rem; }
-.navbar-user-info .bg-light { background-color: rgba(255,255,255,0.95) !important; }
+.navbar-user-info { flex-shrink: 0; }
+.navbar-user-info .badge {
+    padding: 0.38rem 0.65rem;
+    font-weight: 500;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+.navbar-user-info .bg-light  { background-color: rgba(255,255,255,0.95) !important; }
 .navbar-user-info .bg-success { background: linear-gradient(135deg,#10b981,#059669) !important; }
 
-/* ═══ Responsive ════════════════════════════════════════════ */
+/* ═══ Laptop optimised (992px – 1300px) ════════════════════ */
+@media (min-width: 992px) and (max-width: 1300px) {
+    .navbar-brand img { height: 30px !important; }
+    .brand-title   { font-size: 0.82rem; }
+    .brand-subtitle{ display: none; }          /* subtitle hide karo */
+    .navbar .nav-link { font-size: 0.75rem; padding: 0.32rem 0.42rem !important; }
+    .navbar-user-info .badge { font-size: 0.7rem; padding: 0.32rem 0.5rem; }
+    .navbar-user-info .ms-1 { margin-left: 0.2rem !important; }
+}
+
+/* ═══ Mobile / Tablet ════════════════════════════════════ */
 @media (max-width: 991px) {
+    .navbar.bg-gradient { padding-top: 0.4rem !important; padding-bottom: 0.4rem !important; }
     .navbar-nav { padding: 0.75rem 0; }
-    .navbar .nav-link { padding: 0.7rem 1rem !important; margin: 0.15rem 0; font-size: 0.93rem; }
-    .navbar-user-info { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem; }
+    .navbar .nav-link {
+        padding: 0.65rem 1rem !important;
+        margin: 0.12rem 0;
+        font-size: 0.9rem;
+    }
+    /* Show icons on mobile */
+    .navbar .nav-link i.nav-icon,
+    .navbar .nav-link .nav-icon { display: inline-block; margin-right: 6px; }
+
+    .navbar-user-info { display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.75rem; }
     .navbar .dropdown-menu {
         background: rgba(255,255,255,0.08);
         box-shadow: none;
@@ -279,11 +311,12 @@
         font-size: 0.88rem;
         border-radius: 6px;
     }
-    .navbar .dropdown-item:hover { background: rgba(255,255,255,0.12); color: white; transform:none; }
+    .navbar .dropdown-item:hover { background: rgba(255,255,255,0.12); color: white; transform: none; }
     .navbar .dropdown-item i { opacity: 0.7; }
-    .dropdown-header-label { color: rgba(255,255,255,0.45); }
+    .dropdown-header-label { color: rgba(255,255,255,0.4); }
     .navbar .dropdown-divider { border-color: rgba(255,255,255,0.1); }
     .navbar .dropdown-toggle::after { float: right; margin-top: 6px; }
+    .brand-subtitle { display: block !important; }
 }
 </style>
 
@@ -310,14 +343,14 @@
         <!-- Dashboard -->
         <li class="nav-item">
           <a class="nav-link" href="index.html" data-page="index">
-            <i class="bi bi-speedometer2 me-1"></i>Dashboard
+            <i class="bi bi-speedometer2 nav-icon"></i>Dashboard
           </a>
         </li>
 
         <!-- Customers dropdown -->
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-page="customers">
-            <i class="bi bi-people me-1"></i>Customers
+            <i class="bi bi-people nav-icon"></i>Customers
           </a>
           <ul class="dropdown-menu">
             <li><span class="dropdown-header-label">Customers</span></li>
@@ -337,14 +370,14 @@
         <!-- Transactions -->
         <li class="nav-item">
           <a class="nav-link" href="transactions.html" data-page="transactions">
-            <i class="bi bi-arrow-left-right me-1"></i>Transactions
+            <i class="bi bi-arrow-left-right nav-icon"></i>Transactions
           </a>
         </li>
 
         <!-- Stock dropdown -->
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-page="stock">
-            <i class="bi bi-fuel-pump me-1"></i>Stock
+            <i class="bi bi-fuel-pump nav-icon"></i>Stock
           </a>
           <ul class="dropdown-menu">
             <li><span class="dropdown-header-label">Stock Management</span></li>
@@ -370,7 +403,7 @@
         <!-- Khata / Accounts dropdown -->
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-page="khata">
-            <i class="bi bi-journal-text me-1"></i>Khata
+            <i class="bi bi-journal-text nav-icon"></i>Khata
           </a>
           <ul class="dropdown-menu">
             <li><span class="dropdown-header-label">Khata / Ledger</span></li>
@@ -396,7 +429,7 @@
         <!-- Reports dropdown -->
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-page="reports">
-            <i class="bi bi-bar-chart-line me-1"></i>Reports
+            <i class="bi bi-bar-chart-line nav-icon"></i>Reports
           </a>
           <ul class="dropdown-menu">
             <li><span class="dropdown-header-label">Reports</span></li>
@@ -416,14 +449,14 @@
         <!-- Rent -->
         <li class="nav-item">
           <a class="nav-link" href="rent.html" data-page="rent">
-            <i class="bi bi-shop me-1"></i>Rent
+            <i class="bi bi-shop nav-icon"></i>Rent
           </a>
         </li>
 
         <!-- Settings dropdown -->
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-page="settings">
-            <i class="bi bi-gear me-1"></i>Settings
+            <i class="bi bi-gear nav-icon"></i>Settings
           </a>
           <ul class="dropdown-menu dropdown-menu-end">
             <li><span class="dropdown-header-label">Settings</span></li>
