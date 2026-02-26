@@ -850,6 +850,12 @@
     const inst = bootstrap.Modal.getInstance(m);
     if (inst) inst.hide();
     const f = m.querySelector('form'); if (f) f.reset();
+    // Reset any searchable dropdowns inside this modal
+    m.querySelectorAll('[id$="-search-input"]').forEach(inp => { inp.value = ''; });
+    m.querySelectorAll('[id$="-search-list"]').forEach(list => { list.style.display = 'none'; });
+    m.querySelectorAll('[id$="-search-clear"]').forEach(clr => { clr.style.display = 'none'; });
+    m.querySelectorAll('input[type="hidden"]').forEach(h => { h.value = ''; });
+    m.querySelectorAll('small[id$="-balance"]').forEach(s => { s.textContent = ''; });
   }
 
   function setTodayDates() {
@@ -887,6 +893,118 @@
 
 
   // ============================================================
+  // SEARCHABLE DROPDOWN ENGINE
+  // Reusable — builds a type-to-search customer picker
+  // ============================================================
+  function buildSearchableDropdown({ wrapId, inputId, listId, clearId, hiddenId, balanceId, items }) {
+    const inputEl   = el(inputId);
+    const listEl    = el(listId);
+    const clearEl   = el(clearId);
+    const hiddenEl  = el(hiddenId);
+    const balanceEl = balanceId ? el(balanceId) : null;
+    if (!inputEl || !listEl) return;
+
+    let selected = null;
+
+    function renderList(q) {
+      const query = (q || '').toLowerCase().trim();
+      const filtered = query
+        ? items.filter(c =>
+            c.name.toLowerCase().includes(query) ||
+            String(c.sr_no || '').includes(query))
+        : items;
+
+      if (!filtered.length) {
+        listEl.innerHTML = '<div style="padding:10px 14px;color:#888;font-size:13px;">Koi customer nahi mila</div>';
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(c => {
+        const bal     = parseFloat(c.balance) || 0;
+        const balClr  = bal > 0 ? '#dc3545' : bal < 0 ? '#198754' : '#888';
+        const balTxt  = bal > 0 ? `Rs.${fmt(bal)} (Udhaar)` : bal < 0 ? `Rs.${fmt(Math.abs(bal))} (Adv)` : 'Zero';
+        const isSelBg = selected?.id === c.id ? 'background:#e8f0fe;font-weight:700;' : '';
+        return `<div class="sd-item" data-id="${c.id}"
+          style="padding:9px 14px;cursor:pointer;display:flex;justify-content:space-between;
+                 align-items:center;font-size:13px;border-bottom:1px solid #f5f5f5;${isSelBg}">
+          <span>
+            <span style="background:#0d6efd;color:#fff;border-radius:4px;padding:1px 7px;
+              font-size:11px;font-weight:700;margin-right:7px;">#${c.sr_no}</span>
+            ${c.name}
+          </span>
+          <span style="font-size:11px;font-weight:700;color:${balClr};white-space:nowrap;margin-left:8px;">${balTxt}</span>
+        </div>`;
+      }).join('');
+
+      listEl.querySelectorAll('.sd-item').forEach(item => {
+        item.addEventListener('mouseenter', () => { item.style.background = '#f0f4ff'; });
+        item.addEventListener('mouseleave', () => { item.style.background = selected?.id == item.dataset.id ? '#e8f0fe' : ''; });
+        item.addEventListener('mousedown',  e  => { e.preventDefault(); selectItem(items.find(c => c.id == item.dataset.id)); });
+      });
+    }
+
+    function selectItem(c) {
+      if (!c) return;
+      selected = c;
+      inputEl.value         = `#${c.sr_no} — ${c.name}`;
+      if (hiddenEl) hiddenEl.value = c.id;
+      if (clearEl)  clearEl.style.display = 'inline';
+      listEl.style.display  = 'none';
+
+      // Show balance info
+      if (balanceEl) {
+        const bal = parseFloat(c.balance) || 0;
+        if (bal > 0)      { balanceEl.textContent = `⚠️ Baqi: Rs.${fmt(bal)} (Udhaar)`; balanceEl.className = 'text-danger fw-bold'; }
+        else if (bal < 0) { balanceEl.textContent = `✅ Advance: Rs.${fmt(Math.abs(bal))}`; balanceEl.className = 'text-success fw-bold'; }
+        else              { balanceEl.textContent = `✅ Baqi: Zero`; balanceEl.className = 'text-success'; }
+        balanceEl.style.fontSize = '11px';
+        balanceEl.style.display  = 'block';
+      }
+    }
+
+    function resetDropdown() {
+      selected = null;
+      inputEl.value = '';
+      if (hiddenEl)  hiddenEl.value = '';
+      if (clearEl)   clearEl.style.display = 'none';
+      if (balanceEl) { balanceEl.textContent = ''; }
+      listEl.style.display = 'none';
+    }
+
+    inputEl.addEventListener('input', () => {
+      renderList(inputEl.value);
+      listEl.style.display = 'block';
+      if (clearEl) clearEl.style.display = inputEl.value ? 'inline' : 'none';
+    });
+
+    inputEl.addEventListener('focus', () => {
+      renderList(inputEl.value);
+      listEl.style.display = 'block';
+    });
+
+    inputEl.addEventListener('blur', () => {
+      // Small delay so mousedown on list item fires first
+      setTimeout(() => { listEl.style.display = 'none'; }, 150);
+    });
+
+    if (clearEl) {
+      clearEl.addEventListener('click', resetDropdown);
+    }
+
+    // Reset when parent modal opens
+    const parentModal = inputEl.closest('.modal');
+    if (parentModal) {
+      parentModal.addEventListener('show.bs.modal', resetDropdown);
+    }
+
+    // Expose reset globally for closeModal()
+    if (wrapId) window['reset_' + wrapId] = resetDropdown;
+
+    return { selectItem, resetDropdown };
+  }
+
+
+  // ============================================================
   // ✅ LOAD ALL DROPDOWNS FROM customers + expense_categories
   //    Runs once on page init — populates all 3 modals
   // ============================================================
@@ -901,30 +1019,16 @@
 
       const all = customers || [];
 
-      // ── Member Card Modal: all customers except company itself ──
-      const mcuSel = el('mcu-member-id');
-      if (mcuSel) {
-        mcuSel.innerHTML =
-          '<option value="">-- Member Select Karein --</option>' +
-          all
-            .filter(c => c.category !== 'Owner')   // show all non-owner members
-            .map(c => `<option value="${c.id}" data-balance="${c.balance || 0}">#${c.sr_no} — ${c.name}</option>`)
-            .join('');
-
-        // Show balance when member selected
-        mcuSel.addEventListener('change', function () {
-          const opt = this.options[this.selectedIndex];
-          const bal = parseFloat(opt?.dataset?.balance) || 0;
-          const balEl = el('mcu-member-balance');
-          if (balEl) {
-            if (bal > 0)       balEl.textContent = `⚠️ Baqi: Rs.${fmt(bal)} (Udhaar)`;
-            else if (bal < 0)  balEl.textContent = `✅ Advance: Rs.${fmt(Math.abs(bal))}`;
-            else               balEl.textContent = `✅ Baqi: Zero`;
-            balEl.className = bal > 0 ? 'text-danger fw-bold' : 'text-success fw-bold';
-            balEl.style.fontSize = '11px';
-          }
-        });
-      }
+      // ── Member Card Modal: SEARCHABLE dropdown ──────────────
+      buildSearchableDropdown({
+        wrapId:     'mcu-search-wrap',
+        inputId:    'mcu-search-input',
+        listId:     'mcu-search-list',
+        clearId:    'mcu-search-clear',
+        hiddenId:   'mcu-member-id',
+        balanceId:  'mcu-member-balance',
+        items:      all.filter(c => c.category !== 'Owner'),
+      });
 
       // ── Expense Entry Modal: Account (Dual Role) dropdown ──
       // Shows ALL customers — same list as customers page
@@ -1193,14 +1297,15 @@
     const usageDate  = el('mcu-date')?.value || new Date().toISOString().split('T')[0];
     const notes      = el('mcu-notes')?.value || '';
 
-    if (!memberId)      { alert('Member select karein');    return; }
+    // mcu-member-id is now a hidden input; show text comes from search input
+    if (!memberId)      { alert('Member search box mein naam likho aur list se select karein'); return; }
     if (!fuelType)      { alert('Fuel type select karein'); return; }
     if (liters <= 0)    { alert('Liters enter karein');     return; }
     if (unitPrice <= 0) { alert('Unit price enter karein'); return; }
 
     const stockValue   = liters * unitPrice;
     const totalCharges = atmCharge + miscCharge;
-    const memberName   = el('mcu-member-id')?.selectedOptions[0]?.text || '';
+    const memberName   = el('mcu-search-input')?.value || '';
 
     try {
       const userId    = await getCurrentUserId();

@@ -314,11 +314,25 @@
             <div class="row g-3">
               <div class="col-12">
                 <label class="form-label">Member *</label>
-                <!-- ✅ Live from customers table -->
-                <select class="form-select" id="mcu-member-id" required>
-                  <option value="">-- Member Select Karein --</option>
-                </select>
-                <small class="text-primary fw-bold" id="mcu-member-balance" style="font-size:11px;"></small>
+                <!-- ✅ Searchable dropdown — type name or SR No to filter -->
+                <div id="mcu-search-wrap" style="position:relative;">
+                  <div style="display:flex;align-items:center;border:1px solid #dee2e6;border-radius:6px;background:#fff;overflow:hidden;">
+                    <span style="padding:0 10px;color:#aaa;font-size:13px;">🔍</span>
+                    <input type="text" id="mcu-search-input" autocomplete="off"
+                      placeholder="Naam ya SR No likho..."
+                      style="border:none;outline:none;width:100%;padding:7px 4px;font-size:14px;background:transparent;">
+                    <span id="mcu-search-clear" style="padding:0 10px;color:#aaa;cursor:pointer;font-size:16px;display:none;" title="Clear">✕</span>
+                  </div>
+                  <div id="mcu-search-list"
+                    style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;
+                           background:#fff;border:1px solid #dee2e6;border-top:none;
+                           border-radius:0 0 6px 6px;max-height:220px;overflow-y:auto;
+                           box-shadow:0 4px 16px rgba(0,0,0,0.12);">
+                  </div>
+                  <!-- Hidden real value sent on submit -->
+                  <input type="hidden" id="mcu-member-id" name="mcu-member-id">
+                </div>
+                <small id="mcu-member-balance" style="font-size:11px;display:block;min-height:16px;margin-top:3px;"></small>
               </div>
               <div class="col-12">
                 <label class="form-label">Fuel Type *</label>
