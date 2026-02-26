@@ -420,6 +420,33 @@
           <button class="btn-close" data-bs-dismiss="modal" type="button"></button>
         </div>
         <div class="modal-body">
+
+          <!-- Customer (Optional) -->
+          <div class="mb-3">
+            <label class="form-label">Customer (Optional)
+              <small class="text-muted fw-normal">— Agar kisi customer ki taraf se expense hai</small>
+            </label>
+            <input type="hidden" id="expense-customer-hidden">
+            <div style="position:relative;">
+              <input type="text" id="expense-cust-search" class="form-control"
+                placeholder="🔍 Sr# ya naam likhein... (blank chhodo = Owner account)"
+                autocomplete="off">
+              <div id="expense-cust-list"
+                style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;
+                  background:#fff;border:1px solid #e67e22;border-radius:6px;
+                  max-height:200px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.15);">
+              </div>
+            </div>
+            <div id="expense-cust-selected"
+              style="display:none;background:#fff8f0;border:1px solid #e67e22;border-radius:6px;
+                padding:8px 12px;margin-top:4px;justify-content:space-between;align-items:center;">
+              <span id="expense-cust-selected-text" style="font-weight:600;color:#e67e22;"></span>
+              <span id="expense-cust-balance" style="font-size:12px;font-weight:700;margin-left:8px;"></span>
+              <button type="button" onclick="window.clear_sd_expense()"
+                style="background:none;border:none;color:#dc3545;font-size:16px;cursor:pointer;padding:0 4px;margin-left:auto;">✕</button>
+            </div>
+          </div>
+
           <div class="mb-3"><label class="form-label">Expense Type *</label><select class="form-select" id="expense-type" required><option value="">-- Loading categories... --</option></select></div>
           <div class="mb-3"><label class="form-label">Pay From Account *</label><select class="form-select" id="expense-account" required><option value="">Select Account</option><option value="Owner">Owner Account</option><option value="Cash">Cash</option><option value="Bank">Bank</option></select></div>
           <div class="mb-3"><label class="form-label">Amount *</label><div class="input-group"><span class="input-group-text">Rs.</span><input class="form-control" id="expense-amount" required step="0.01" type="number"/></div></div>
@@ -505,11 +532,26 @@
             <label class="form-label">Extra Notes (Optional)</label>
             <textarea id="advance-notes" class="form-control" rows="2" placeholder="Koi aur baat..."></textarea>
           </div>
+
+          <!-- Print button row — shows after save -->
+          <div id="advance-print-btn-row" style="display:none;background:#f3eeff;border:1px solid #6f42c1;border-radius:8px;padding:12px;margin-top:8px;">
+            <div style="font-size:13px;color:#6f42c1;font-weight:600;margin-bottom:8px;">
+              ✅ Record save ho gaya! Ab parchi print karein?
+            </div>
+            <button type="button" onclick="window.printLastAdvance()"
+              style="background:#6f42c1;color:#fff;border:none;border-radius:6px;padding:8px 20px;cursor:pointer;font-size:14px;font-weight:600;">
+              <i class="bi bi-printer me-1"></i>Print Parchi
+            </button>
+            <button type="button" onclick="document.getElementById('advance-print-btn-row').style.display='none'"
+              style="background:none;border:1px solid #aaa;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;margin-left:8px;">
+              Skip
+            </button>
+          </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
           <button type="submit" class="btn" style="background:#6f42c1;color:#fff;">
-            <i class="bi bi-check-circle me-1"></i>Save & Print Parchi
+            <i class="bi bi-check-circle me-1"></i>Save Karein
           </button>
         </div>
       </form>
