@@ -93,6 +93,21 @@
       </div>
     </div>
 
+    <!-- Pagination Controls -->
+    <div id="pagination-controls" class="d-flex justify-content-between align-items-center mb-2 px-1">
+      <div class="d-flex align-items-center gap-2">
+        <label class="mb-0 text-muted small">Show:</label>
+        <select id="page-size-select" class="form-select form-select-sm" style="width:auto;">
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="all">All</option>
+        </select>
+        <span class="text-muted small" id="pagination-info"></span>
+      </div>
+      <div id="pagination-buttons" class="d-flex gap-1 flex-wrap"></div>
+    </div>
+
     <!-- Table -->
     <div class="card shadow-sm">
       <div class="card-body p-0">

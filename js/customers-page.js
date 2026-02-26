@@ -596,9 +596,8 @@
 
 
 
-
 // =============================================
-// CUSTOMERS - COMPLETE FIX
+// CUSTOMERS PAGE - FINAL FIXED VERSION
 // =============================================
 (function() {
 'use strict';
@@ -606,33 +605,25 @@
 let allCustomers = [];
 let currentUserId = null;
 let currentPage = 1;
-let pageSize = 20; // default, can be changed to 'all'
+let pageSize = 20;
 
 function $(id) { return document.getElementById(id); }
 function fmt(n) {
   return Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
-
-function getSupabase() {
-  return window.supabaseClient;
-}
+function getSupabase() { return window.supabaseClient; }
 
 // ════════════════════════════════════════════
-// AUTH (disabled — works without login)
+// AUTH
 // ════════════════════════════════════════════
 async function getUser() {
   try {
     const sb = getSupabase();
     if (sb?.auth?.getUser) {
       const { data, error } = await sb.auth.getUser();
-      if (!error && data?.user?.id) {
-        currentUserId = data.user.id;
-        console.log('✅ User:', data.user.email);
-        return data.user;
-      }
+      if (!error && data?.user?.id) { currentUserId = data.user.id; return data.user; }
     }
-  } catch (e) { /* auth disabled, continue without user */ }
-  console.log('ℹ️ No auth user — loading all data');
+  } catch(e) {}
   return null;
 }
 
@@ -641,90 +632,68 @@ async function getUser() {
 // ════════════════════════════════════════════
 async function loadCustomers() {
   const sb = getSupabase();
-  if (!sb) { console.error('❌ Supabase not ready'); return; }
-  console.log('Loading customers...');
+  if (!sb) return;
   try {
-    let query = sb.from('customers').select('*').order('sr_no');
-    if (currentUserId) query = query.eq('user_id', currentUserId);
-    const { data, error } = await query;
+    let q = sb.from('customers').select('*').order('sr_no');
+    if (currentUserId) q = q.eq('user_id', currentUserId);
+    const { data, error } = await q;
     if (error) throw error;
     allCustomers = data || [];
-    console.log('✅ Customers:', allCustomers.length);
-    display(allCustomers);
+    display(getCurrentFilteredList());
     updateSummary();
-  } catch (e) {
-    console.error('❌ Load error:', e);
-    toast('Error: ' + e.message, 'danger');
-  }
+  } catch(e) { toast('Error: ' + e.message, 'danger'); }
 }
 
 // ════════════════════════════════════════════
-// PAGINATION CONTROLS (inject into page)
+// FILTER HELPER
 // ════════════════════════════════════════════
-function ensurePaginationControls() {
-  if ($('pagination-controls')) return;
-  const tableCard = document.querySelector('.card.shadow-sm:last-of-type .card-body');
-  if (!tableCard) return;
-  const div = document.createElement('div');
-  div.className = 'd-flex justify-content-between align-items-center px-3 py-2 border-top';
-  div.id = 'pagination-controls';
-  div.innerHTML = `
-    <div class="d-flex align-items-center gap-2">
-      <label class="mb-0 text-muted small">Show:</label>
-      <select id="page-size-select" class="form-select form-select-sm" style="width:auto;">
-        <option value="20">20</option>
-        <option value="50">50</option>
-        <option value="100">100</option>
-        <option value="all">All</option>
-      </select>
-      <span class="text-muted small" id="pagination-info"></span>
-    </div>
-    <div id="pagination-buttons" class="d-flex gap-1"></div>
-  `;
-  tableCard.appendChild(div);
-
-  $('page-size-select').addEventListener('change', function() {
-    pageSize = this.value === 'all' ? 'all' : parseInt(this.value);
-    currentPage = 1;
-    const s = $('search-input')?.value.toLowerCase() || '';
-    const c = $('filter-category')?.value || '';
-    const filtered = filterList(s, c);
-    display(filtered);
-  });
-}
-
-function filterList(s, c) {
+function getCurrentFilteredList() {
+  const s = $('search-input')?.value.toLowerCase() || '';
+  const c = $('filter-category')?.value || '';
   return allCustomers.filter(x => {
-    const nm = x.name.toLowerCase().includes(s);
-    const sr = x.sr_no.toString().includes(s);
-    const ct = !c || x.category === c;
-    return (nm || sr) && ct;
+    const matchName = x.name.toLowerCase().includes(s);
+    const matchSr   = x.sr_no.toString().includes(s);
+    const matchCat  = !c || x.category === c;
+    return (matchName || matchSr) && matchCat;
   });
 }
 
+// ════════════════════════════════════════════
+// DISPLAY TABLE
+// ════════════════════════════════════════════
 function display(list) {
-  ensurePaginationControls();
   const tbody = $('customers-table');
   if (!tbody) return;
 
+  // Bind page-size dropdown once
+  const sel = $('page-size-select');
+  if (sel && !sel.dataset.bound) {
+    sel.dataset.bound = '1';
+    sel.addEventListener('change', function() {
+      pageSize = this.value === 'all' ? 'all' : parseInt(this.value);
+      currentPage = 1;
+      display(getCurrentFilteredList());
+    });
+  }
+
   if (list.length === 0) {
     tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No customers found</td></tr>';
-    updatePaginationUI(0, 0, 0);
+    renderPagination(0, 1);
+    tbody.onclick = null;
     return;
   }
 
   let pageItems;
   if (pageSize === 'all') {
     pageItems = list;
-    updatePaginationUI(list.length, list.length, 1);
+    renderPagination(list.length, 1);
   } else {
-    const total = list.length;
-    const totalPages = Math.ceil(total / pageSize);
+    const totalPages = Math.ceil(list.length / pageSize);
     if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
     const start = (currentPage - 1) * pageSize;
-    const end = start + pageSize;
-    pageItems = list.slice(start, end);
-    updatePaginationUI(total, pageSize, totalPages);
+    pageItems = list.slice(start, start + pageSize);
+    renderPagination(list.length, totalPages);
   }
 
   tbody.innerHTML = pageItems.map(c => {
@@ -732,9 +701,9 @@ function display(list) {
                    c.balance < 0 ? 'text-success fw-bold' : 'text-muted';
     const balTxt = c.balance > 0 ? `Rs. ${fmt(c.balance)} (Udhaar)` :
                    c.balance < 0 ? `Rs. ${fmt(Math.abs(c.balance))} (Advance)` : 'Rs. 0.00';
-    const catCls = c.category === 'Member' ? 'bg-primary' :
-                   c.category === 'Company' ? 'bg-info' :
-                   c.category === 'Owner' ? 'bg-success' : 'bg-secondary';
+    const catCls = c.category === 'Member'  ? 'bg-primary' :
+                   c.category === 'Company' ? 'bg-info text-dark' :
+                   c.category === 'Owner'   ? 'bg-success' : 'bg-secondary';
     return `<tr>
       <td>${c.sr_no}</td>
       <td>${c.name}</td>
@@ -754,71 +723,74 @@ function display(list) {
       </td>
     </tr>`;
   }).join('');
+
+  // CRITICAL: re-assign onclick every render so it ALWAYS works after refresh
+  tbody.onclick = function(e) {
+    const v = e.target.closest('.cust-view');
+    const ed = e.target.closest('.cust-edit');
+    const dl = e.target.closest('.cust-del');
+    if (v)  openLedger(parseInt(v.dataset.id));
+    if (ed) openEdit(parseInt(ed.dataset.id));
+    if (dl) doDelete(parseInt(dl.dataset.id));
+  };
 }
 
-function updatePaginationUI(total, ps, totalPages) {
+// ════════════════════════════════════════════
+// PAGINATION UI  (First / Prev / pages / Next / Last)
+// ════════════════════════════════════════════
+function renderPagination(total, totalPages) {
   const info = $('pagination-info');
   const btns = $('pagination-buttons');
   if (!info || !btns) return;
 
   if (pageSize === 'all' || totalPages <= 1) {
-    info.textContent = `Showing all ${total} customers`;
+    info.textContent = `Total: ${total}`;
     btns.innerHTML = '';
     return;
   }
 
-  const start = (currentPage - 1) * ps + 1;
-  const end = Math.min(currentPage * ps, total);
-  info.textContent = `Showing ${start}–${end} of ${total}`;
+  const start = (currentPage - 1) * pageSize + 1;
+  const end   = Math.min(currentPage * pageSize, total);
+  info.textContent = `${start}–${end} of ${total}`;
 
-  let html = `<button class="btn btn-sm btn-outline-secondary" id="pg-prev" ${currentPage === 1 ? 'disabled' : ''}>
-    <i class="bi bi-chevron-left"></i>
-  </button>`;
+  let html = '';
+  html += `<button class="btn btn-sm btn-outline-secondary" data-pg="first" ${currentPage===1?'disabled':''} title="First Page"><i class="bi bi-chevron-double-left"></i></button>`;
+  html += `<button class="btn btn-sm btn-outline-secondary" data-pg="prev"  ${currentPage===1?'disabled':''} title="Previous"><i class="bi bi-chevron-left"></i></button>`;
 
-  // Show page numbers (max 5 around current)
-  const maxVisible = 5;
-  let startPage = Math.max(1, currentPage - 2);
-  let endPage = Math.min(totalPages, startPage + maxVisible - 1);
-  if (endPage - startPage < maxVisible - 1) startPage = Math.max(1, endPage - maxVisible + 1);
+  let sp = Math.max(1, currentPage - 2);
+  let ep = Math.min(totalPages, sp + 4);
+  if (ep - sp < 4) sp = Math.max(1, ep - 4);
 
-  if (startPage > 1) html += `<button class="btn btn-sm btn-outline-secondary pg-num" data-page="1">1</button>`;
-  if (startPage > 2) html += `<span class="btn btn-sm disabled">…</span>`;
-
-  for (let i = startPage; i <= endPage; i++) {
-    html += `<button class="btn btn-sm ${i === currentPage ? 'btn-primary' : 'btn-outline-secondary'} pg-num" data-page="${i}">${i}</button>`;
+  if (sp > 1) html += `<button class="btn btn-sm btn-outline-secondary" data-pg="1">1</button>`;
+  if (sp > 2) html += `<span class="px-1 text-muted align-self-center">…</span>`;
+  for (let i = sp; i <= ep; i++) {
+    html += `<button class="btn btn-sm ${i===currentPage?'btn-primary':'btn-outline-secondary'}" data-pg="${i}">${i}</button>`;
   }
+  if (ep < totalPages - 1) html += `<span class="px-1 text-muted align-self-center">…</span>`;
+  if (ep < totalPages) html += `<button class="btn btn-sm btn-outline-secondary" data-pg="${totalPages}">${totalPages}</button>`;
 
-  if (endPage < totalPages - 1) html += `<span class="btn btn-sm disabled">…</span>`;
-  if (endPage < totalPages) html += `<button class="btn btn-sm btn-outline-secondary pg-num" data-page="${totalPages}">${totalPages}</button>`;
-
-  html += `<button class="btn btn-sm btn-outline-secondary" id="pg-next" ${currentPage === totalPages ? 'disabled' : ''}>
-    <i class="bi bi-chevron-right"></i>
-  </button>`;
+  html += `<button class="btn btn-sm btn-outline-secondary" data-pg="next" ${currentPage===totalPages?'disabled':''} title="Next"><i class="bi bi-chevron-right"></i></button>`;
+  html += `<button class="btn btn-sm btn-outline-secondary" data-pg="last" ${currentPage===totalPages?'disabled':''} title="Last Page"><i class="bi bi-chevron-double-right"></i></button>`;
 
   btns.innerHTML = html;
 
-  $('pg-prev')?.addEventListener('click', () => {
-    if (currentPage > 1) { currentPage--; display(getCurrentFilteredList()); }
-  });
-  $('pg-next')?.addEventListener('click', () => {
-    if (currentPage < totalPages) { currentPage++; display(getCurrentFilteredList()); }
-  });
-  btns.querySelectorAll('.pg-num').forEach(btn => {
-    btn.addEventListener('click', () => {
-      currentPage = parseInt(btn.dataset.page);
-      display(getCurrentFilteredList());
-    });
-  });
+  btns.onclick = function(e) {
+    const btn = e.target.closest('button[data-pg]');
+    if (!btn || btn.disabled) return;
+    const pg = btn.dataset.pg;
+    if      (pg === 'first') currentPage = 1;
+    else if (pg === 'prev')  currentPage = Math.max(1, currentPage - 1);
+    else if (pg === 'next')  currentPage = Math.min(totalPages, currentPage + 1);
+    else if (pg === 'last')  currentPage = totalPages;
+    else                     currentPage = parseInt(pg);
+    display(getCurrentFilteredList());
+  };
 }
 
-function getCurrentFilteredList() {
-  const s = $('search-input')?.value.toLowerCase() || '';
-  const c = $('filter-category')?.value || '';
-  return filterList(s, c);
-}
-
+// ════════════════════════════════════════════
+// SUMMARY CARDS
+// ════════════════════════════════════════════
 function updateSummary() {
-  let total = allCustomers.length;
   let udhaar = 0, advance = 0, companies = 0;
   allCustomers.forEach(c => {
     if (c.balance > 0) udhaar += c.balance;
@@ -826,24 +798,19 @@ function updateSummary() {
     if (c.category === 'Company') companies++;
   });
   const set = (id,v) => { const el=$(id); if(el) el.textContent=v; };
-  set('total-customers', total);
-  set('total-udhaar', 'Rs. ' + fmt(udhaar));
-  set('total-advance', 'Rs. ' + fmt(advance));
+  set('total-customers', allCustomers.length);
+  set('total-udhaar',    'Rs. ' + fmt(udhaar));
+  set('total-advance',   'Rs. ' + fmt(advance));
   set('total-companies', companies);
-  console.log('✅ Summary updated');
 }
 
 // ════════════════════════════════════════════
-// FILTER
+// SEARCH / FILTER
 // ════════════════════════════════════════════
-function filter() {
-  currentPage = 1;
-  display(getCurrentFilteredList());
-}
-
+function filter() { currentPage = 1; display(getCurrentFilteredList()); }
 function clearFilter() {
-  const s = $('search-input'); if (s) s.value = '';
-  const c = $('filter-category'); if (c) c.value = '';
+  const s=$('search-input');    if(s) s.value='';
+  const c=$('filter-category'); if(c) c.value='';
   currentPage = 1;
   display(allCustomers);
 }
@@ -854,38 +821,22 @@ function clearFilter() {
 async function addCustomer() {
   const sb = getSupabase();
   if (!sb) { alert('Database not ready'); return; }
-
   const sr = parseInt($('customer-sr-no')?.value);
   const nm = $('customer-name')?.value?.trim();
   const ph = $('customer-phone')?.value?.trim();
   const ct = $('customer-category')?.value;
   const bl = parseFloat($('customer-balance')?.value) || 0;
-
-  if (!sr || !nm || !ct) {
-    alert('Fill SR No, Name, Category');
-    return;
-  }
-
-  if (allCustomers.find(c => c.sr_no === sr)) {
-    alert(`SR ${sr} already exists`);
-    return;
-  }
-
+  if (!sr || !nm || !ct) { alert('Fill SR No, Name, Category'); return; }
+  if (allCustomers.find(c => c.sr_no === sr)) { alert(`SR No. ${sr} already exists`); return; }
   try {
-    const insertData = { sr_no: sr, name: nm, phone: ph || null, category: ct, balance: bl };
-    if (currentUserId) insertData.user_id = currentUserId;
-
-    const { error } = await sb.from('customers').insert([insertData]);
+    const row = { sr_no:sr, name:nm, phone:ph||null, category:ct, balance:bl };
+    if (currentUserId) row.user_id = currentUserId;
+    const { error } = await sb.from('customers').insert([row]);
     if (error) throw error;
-
-    console.log('✅ Customer added');
-    toast('Customer added successfully!', 'success');
+    toast('Customer added!', 'success');
     closeModal('addCustomerModal');
     await loadCustomers();
-  } catch (e) {
-    console.error('❌ Add error:', e);
-    alert('Error adding customer: ' + e.message);
-  }
+  } catch(e) { alert('Error: ' + e.message); }
 }
 
 // ════════════════════════════════════════════
@@ -893,153 +844,94 @@ async function addCustomer() {
 // ════════════════════════════════════════════
 function openEdit(id) {
   const c = allCustomers.find(x => x.id === id);
-  if (!c) { console.warn('Customer not found for id:', id); return; }
+  if (!c) return;
   $('edit-customer-id').value = c.id;
-  $('edit-sr-no').value = c.sr_no;
-  $('edit-name').value = c.name;
-  $('edit-phone').value = c.phone || '';
-  $('edit-category').value = c.category;
-  $('edit-balance').value = c.balance;
+  $('edit-sr-no').value       = c.sr_no;
+  $('edit-name').value        = c.name;
+  $('edit-phone').value       = c.phone || '';
+  $('edit-category').value    = c.category;
+  $('edit-balance').value     = c.balance;
   new bootstrap.Modal($('editCustomerModal')).show();
 }
-
 window.editCust = openEdit;
 
 async function updateCustomer() {
   const sb = getSupabase();
   if (!sb) { alert('Database not ready'); return; }
-
   const id = parseInt($('edit-customer-id').value);
   const sr = parseInt($('edit-sr-no').value);
   const nm = $('edit-name').value.trim();
   const ph = $('edit-phone').value.trim();
   const ct = $('edit-category').value;
   const bl = parseFloat($('edit-balance').value) || 0;
-
-  if (!sr || !nm || !ct) {
-    alert('Fill all required fields');
-    return;
-  }
-
+  if (!sr || !nm || !ct) { alert('Fill all required fields'); return; }
   try {
-    let query = sb.from('customers')
-      .update({ sr_no: sr, name: nm, phone: ph || null, category: ct, balance: bl })
+    let q = sb.from('customers')
+      .update({ sr_no:sr, name:nm, phone:ph||null, category:ct, balance:bl })
       .eq('id', id);
-    if (currentUserId) query = query.eq('user_id', currentUserId);
-    const { error } = await query;
+    if (currentUserId) q = q.eq('user_id', currentUserId);
+    const { error } = await q;
     if (error) throw error;
-
     toast('Customer updated!', 'success');
     closeModal('editCustomerModal');
     await loadCustomers();
-  } catch (e) {
-    alert('Error: ' + e.message);
-  }
+  } catch(e) { alert('Error: ' + e.message); }
 }
 
 // ════════════════════════════════════════════
 // DELETE
 // ════════════════════════════════════════════
-async function deleteCust(id) {
+async function doDelete(id) {
   const sb = getSupabase();
   if (!sb) { alert('Database not ready'); return; }
   const c = allCustomers.find(x => x.id === id);
-  if (!c || !confirm(`Delete ${c.name}? This cannot be undone.`)) return;
-
+  if (!c || !confirm(`Delete "${c.name}"? This cannot be undone.`)) return;
   try {
-    let query = sb.from('customers').delete().eq('id', id);
-    if (currentUserId) query = query.eq('user_id', currentUserId);
-    const { error } = await query;
+    let q = sb.from('customers').delete().eq('id', id);
+    if (currentUserId) q = q.eq('user_id', currentUserId);
+    const { error } = await q;
     if (error) throw error;
-
     toast('Customer deleted', 'success');
     await loadCustomers();
-  } catch (e) {
-    alert('Error: ' + e.message);
-  }
+  } catch(e) { alert('Error: ' + e.message); }
 }
-
-window.delCust = deleteCust;
+window.delCust = doDelete;
 
 // ════════════════════════════════════════════
 // LEDGER
 // ════════════════════════════════════════════
-window.viewLedger = function(id) {
+function openLedger(id) {
   const c = allCustomers.find(x => x.id === id);
   if (!c) return;
   sessionStorage.setItem('selected_customer', JSON.stringify(c));
   window.location.href = 'customer-details.html?id=' + id;
-};
-
-// ════════════════════════════════════════════
-// TABLE EVENT DELEGATION (fix for refresh issue)
-// ════════════════════════════════════════════
-function bindTableEvents() {
-  const tbody = $('customers-table');
-  if (!tbody) return;
-
-  // Remove old listener if re-binding
-  tbody.removeEventListener('click', tableClickHandler);
-  tbody.addEventListener('click', tableClickHandler);
 }
-
-function tableClickHandler(e) {
-  const viewBtn = e.target.closest('.cust-view');
-  const editBtn = e.target.closest('.cust-edit');
-  const delBtn  = e.target.closest('.cust-del');
-
-  if (viewBtn) {
-    const id = parseInt(viewBtn.dataset.id);
-    window.viewLedger(id);
-  } else if (editBtn) {
-    const id = parseInt(editBtn.dataset.id);
-    openEdit(id);
-  } else if (delBtn) {
-    const id = parseInt(delBtn.dataset.id);
-    deleteCust(id);
-  }
-}
+window.viewLedger = openLedger;
 
 // ════════════════════════════════════════════
 // HELPERS
 // ════════════════════════════════════════════
 function closeModal(id) {
-  const el = $(id);
-  if (!el) return;
-  const m = bootstrap.Modal.getInstance(el);
-  if (m) m.hide();
-  const f = el.querySelector('form');
-  if (f) f.reset();
+  const el = $(id); if (!el) return;
+  const m = bootstrap.Modal.getInstance(el); if (m) m.hide();
+  const f = el.querySelector('form'); if (f) f.reset();
 }
-
-function toast(msg, type = 'info') {
-  const el = $('liveToast');
-  if (!el) return;
-  $('toast-title').textContent = type === 'success' ? 'Success' : 'Info';
+function toast(msg, type='info') {
+  const el = $('liveToast'); if (!el) return;
+  $('toast-title').textContent   = type==='success'?'Success':type==='danger'?'Error':'Info';
   $('toast-message').textContent = msg;
   new bootstrap.Toast(el).show();
 }
 
 // ════════════════════════════════════════════
-// EVENTS
+// BIND STATIC EVENTS
 // ════════════════════════════════════════════
 function bind() {
-  const addForm = $('addCustomerForm');
-  if (addForm) addForm.addEventListener('submit', e => { e.preventDefault(); addCustomer(); });
-
-  const editForm = $('editCustomerForm');
-  if (editForm) editForm.addEventListener('submit', e => { e.preventDefault(); updateCustomer(); });
-
-  const srch = $('search-input');
-  if (srch) srch.addEventListener('input', filter);
-
-  const cat = $('filter-category');
-  if (cat) cat.addEventListener('change', filter);
-
-  const clr = $('clear-filters');
-  if (clr) clr.addEventListener('click', clearFilter);
-
-  bindTableEvents();
+  $('addCustomerForm')?.addEventListener('submit',  e => { e.preventDefault(); addCustomer(); });
+  $('editCustomerForm')?.addEventListener('submit', e => { e.preventDefault(); updateCustomer(); });
+  $('search-input')?.addEventListener('input', filter);
+  $('filter-category')?.addEventListener('change', filter);
+  $('clear-filters')?.addEventListener('click', clearFilter);
 }
 
 // ════════════════════════════════════════════
@@ -1047,19 +939,14 @@ function bind() {
 // ════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
   if (document.body.getAttribute('data-page') !== 'customers') return;
-
-  console.log('🚀 Customers starting...');
-
   await new Promise(resolve => {
     function check() { if (window.supabaseClient) return resolve(); setTimeout(check, 100); }
     check();
   });
-
   await getUser();
   bind();
   await loadCustomers();
-
-  console.log('✅ Customers ready!');
+  console.log('✅ Customers ready');
 });
 
 window.loadCustomers = loadCustomers;
