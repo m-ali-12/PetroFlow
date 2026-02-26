@@ -1,4 +1,4 @@
-
+<!-- 
 
 <style>
 /* Navbar Styling - Matching First Image */
@@ -136,7 +136,7 @@
               <i class="bi bi-box-arrow-right me-2"></i>Logout
             </a></li>
           </ul>
-        </li> -->
+        </li> 
       </ul>
 
       <div class="navbar-user-info ms-lg-3 mt-3 mt-lg-0">
@@ -149,4 +149,328 @@
       </div>
     </div>
   </div>
+</nav> -->
+
+
+
+
+
+
+
+<style>
+/* ═══ Navbar Base ═══════════════════════════════════════════════ */
+.navbar.bg-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    box-shadow: 0 2px 20px rgba(102, 126, 234, 0.3) !important;
+}
+.navbar-brand { color: white !important; }
+.brand-title   { font-size: 1rem; font-weight: 700; line-height: 1.2; color: white; }
+.brand-subtitle{ font-size: 0.7rem; opacity: 0.9; color: rgba(255,255,255,0.9); }
+.navbar-brand img { box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+.navbar-toggler { border-color: rgba(255,255,255,0.3); }
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255,255,255,1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* ═══ Nav Links ═══════════════════════════════════════════════ */
+.navbar .nav-link {
+    color: rgba(255,255,255,0.85) !important;
+    font-weight: 500;
+    padding: 0.5rem 0.75rem !important;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    margin: 0 0.1rem;
+    font-size: 0.88rem;
+    white-space: nowrap;
+}
+.navbar .nav-link:hover,
+.navbar .nav-link:focus {
+    background: rgba(255,255,255,0.15);
+    color: white !important;
+    transform: translateY(-1px);
+}
+.navbar .nav-link.active {
+    background: white !important;
+    color: #667eea !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-weight: 600;
+}
+
+/* ═══ Dropdown Menus ══════════════════════════════════════════ */
+.navbar .dropdown-toggle::after {
+    vertical-align: 0.15em;
+    opacity: 0.8;
+}
+.navbar .dropdown-menu {
+    background: #fff;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(102,126,234,0.18);
+    padding: 0.5rem;
+    min-width: 190px;
+    margin-top: 6px !important;
+    animation: dropFade 0.18s ease;
+}
+@keyframes dropFade {
+    from { opacity:0; transform:translateY(-6px); }
+    to   { opacity:1; transform:translateY(0); }
+}
+.navbar .dropdown-item {
+    border-radius: 8px;
+    padding: 0.55rem 1rem;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: #444;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+.navbar .dropdown-item:hover {
+    background: linear-gradient(135deg, #667eea15, #764ba215);
+    color: #667eea;
+    transform: translateX(2px);
+}
+.navbar .dropdown-item.active,
+.navbar .dropdown-item:active {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+.navbar .dropdown-item i {
+    width: 18px;
+    text-align: center;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+.navbar .dropdown-divider {
+    margin: 0.35rem 0.5rem;
+    border-color: #f0f0f0;
+}
+.dropdown-header-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #999;
+    padding: 0.4rem 1rem 0.2rem;
+}
+
+/* ═══ Badge / Time ══════════════════════════════════════════ */
+.navbar-user-info .badge { padding: 0.45rem 0.8rem; font-weight: 500; font-size: 0.82rem; }
+.navbar-user-info .bg-light { background-color: rgba(255,255,255,0.95) !important; }
+.navbar-user-info .bg-success { background: linear-gradient(135deg,#10b981,#059669) !important; }
+
+/* ═══ Responsive ════════════════════════════════════════════ */
+@media (max-width: 991px) {
+    .navbar-nav { padding: 0.75rem 0; }
+    .navbar .nav-link { padding: 0.7rem 1rem !important; margin: 0.15rem 0; font-size: 0.93rem; }
+    .navbar-user-info { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem; }
+    .navbar .dropdown-menu {
+        background: rgba(255,255,255,0.08);
+        box-shadow: none;
+        border-radius: 8px;
+        padding: 0.25rem 0.5rem;
+        margin-top: 2px !important;
+        animation: none;
+    }
+    .navbar .dropdown-item {
+        color: rgba(255,255,255,0.85);
+        padding: 0.55rem 1rem;
+        font-size: 0.88rem;
+        border-radius: 6px;
+    }
+    .navbar .dropdown-item:hover { background: rgba(255,255,255,0.12); color: white; transform:none; }
+    .navbar .dropdown-item i { opacity: 0.7; }
+    .dropdown-header-label { color: rgba(255,255,255,0.45); }
+    .navbar .dropdown-divider { border-color: rgba(255,255,255,0.1); }
+    .navbar .dropdown-toggle::after { float: right; margin-top: 6px; }
+}
+</style>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-gradient sticky-top shadow-sm">
+  <div class="container-fluid">
+
+    <!-- ── Brand ── -->
+    <a class="navbar-brand fw-bold d-flex align-items-center" href="index.html">
+      <img src="assets/logo.jfif" alt="Khalid & Sons Petroleum" height="38" class="me-2 rounded">
+      <div>
+        <div class="brand-title">Khalid &amp; Sons</div>
+        <small class="brand-subtitle">Petroleum Management</small>
+      </div>
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto align-items-lg-center flex-wrap">
+
+        <!-- Dashboard -->
+        <li class="nav-item">
+          <a class="nav-link" href="index.html" data-page="index">
+            <i class="bi bi-speedometer2 me-1"></i>Dashboard
+          </a>
+        </li>
+
+        <!-- Customers dropdown -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-page="customers">
+            <i class="bi bi-people me-1"></i>Customers
+          </a>
+          <ul class="dropdown-menu">
+            <li><span class="dropdown-header-label">Customers</span></li>
+            <li>
+              <a class="dropdown-item" href="customers.html" data-page="customers">
+                <i class="bi bi-people-fill"></i>Customer List
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="customer-details.html" data-page="customer-details">
+                <i class="bi bi-person-lines-fill"></i>Customer Details
+              </a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- Transactions -->
+        <li class="nav-item">
+          <a class="nav-link" href="transactions.html" data-page="transactions">
+            <i class="bi bi-arrow-left-right me-1"></i>Transactions
+          </a>
+        </li>
+
+        <!-- Stock dropdown -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-page="stock">
+            <i class="bi bi-fuel-pump me-1"></i>Stock
+          </a>
+          <ul class="dropdown-menu">
+            <li><span class="dropdown-header-label">Stock Management</span></li>
+            <li>
+              <a class="dropdown-item" href="stock.html" data-page="stock">
+                <i class="bi bi-droplet-fill"></i>Petrol / Diesel Stock
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="mobil-stock.html" data-page="mobil-stock">
+                <i class="bi bi-box-seam"></i>Mobil Stock
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item" href="mobil.html" data-page="mobil">
+                <i class="bi bi-oil-drum"></i>Mobil Transactions
+              </a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- Khata / Accounts dropdown -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-page="khata">
+            <i class="bi bi-journal-text me-1"></i>Khata
+          </a>
+          <ul class="dropdown-menu">
+            <li><span class="dropdown-header-label">Khata / Ledger</span></li>
+            <li>
+              <a class="dropdown-item" href="khata.html" data-page="khata">
+                <i class="bi bi-journal-bookmark-fill"></i>Customer Khata
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="khata1.html" data-page="khata1">
+                <i class="bi bi-journal-check"></i>Khata Detail
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item" href="company-account.html" data-page="company-account">
+                <i class="bi bi-building"></i>Company Account
+              </a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- Reports dropdown -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-page="reports">
+            <i class="bi bi-bar-chart-line me-1"></i>Reports
+          </a>
+          <ul class="dropdown-menu">
+            <li><span class="dropdown-header-label">Reports</span></li>
+            <li>
+              <a class="dropdown-item" href="reports.html" data-page="reports">
+                <i class="bi bi-file-earmark-bar-graph"></i>Sales Report
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="profit-loss.html" data-page="profit-loss">
+                <i class="bi bi-graph-up-arrow"></i>Profit &amp; Loss
+              </a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- Rent -->
+        <li class="nav-item">
+          <a class="nav-link" href="rent.html" data-page="rent">
+            <i class="bi bi-shop me-1"></i>Rent
+          </a>
+        </li>
+
+        <!-- Settings dropdown -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-page="settings">
+            <i class="bi bi-gear me-1"></i>Settings
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><span class="dropdown-header-label">Settings</span></li>
+            <li>
+              <a class="dropdown-item" href="settings.html" data-page="settings">
+                <i class="bi bi-sliders"></i>App Settings
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="pump-profile.html" data-page="pump-profile">
+                <i class="bi bi-building-gear"></i>Pump Profile
+              </a>
+            </li>
+          </ul>
+        </li>
+
+      </ul>
+
+      <!-- Date / Time badges -->
+      <div class="navbar-user-info ms-lg-3 mt-2 mt-lg-0">
+        <span class="badge bg-light text-dark">
+          <i class="bi bi-calendar3"></i> <span id="current-date"></span>
+        </span>
+        <span class="badge bg-success ms-1">
+          <i class="bi bi-clock"></i> <span id="current-time"></span>
+        </span>
+      </div>
+    </div>
+
+  </div>
 </nav>
+
+<script>
+/* ── Active page highlight ─────────────────────────────────── */
+(function(){
+  const page = document.body.dataset.page || '';
+  if(!page) return;
+  document.querySelectorAll('.navbar .nav-link[data-page], .navbar .dropdown-item[data-page]').forEach(link => {
+    if(link.dataset.page === page){
+      link.classList.add('active');
+      // Agar dropdown item hai, parent toggle ko bhi active karo
+      const dropMenu = link.closest('.dropdown-menu');
+      if(dropMenu){
+        const toggle = dropMenu.closest('.dropdown')?.querySelector('.dropdown-toggle');
+        if(toggle){ toggle.classList.add('active'); }
+      }
+    }
+  });
+})();
+</script>
