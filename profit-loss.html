@@ -1,711 +1,704 @@
 <!DOCTYPE html>
-<html lang="en" data-page="profit-loss">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Profit & Loss — Khalid & Sons Petroleum</title>
+  <title>Profit & Loss | Khalid and Sons Petroleum</title>
+
+  <link rel="icon" type="image/jfif" href="assets/logo.jfif">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
   <style>
     :root {
-      --primary: #1a5276;
-      --success: #1e8449;
-      --danger: #c0392b;
-      --warning: #d4ac0d;
-      --muted: #7f8c8d;
+      --p-success: #1e8449;
+      --p-danger:  #c0392b;
+      --p-primary: #1a5276;
+      --p-muted:   #7f8c8d;
     }
-    * { box-sizing: border-box; }
-    body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; color: #2c3e50; }
+    .metric-card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,.06); border-left:4px solid transparent; height:100%; }
+    .metric-card.green  { border-color:var(--p-success); }
+    .metric-card.red    { border-color:var(--p-danger); }
+    .metric-card.blue   { border-color:#2980b9; }
+    .metric-card.purple { border-color:#8e44ad; }
+    .metric-card.gold   { border-color:#d4ac0d; }
+    .metric-card h6     { font-size:11px; color:var(--p-muted); margin:0 0 6px; text-transform:uppercase; letter-spacing:.6px; }
+    .metric-card .val   { font-size:22px; font-weight:800; line-height:1.1; }
+    .metric-card .sub   { font-size:11px; color:var(--p-muted); margin-top:4px; }
 
-    /* Sidebar consistent with your app */
-    .sidebar { width: 240px; min-height: 100vh; background: var(--primary); position: fixed; top: 0; left: 0; z-index: 100; }
-    .sidebar .logo { padding: 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-    .sidebar .logo h6 { color: #fff; margin: 0; font-size: 15px; font-weight: 700; }
-    .sidebar .logo small { color: rgba(255,255,255,0.6); font-size: 11px; }
-    .sidebar nav a { display: flex; align-items: center; gap: 10px; padding: 11px 16px; color: rgba(255,255,255,0.75); text-decoration: none; font-size: 14px; transition: all 0.2s; }
-    .sidebar nav a:hover, .sidebar nav a.active { background: rgba(255,255,255,0.12); color: #fff; border-left: 3px solid #fff; }
-    .main { margin-left: 240px; padding: 24px; }
+    .section-card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:20px; }
+    .sc-title { font-weight:700; font-size:14px; color:var(--p-primary); margin-bottom:14px; padding-bottom:10px; border-bottom:2px solid #eaf0fb; display:flex; align-items:center; gap:8px; }
 
-    /* Header */
-    .page-header { background: var(--primary); color: #fff; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; }
-    .page-header h4 { margin: 0; font-weight: 700; }
+    .filter-bar { background:#fff; border-radius:10px; padding:14px 20px; margin-bottom:20px; box-shadow:0 2px 6px rgba(0,0,0,.05); }
 
-    /* Summary Cards */
-    .metric-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 4px solid transparent; }
-    .metric-card.green  { border-color: var(--success); }
-    .metric-card.red    { border-color: var(--danger); }
-    .metric-card.blue   { border-color: #2980b9; }
-    .metric-card.purple { border-color: #8e44ad; }
-    .metric-card.gold   { border-color: var(--warning); }
-    .metric-card h6     { font-size: 12px; color: var(--muted); margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .metric-card .value { font-size: 26px; font-weight: 800; line-height: 1; }
-    .metric-card .sub   { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .page-header-pl { background:linear-gradient(135deg,#1a5276,#2e86c1); color:#fff; border-radius:12px; padding:20px 24px; margin-bottom:24px; }
 
-    /* Section card */
-    .section-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 20px; }
-    .section-card h6 { font-weight: 700; color: var(--primary); margin-bottom: 16px; border-bottom: 2px solid #eaf0fb; padding-bottom: 10px; }
+    .pl-table th { background:#eaf0fb; color:var(--p-primary); font-size:11px; font-weight:700; text-transform:uppercase; padding:10px 12px; }
+    .pl-table td { padding:10px 12px; font-size:13px; vertical-align:middle; border-bottom:1px solid #f0f2f5; }
+    .pl-table tbody tr:hover td { background:#f8fbff; }
 
-    /* Monthly table */
-    .monthly-table th { background: #eaf0fb; color: var(--primary); font-size: 12px; font-weight: 700; text-transform: uppercase; padding: 10px 12px; }
-    .monthly-table td { padding: 10px 12px; font-size: 14px; vertical-align: middle; border-bottom: 1px solid #f0f2f5; }
-    .monthly-table tr:hover td { background: #f8fbff; }
-    .profit-pos { color: var(--success); font-weight: 700; }
-    .profit-neg { color: var(--danger); font-weight: 700; }
+    .profit-pos { color:var(--p-success); font-weight:700; }
+    .profit-neg { color:var(--p-danger); font-weight:700; }
+    .total-row td { font-weight:700; background:#f0f4f8 !important; }
 
-    /* Filter bar */
-    .filter-bar { background: #fff; border-radius: 10px; padding: 14px 20px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    .pl-loading { display:flex; align-items:center; justify-content:center; gap:12px; padding:48px; color:var(--p-muted); font-size:15px; }
 
-    /* Expense breakdown bar */
-    .exp-bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg, #e74c3c, #f39c12); }
+    .exp-prog { height:7px; border-radius:4px; background:linear-gradient(90deg,#e74c3c,#f39c12); margin-top:4px; }
 
-    /* Loading */
-    .loading-overlay { display:flex; align-items:center; justify-content:center; padding: 48px; color: var(--muted); }
-
-    /* Print */
     @media print {
-      .sidebar, .filter-bar, .btn, .no-print { display: none !important; }
-      .main { margin-left: 0; padding: 10px; }
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .sidebar { display: none; }
-      .main { margin-left: 0; }
+      .no-print { display:none !important; }
     }
   </style>
 </head>
-<body>
+<body data-page="profit-loss">
 
-<!-- Sidebar -->
-<!-- <div class="sidebar">
-  <div class="logo">
-    <h6>⛽ Khalid & Sons</h6>
-    <small>Petroleum Management</small>
-  </div>
-  <nav>
-    <a href="dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a>
-    <a href="transactions.html"><i class="bi bi-arrow-left-right"></i> Transactions</a>
-    <a href="customers.html"><i class="bi bi-people"></i> Customers</a>
-    <a href="stock.html"><i class="bi bi-fuel-pump"></i> Stock</a>
-    <a href="profit-loss.html" class="active"><i class="bi bi-graph-up-arrow"></i> Profit & Loss</a>
-    <a href="settings.html"><i class="bi bi-gear"></i> Settings</a>
-  </nav>
-</div> -->
+  <!-- Navbar — same placeholder as index.html -->
   <div id="navbar-placeholder"></div>
-<!-- Main Content -->
-<div class="main">
 
-  <!-- Page Header -->
-  <div class="page-header d-flex justify-content-between align-items-center">
-    <div>
-      <h4><i class="bi bi-graph-up-arrow me-2"></i>Profit & Loss Report</h4>
-      <small style="opacity:0.75;">Tumhari tamam income, kharche, aur net munafa</small>
-    </div>
-    <div class="d-flex gap-2 no-print">
-      <button class="btn btn-light btn-sm" onclick="window.print()">
-        <i class="bi bi-printer me-1"></i>Print
-      </button>
-      <button class="btn btn-outline-light btn-sm" onclick="exportCSV()">
-        <i class="bi bi-download me-1"></i>Export CSV
-      </button>
-    </div>
-  </div>
+  <div class="container-fluid main-wrapper pt-4">
+    <div class="container-xl">
 
-  <!-- Filter Bar -->
-  <div class="filter-bar d-flex flex-wrap gap-3 align-items-end no-print">
-    <div>
-      <label class="form-label small mb-1 fw-semibold">Report Type</label>
-      <select id="report-period" class="form-select form-select-sm">
-        <option value="all">Poora Data</option>
-        <option value="this_month" selected>Is Mahine</option>
-        <option value="last_month">Pichle Mahine</option>
-        <option value="this_year">Is Saal</option>
-        <option value="last_year">Pichle Saal</option>
-        <option value="custom">Custom Range</option>
-      </select>
-    </div>
-    <div id="custom-range" style="display:none;" class="d-flex gap-2">
-      <div>
-        <label class="form-label small mb-1">From</label>
-        <input type="date" id="date-from" class="form-control form-control-sm">
-      </div>
-      <div>
-        <label class="form-label small mb-1">To</label>
-        <input type="date" id="date-to" class="form-control form-control-sm">
-      </div>
-    </div>
-    <button class="btn btn-primary btn-sm" onclick="loadReport()">
-      <i class="bi bi-search me-1"></i>Report Dekho
-    </button>
-    <div class="ms-auto">
-      <small class="text-muted" id="report-label">Is Mahine ki report</small>
-    </div>
-  </div>
-
-  <!-- Summary Metric Cards -->
-  <div class="row g-3 mb-4" id="metric-cards">
-    <div class="loading-overlay">
-      <div class="spinner-border text-primary me-2"></div> Loading...
-    </div>
-  </div>
-
-  <!-- Charts Row -->
-  <div class="row g-3 mb-4">
-    <div class="col-lg-8">
-      <div class="section-card">
-        <h6><i class="bi bi-bar-chart me-2"></i>Monthly Income vs Expense (Last 6 Months)</h6>
-        <canvas id="monthlyChart" height="120"></canvas>
-      </div>
-    </div>
-    <div class="col-lg-4">
-      <div class="section-card">
-        <h6><i class="bi bi-pie-chart me-2"></i>Expense Breakdown</h6>
-        <canvas id="expenseChart" height="200"></canvas>
-        <div id="expense-legend" class="mt-3"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Monthly Breakdown Table -->
-  <div class="section-card mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h6 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Monthly Breakdown</h6>
-      <small class="text-muted" id="table-count"></small>
-    </div>
-    <div class="table-responsive">
-      <table class="table table-hover monthly-table mb-0" id="monthly-breakdown">
-        <thead>
-          <tr>
-            <th>Mahina</th>
-            <th class="text-end">Total Sale (Income)</th>
-            <th class="text-end">Vasooli (Received)</th>
-            <th class="text-end">Cash Advances</th>
-            <th class="text-end">Kharche (Expenses)</th>
-            <th class="text-end">Net Munafa / Nuqsan</th>
-            <th class="text-center">Status</th>
-          </tr>
-        </thead>
-        <tbody id="monthly-tbody">
-          <tr><td colspan="7" class="text-center py-4 text-muted">
-            <div class="spinner-border spinner-border-sm text-primary me-2"></div>Loading...
-          </td></tr>
-        </tbody>
-        <tfoot id="monthly-tfoot"></tfoot>
-      </table>
-    </div>
-  </div>
-
-  <!-- Expense Detail Breakdown -->
-  <div class="section-card mb-4">
-    <h6><i class="bi bi-list-ul me-2"></i>Expense Category Detail</h6>
-    <div id="expense-detail-list">
-      <div class="text-center text-muted py-3">Loading...</div>
-    </div>
-  </div>
-
-  <!-- Cash Advance Pending List -->
-  <div class="section-card">
-    <h6><i class="bi bi-cash-coin me-2"></i>Pending Cash Advances</h6>
-    <div class="table-responsive">
-      <table class="table table-sm" id="advance-table">
-        <thead class="table-light">
-          <tr>
-            <th>Customer</th>
-            <th>Taareekh</th>
-            <th>Amount</th>
-            <th>Wajah</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="advance-tbody">
-          <tr><td colspan="5" class="text-center py-3 text-muted">Loading...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-</div><!-- /main -->
-
-<!-- Toast -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
-  <div id="liveToast" class="toast" role="alert">
-    <div class="toast-header">
-      <strong id="toast-title" class="me-auto">Info</strong>
-      <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-    </div>
-    <div class="toast-body" id="toast-message"></div>
-  </div>
-</div>
-
-<div id="footer-placeholder"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Load your existing config/auth/supabase setup -->
-<script src="/js/config.js"></script>
-<script src="/js/auth.js"></script>
-<script src="/js/app.js"></script>
-
-<script>
-(function(){
-  'use strict';
-
-  // Safe supabase getter — avoids "Cannot read properties of undefined" if scripts load late
-  function getSupabase() { return window.supabaseClient; }
-
-  function fmt(n){ return Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-  function el(id){ return document.getElementById(id); }
-
-  let monthlyChart = null;
-  let expenseChart = null;
-  let allData = { transactions: [], advances: [] };
-
-  // ── Date Range Helpers ─────────────────────────────────────
-  function getDateRange(){
-    const period = el('report-period').value;
-    const now = new Date();
-    let from, to = new Date();
-
-    if(period === 'this_month'){
-      from = new Date(now.getFullYear(), now.getMonth(), 1);
-    } else if(period === 'last_month'){
-      from = new Date(now.getFullYear(), now.getMonth()-1, 1);
-      to   = new Date(now.getFullYear(), now.getMonth(), 0);
-    } else if(period === 'this_year'){
-      from = new Date(now.getFullYear(), 0, 1);
-    } else if(period === 'last_year'){
-      from = new Date(now.getFullYear()-1, 0, 1);
-      to   = new Date(now.getFullYear()-1, 11, 31);
-    } else if(period === 'custom'){
-      const df = el('date-from').value;
-      const dt = el('date-to').value;
-      from = df ? new Date(df) : new Date(now.getFullYear(), now.getMonth(), 1);
-      to   = dt ? new Date(dt) : now;
-    } else { // all
-      from = new Date('2020-01-01');
-    }
-
-    return { from, to };
-  }
-
-  function getPeriodLabel(){
-    const period = el('report-period').value;
-    const labels = {
-      'this_month':'Is Mahine ki report', 'last_month':'Pichle Mahine ki report',
-      'this_year':'Is Saal ki report', 'last_year':'Pichle Saal ki report',
-      'custom':'Custom range report', 'all':'Poore data ki report'
-    };
-    return labels[period] || '';
-  }
-
-  // ── Toggle custom range ────────────────────────────────────
-  el('report-period').addEventListener('change', function(){
-    el('custom-range').style.display = this.value === 'custom' ? 'flex' : 'none';
-    if(this.value !== 'custom') loadReport();
-  });
-
-  // ── Load Report ────────────────────────────────────────────
-  async function loadReport(){
-    el('report-label').textContent = getPeriodLabel();
-
-    try {
-      const sb = getSupabase();
-      if(!sb) throw new Error('Supabase client not ready. Please refresh.');
-      const userId = (await sb.auth.getUser()).data?.user?.id;
-      const { from, to } = getDateRange();
-      const fromStr = from.toISOString();
-      const toStr   = new Date(to.setHours(23,59,59,999)).toISOString();
-
-      // Load transactions in range
-      const { data: txns, error: txErr } = await sb
-        .from('transactions')
-        .select('*, customers(name, sr_no)')
-        .eq('user_id', userId)
-        .gte('created_at', fromStr)
-        .lte('created_at', toStr)
-        .order('created_at', { ascending: true });
-
-      if(txErr) throw txErr;
-
-      // Load cash advances
-      const { data: advances } = await sb
-        .from('cash_advances')
-        .select('*, customers(name, sr_no)')
-        .eq('user_id', userId)
-        .gte('advance_date', from.toISOString().split('T')[0])
-        .lte('advance_date', to.toISOString().split('T')[0])
-        .order('advance_date', { ascending: false });
-
-      allData.transactions = txns || [];
-      allData.advances = advances || [];
-
-      renderMetricCards(txns || [], advances || []);
-      renderMonthlyTable(txns || []);
-      renderExpenseDetail(txns || []);
-      renderAdvanceTable(advances || []);
-      renderCharts(txns || []);
-
-    } catch(e){
-      console.error('loadReport:', e);
-      el('metric-cards').innerHTML = `<div class="col-12 text-center text-danger py-4">Error: ${e.message}</div>`;
-    }
-  }
-
-  // ── Metric Cards ───────────────────────────────────────────
-  function renderMetricCards(txns, advances){
-    let totalSales=0, totalVasooli=0, totalExpenses=0, totalAdvances=0;
-    let saleCount=0, vasooliCount=0, expenseCount=0, advCount=0;
-
-    txns.forEach(t => {
-      const a = parseFloat(t.amount)||0;
-      if(t.transaction_type==='Credit')  { totalSales+=a; saleCount++; }
-      if(t.transaction_type==='Debit')   { totalVasooli+=a; vasooliCount++; }
-      if(t.transaction_type==='Expense') { totalExpenses+=a; expenseCount++; }
-      if(t.transaction_type==='Advance') { totalAdvances+=a; advCount++; }
-    });
-
-    const netProfit = totalSales - totalExpenses - totalAdvances;
-    const profitColor = netProfit >= 0 ? 'green' : 'red';
-    const profitIcon  = netProfit >= 0 ? 'bi-arrow-up-circle-fill' : 'bi-arrow-down-circle-fill';
-    const profitLabel = netProfit >= 0 ? 'Net Munafa (Profit)' : 'Net Nuqsan (Loss)';
-
-    // Pending advances from advances table
-    const pendingAdv = (advances||[]).filter(a => a.status === 'pending').reduce((s,a) => s + parseFloat(a.amount||0), 0);
-
-    el('metric-cards').innerHTML = `
-      <div class="col-6 col-md-4 col-xl-2">
-        <div class="metric-card green">
-          <h6>Total Sales</h6>
-          <div class="value text-success">Rs.${fmt(totalSales)}</div>
-          <div class="sub">${saleCount} transactions</div>
+      <!-- Page Header -->
+      <div class="page-header-pl d-flex justify-content-between align-items-center no-print mb-4">
+        <div>
+          <h4 class="mb-1 fw-bold"><i class="bi bi-graph-up-arrow me-2"></i>Profit &amp; Loss Report</h4>
+          <small style="opacity:.8;">Tamam income, kharche, aur net munafa ek jagah</small>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-light btn-sm" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i>Print
+          </button>
+          <button class="btn btn-outline-light btn-sm" onclick="exportCSV()">
+            <i class="bi bi-download me-1"></i>Export CSV
+          </button>
         </div>
       </div>
-      <div class="col-6 col-md-4 col-xl-2">
-        <div class="metric-card blue">
-          <h6>Vasooli (Received)</h6>
-          <div class="value" style="color:#2980b9">Rs.${fmt(totalVasooli)}</div>
-          <div class="sub">${vasooliCount} payments</div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar d-flex flex-wrap gap-3 align-items-end no-print">
+        <div>
+          <label class="form-label small fw-semibold mb-1">Report Type</label>
+          <select id="report-period" class="form-select form-select-sm" style="min-width:150px;">
+            <option value="today">Aaj</option>
+            <option value="this_week">Is Hafte</option>
+            <option value="this_month" selected>Is Mahine</option>
+            <option value="last_month">Pichle Mahine</option>
+            <option value="this_year">Is Saal</option>
+            <option value="last_year">Pichle Saal</option>
+            <option value="custom">Custom Range</option>
+          </select>
         </div>
-      </div>
-      <div class="col-6 col-md-4 col-xl-2">
-        <div class="metric-card red">
-          <h6>Total Kharche</h6>
-          <div class="value text-danger">Rs.${fmt(totalExpenses)}</div>
-          <div class="sub">${expenseCount} expenses</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-4 col-xl-2">
-        <div class="metric-card purple">
-          <h6>Cash Advances</h6>
-          <div class="value" style="color:#8e44ad">Rs.${fmt(totalAdvances)}</div>
-          <div class="sub">${advCount} advances</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-4 col-xl-2">
-        <div class="metric-card gold">
-          <h6>Pending Recovery</h6>
-          <div class="value" style="color:${pendingAdv>0?'#c0392b':'#1e8449'}">Rs.${fmt(pendingAdv)}</div>
-          <div class="sub">${(advances||[]).filter(a=>a.status==='pending').length} pending</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-4 col-xl-2">
-        <div class="metric-card ${profitColor}">
-          <h6>${profitLabel}</h6>
-          <div class="value" style="color:${netProfit>=0?'var(--success)':'var(--danger)'}">
-            <i class="bi ${profitIcon} me-1" style="font-size:18px;"></i>Rs.${fmt(Math.abs(netProfit))}
+        <div id="custom-range" style="display:none;" class="d-flex gap-2">
+          <div>
+            <label class="form-label small mb-1">From</label>
+            <input type="date" id="date-from" class="form-control form-control-sm">
           </div>
-          <div class="sub">Sales - Expenses - Advances</div>
+          <div>
+            <label class="form-label small mb-1">To</label>
+            <input type="date" id="date-to" class="form-control form-control-sm">
+          </div>
         </div>
-      </div>`;
-  }
+        <button class="btn btn-primary btn-sm" onclick="runReport()">
+          <i class="bi bi-search me-1"></i>Report Dekho
+        </button>
+        <div class="ms-auto">
+          <small class="text-muted" id="report-label">Is Mahine ki report</small>
+        </div>
+      </div>
 
-  // ── Monthly Breakdown Table ────────────────────────────────
-  function renderMonthlyTable(txns){
-    const months = {};
-    txns.forEach(t => {
-      const d = new Date(t.created_at);
-      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      const lbl = d.toLocaleDateString('en-PK', {month:'long', year:'numeric'});
-      if(!months[key]) months[key] = { lbl, sales:0, vasooli:0, expenses:0, advances:0 };
-      const a = parseFloat(t.amount)||0;
-      if(t.transaction_type==='Credit')  months[key].sales    += a;
-      if(t.transaction_type==='Debit')   months[key].vasooli  += a;
-      if(t.transaction_type==='Expense') months[key].expenses += a;
-      if(t.transaction_type==='Advance') months[key].advances += a;
-    });
+      <!-- Metric Cards -->
+      <div class="row g-3 mb-4" id="metric-cards">
+        <div class="col-12">
+          <div class="pl-loading">
+            <div class="spinner-border spinner-border-sm text-primary"></div>
+            Data load ho raha hai...
+          </div>
+        </div>
+      </div>
 
-    const keys = Object.keys(months).sort((a,b) => b.localeCompare(a));
-    el('table-count').textContent = keys.length + ' months';
+      <!-- Charts -->
+      <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+          <div class="section-card">
+            <div class="sc-title"><i class="bi bi-bar-chart"></i> Monthly Income vs Expense (Last 6 Months)</div>
+            <canvas id="monthlyChart" height="110"></canvas>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="section-card">
+            <div class="sc-title"><i class="bi bi-pie-chart"></i> Expense Breakdown</div>
+            <canvas id="expenseChart" height="200"></canvas>
+            <div id="expense-legend" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
 
-    if(!keys.length){
-      el('monthly-tbody').innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Is period mein koi data nahi</td></tr>';
-      el('monthly-tfoot').innerHTML = '';
-      return;
+      <!-- Monthly Breakdown -->
+      <div class="section-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="sc-title mb-0"><i class="bi bi-calendar3"></i> Monthly Breakdown</div>
+          <small class="text-muted" id="table-count"></small>
+        </div>
+        <div class="table-responsive">
+          <table class="table pl-table mb-0">
+            <thead>
+              <tr>
+                <th>Mahina</th>
+                <th class="text-end">Sales</th>
+                <th class="text-end">Vasooli</th>
+                <th class="text-end">Cash Advance</th>
+                <th class="text-end">Kharche</th>
+                <th class="text-end">Net Munafa</th>
+                <th class="text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="monthly-tbody">
+              <tr><td colspan="7" class="text-center py-4 text-muted">Loading...</td></tr>
+            </tbody>
+            <tfoot id="monthly-tfoot"></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Daily Breakdown -->
+      <div class="section-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="sc-title mb-0"><i class="bi bi-calendar-day"></i> Daily Breakdown</div>
+          <small class="text-muted" id="daily-count"></small>
+        </div>
+        <div class="table-responsive">
+          <table class="table pl-table mb-0">
+            <thead>
+              <tr>
+                <th>Taareekh</th>
+                <th class="text-end">Sales</th>
+                <th class="text-end">Vasooli</th>
+                <th class="text-end">Advance</th>
+                <th class="text-end">Kharche</th>
+                <th class="text-end">Net</th>
+                <th class="text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="daily-tbody">
+              <tr><td colspan="7" class="text-center py-4 text-muted">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Expense Detail -->
+      <div class="section-card">
+        <div class="sc-title"><i class="bi bi-list-ul"></i> Expense Category Detail</div>
+        <div id="expense-detail-list">
+          <div class="text-center text-muted py-3">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Cash Advances -->
+      <div class="section-card">
+        <div class="sc-title"><i class="bi bi-cash-coin"></i> Pending Cash Advances</div>
+        <div class="table-responsive">
+          <table class="table pl-table table-sm mb-0">
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Taareekh</th>
+                <th class="text-end">Amount</th>
+                <th>Wajah</th>
+                <th class="text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="advance-tbody">
+              <tr><td colspan="5" class="text-center py-3 text-muted">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+    <div id="liveToast" class="toast" role="alert">
+      <div class="toast-header">
+        <strong id="toast-title" class="me-auto">Info</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body" id="toast-message"></div>
+    </div>
+  </div>
+
+  <!-- Scripts — exact same order & paths as index.html -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script src="app.js"></script>
+
+  <script>
+  (function () {
+    'use strict';
+
+    // ── Helpers ──────────────────────────────────────────────────
+    function fmt(n) {
+      return Number(n || 0).toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function el(id) { return document.getElementById(id); }
+    function fmtDate(d) {
+      return new Date(d).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' });
     }
 
-    let totSales=0, totVas=0, totAdv=0, totExp=0;
+    let monthlyChart = null;
+    let expenseChart = null;
+    let _allTxns = [];
+    let _allAdv  = [];
 
-    el('monthly-tbody').innerHTML = keys.map(key => {
-      const m = months[key];
-      const net = m.sales - m.expenses - m.advances;
-      totSales += m.sales; totVas += m.vasooli; totAdv += m.advances; totExp += m.expenses;
-      const profitClass = net >= 0 ? 'profit-pos' : 'profit-neg';
-      const profitIcon  = net >= 0 ? '▲' : '▼';
-      const statusBadge = net >= 0
-        ? `<span style="background:#d4edda;color:#155724;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">✅ Munafa</span>`
-        : `<span style="background:#f8d7da;color:#721c24;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">❌ Nuqsan</span>`;
-      return `<tr>
-        <td><strong>${m.lbl}</strong></td>
-        <td class="text-end text-success fw-semibold">Rs.${fmt(m.sales)}</td>
-        <td class="text-end" style="color:#2980b9">Rs.${fmt(m.vasooli)}</td>
-        <td class="text-end" style="color:#8e44ad">Rs.${fmt(m.advances)}</td>
-        <td class="text-end text-danger">Rs.${fmt(m.expenses)}</td>
-        <td class="text-end ${profitClass}">${profitIcon} Rs.${fmt(Math.abs(net))}</td>
-        <td class="text-center">${statusBadge}</td>
-      </tr>`;
-    }).join('');
+    // ── Date Range ────────────────────────────────────────────────
+    function getDateRange() {
+      const period = el('report-period').value;
+      const now = new Date();
+      let from, to = new Date();
 
-    const totalNet = totSales - totExp - totAdv;
-    el('monthly-tfoot').innerHTML = `
-      <tr style="background:#eaf0fb;font-weight:800;font-size:14px;">
-        <td>TOTAL</td>
-        <td class="text-end text-success">Rs.${fmt(totSales)}</td>
-        <td class="text-end" style="color:#2980b9">Rs.${fmt(totVas)}</td>
-        <td class="text-end" style="color:#8e44ad">Rs.${fmt(totAdv)}</td>
-        <td class="text-end text-danger">Rs.${fmt(totExp)}</td>
-        <td class="text-end ${totalNet>=0?'profit-pos':'profit-neg'}">
-          ${totalNet>=0?'▲':'▼'} Rs.${fmt(Math.abs(totalNet))}
-        </td>
-        <td class="text-center">
-          <span style="background:${totalNet>=0?'#d4edda':'#f8d7da'};color:${totalNet>=0?'#155724':'#721c24'};
-            padding:4px 12px;border-radius:12px;font-size:12px;">
-            ${totalNet>=0?'Overall Munafa ✅':'Overall Nuqsan ❌'}
-          </span>
-        </td>
-      </tr>`;
-  }
+      if (period === 'today') {
+        from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        to   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      } else if (period === 'this_week') {
+        const day = now.getDay();
+        from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
+      } else if (period === 'this_month') {
+        from = new Date(now.getFullYear(), now.getMonth(), 1);
+      } else if (period === 'last_month') {
+        from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        to   = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+      } else if (period === 'this_year') {
+        from = new Date(now.getFullYear(), 0, 1);
+      } else if (period === 'last_year') {
+        from = new Date(now.getFullYear() - 1, 0, 1);
+        to   = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59);
+      } else if (period === 'custom') {
+        const df = el('date-from').value;
+        const dt = el('date-to').value;
+        from = df ? new Date(df) : new Date(now.getFullYear(), now.getMonth(), 1);
+        to   = dt ? new Date(dt + 'T23:59:59') : now;
+      } else {
+        from = new Date('2020-01-01');
+      }
 
-  // ── Expense Category Detail ────────────────────────────────
-  function renderExpenseDetail(txns){
-    const cats = {};
-    txns.filter(t => t.transaction_type==='Expense').forEach(t => {
-      const desc = t.description || 'Unknown';
-      // Extract category from "Category: ..." format
-      const cat = desc.includes(':') ? desc.split(':')[0].trim() : 'Other';
-      cats[cat] = (cats[cat]||0) + (parseFloat(t.amount)||0);
-    });
-
-    const entries = Object.entries(cats).sort((a,b) => b[1]-a[1]);
-    const total = entries.reduce((s,[,v]) => s+v, 0);
-
-    if(!entries.length){
-      el('expense-detail-list').innerHTML = '<div class="text-center text-muted py-3">Is period mein koi expense nahi</div>';
-      return;
+      return { from, to };
     }
 
-    el('expense-detail-list').innerHTML = entries.map(([cat, amount]) => {
-      const pct = total > 0 ? ((amount/total)*100).toFixed(1) : 0;
-      return `<div class="d-flex align-items-center gap-3 py-2" style="border-bottom:1px solid #f0f2f5;">
-        <div style="flex:1;">
+    function getPeriodLabel() {
+      const labels = {
+        today:'Aaj ki report', this_week:'Is hafte ki report',
+        this_month:'Is mahine ki report', last_month:'Pichle mahine ki report',
+        this_year:'Is saal ki report', last_year:'Pichle saal ki report',
+        custom:'Custom range ki report'
+      };
+      return labels[el('report-period').value] || 'Report';
+    }
+
+    // ── DOMContentLoaded ─────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+      const now = new Date();
+      el('date-from').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
+      el('date-to').value   = now.toISOString().split('T')[0];
+
+      el('report-period').addEventListener('change', function () {
+        el('custom-range').style.display = this.value === 'custom' ? 'flex' : 'none';
+        if (this.value !== 'custom') tryLoad();
+      });
+
+      // EXACT same pattern as index.html loadQuickStock()
+      tryLoad();
+    });
+
+    // ── tryLoad — same as index.html, NO infinity loop ───────────
+    function tryLoad() {
+      if (!window.supabaseClient) {
+        setTimeout(tryLoad, 200);
+        return;
+      }
+      loadReport();
+    }
+
+    // ── Main Loader ───────────────────────────────────────────────
+    async function loadReport() {
+      el('report-label').textContent = getPeriodLabel();
+
+      el('metric-cards').innerHTML = `<div class="col-12"><div class="pl-loading">
+        <div class="spinner-border spinner-border-sm text-primary"></div> Data load ho raha hai...
+      </div></div>`;
+
+      try {
+        const sb = window.supabaseClient;
+        const { data: { user } } = await sb.auth.getUser();
+
+        if (!user) {
+          el('metric-cards').innerHTML = `<div class="col-12 text-center py-4 text-danger">
+            <i class="bi bi-lock me-2"></i>Login karein pehle
+          </div>`;
+          return;
+        }
+
+        const { from, to } = getDateRange();
+        const fromISO = from.toISOString();
+        const toISO   = new Date(to).toISOString();
+
+        // Transactions
+        const { data: txns, error: txErr } = await sb
+          .from('transactions')
+          .select('id, transaction_type, amount, description, created_at, expense_type, customers(name, sr_no)')
+          .eq('user_id', user.id)
+          .gte('created_at', fromISO)
+          .lte('created_at', toISO)
+          .order('created_at', { ascending: true });
+
+        if (txErr) throw txErr;
+
+        // Cash advances
+        const { data: advances } = await sb
+          .from('cash_advances')
+          .select('id, amount, reason, advance_date, status, customers(name, sr_no)')
+          .eq('user_id', user.id)
+          .gte('advance_date', from.toISOString().split('T')[0])
+          .lte('advance_date', to.toISOString().split('T')[0])
+          .order('advance_date', { ascending: false });
+
+        _allTxns = txns   || [];
+        _allAdv  = advances || [];
+
+        renderMetricCards(_allTxns, _allAdv);
+        renderMonthlyTable(_allTxns);
+        renderDailyTable(_allTxns);
+        renderExpenseDetail(_allTxns);
+        renderAdvanceTable(_allAdv);
+        renderCharts(_allTxns);
+
+      } catch (e) {
+        console.error('P&L Error:', e);
+        el('metric-cards').innerHTML = `<div class="col-12 text-center py-4 text-danger">
+          <i class="bi bi-exclamation-triangle me-2"></i>Error: ${e.message}
+        </div>`;
+      }
+    }
+
+    // ── Metric Cards ──────────────────────────────────────────────
+    function renderMetricCards(txns, advances) {
+      let sales = 0, vasooli = 0, expenses = 0, advAmt = 0;
+      let sCnt = 0, vCnt = 0, eCnt = 0, aCnt = 0;
+
+      txns.forEach(t => {
+        const a = parseFloat(t.amount) || 0;
+        if (t.transaction_type === 'Credit')  { sales    += a; sCnt++; }
+        if (t.transaction_type === 'Debit')   { vasooli  += a; vCnt++; }
+        if (t.transaction_type === 'Expense') { expenses += a; eCnt++; }
+        if (t.transaction_type === 'Advance') { advAmt   += a; aCnt++; }
+      });
+
+      const pendingAdv = (advances || [])
+        .filter(a => a.status === 'pending')
+        .reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
+
+      const net = sales - expenses - advAmt;
+      const isProfit = net >= 0;
+
+      el('metric-cards').innerHTML = `
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="metric-card green">
+            <h6><i class="bi bi-graph-up me-1"></i>Total Sales</h6>
+            <div class="val text-success">Rs.${fmt(sales)}</div>
+            <div class="sub">${sCnt} transactions</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="metric-card blue">
+            <h6><i class="bi bi-wallet2 me-1"></i>Vasooli</h6>
+            <div class="val" style="color:#2980b9">Rs.${fmt(vasooli)}</div>
+            <div class="sub">${vCnt} collections</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="metric-card red">
+            <h6><i class="bi bi-bag-x me-1"></i>Total Kharche</h6>
+            <div class="val text-danger">Rs.${fmt(expenses)}</div>
+            <div class="sub">${eCnt} expenses</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="metric-card purple">
+            <h6><i class="bi bi-cash-coin me-1"></i>Cash Advance</h6>
+            <div class="val" style="color:#8e44ad">Rs.${fmt(advAmt)}</div>
+            <div class="sub">${aCnt} advances</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="metric-card gold">
+            <h6><i class="bi bi-hourglass-split me-1"></i>Pending Recovery</h6>
+            <div class="val" style="color:${pendingAdv > 0 ? '#c0392b' : '#1e8449'}">Rs.${fmt(pendingAdv)}</div>
+            <div class="sub">${(advances || []).filter(a => a.status === 'pending').length} pending</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="metric-card ${isProfit ? 'green' : 'red'}">
+            <h6><i class="bi bi-${isProfit ? 'arrow-up-circle-fill' : 'arrow-down-circle-fill'} me-1"></i>${isProfit ? 'Net Munafa' : 'Net Nuqsan'}</h6>
+            <div class="val ${isProfit ? 'text-success' : 'text-danger'}">Rs.${fmt(Math.abs(net))}</div>
+            <div class="sub">Sales - Kharche - Advance</div>
+          </div>
+        </div>`;
+    }
+
+    // ── Monthly Table ─────────────────────────────────────────────
+    function renderMonthlyTable(txns) {
+      const months = {};
+      txns.forEach(t => {
+        const d   = new Date(t.created_at);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const lbl = d.toLocaleDateString('en-PK', { month: 'long', year: 'numeric' });
+        if (!months[key]) months[key] = { lbl, sales: 0, vasooli: 0, expenses: 0, advances: 0 };
+        const a = parseFloat(t.amount) || 0;
+        if (t.transaction_type === 'Credit')  months[key].sales    += a;
+        if (t.transaction_type === 'Debit')   months[key].vasooli  += a;
+        if (t.transaction_type === 'Expense') months[key].expenses += a;
+        if (t.transaction_type === 'Advance') months[key].advances += a;
+      });
+
+      const keys = Object.keys(months).sort((a, b) => b.localeCompare(a));
+      el('table-count').textContent = keys.length + ' months';
+
+      if (!keys.length) {
+        el('monthly-tbody').innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Is period mein koi data nahi</td></tr>';
+        el('monthly-tfoot').innerHTML = '';
+        return;
+      }
+
+      let tS = 0, tV = 0, tA = 0, tE = 0;
+
+      el('monthly-tbody').innerHTML = keys.map(key => {
+        const m   = months[key];
+        const net = m.sales - m.expenses - m.advances;
+        tS += m.sales; tV += m.vasooli; tA += m.advances; tE += m.expenses;
+        const badge = net >= 0
+          ? `<span class="badge" style="background:#d4edda;color:#155724;">&#10003; Munafa</span>`
+          : `<span class="badge" style="background:#f8d7da;color:#721c24;">&#10007; Nuqsan</span>`;
+        return `<tr>
+          <td><strong>${m.lbl}</strong></td>
+          <td class="text-end text-success fw-semibold">Rs.${fmt(m.sales)}</td>
+          <td class="text-end" style="color:#2980b9">Rs.${fmt(m.vasooli)}</td>
+          <td class="text-end" style="color:#8e44ad">Rs.${fmt(m.advances)}</td>
+          <td class="text-end text-danger">Rs.${fmt(m.expenses)}</td>
+          <td class="text-end ${net >= 0 ? 'profit-pos' : 'profit-neg'}">
+            Rs.${fmt(Math.abs(net))} ${net >= 0 ? '&#9650;' : '&#9660;'}
+          </td>
+          <td class="text-center">${badge}</td>
+        </tr>`;
+      }).join('');
+
+      const tNet = tS - tE - tA;
+      el('monthly-tfoot').innerHTML = `<tr class="total-row">
+        <td><strong>Total</strong></td>
+        <td class="text-end text-success">Rs.${fmt(tS)}</td>
+        <td class="text-end" style="color:#2980b9">Rs.${fmt(tV)}</td>
+        <td class="text-end" style="color:#8e44ad">Rs.${fmt(tA)}</td>
+        <td class="text-end text-danger">Rs.${fmt(tE)}</td>
+        <td class="text-end ${tNet >= 0 ? 'profit-pos' : 'profit-neg'}">Rs.${fmt(Math.abs(tNet))}</td>
+        <td></td>
+      </tr>`;
+    }
+
+    // ── Daily Table ───────────────────────────────────────────────
+    function renderDailyTable(txns) {
+      const days = {};
+      txns.forEach(t => {
+        const d   = new Date(t.created_at);
+        const key = d.toISOString().split('T')[0];
+        const lbl = d.toLocaleDateString('en-PK', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+        if (!days[key]) days[key] = { lbl, sales: 0, vasooli: 0, expenses: 0, advances: 0 };
+        const a = parseFloat(t.amount) || 0;
+        if (t.transaction_type === 'Credit')  days[key].sales    += a;
+        if (t.transaction_type === 'Debit')   days[key].vasooli  += a;
+        if (t.transaction_type === 'Expense') days[key].expenses += a;
+        if (t.transaction_type === 'Advance') days[key].advances += a;
+      });
+
+      const keys = Object.keys(days).sort((a, b) => b.localeCompare(a));
+      el('daily-count').textContent = keys.length + ' days';
+
+      if (!keys.length) {
+        el('daily-tbody').innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Is period mein koi data nahi</td></tr>';
+        return;
+      }
+
+      el('daily-tbody').innerHTML = keys.map(key => {
+        const d   = days[key];
+        const net = d.sales - d.expenses - d.advances;
+        const badge = net >= 0
+          ? `<span class="badge" style="background:#d4edda;color:#155724;font-size:10px;">Munafa</span>`
+          : `<span class="badge" style="background:#f8d7da;color:#721c24;font-size:10px;">Nuqsan</span>`;
+        return `<tr>
+          <td>${d.lbl}</td>
+          <td class="text-end text-success">Rs.${fmt(d.sales)}</td>
+          <td class="text-end" style="color:#2980b9">Rs.${fmt(d.vasooli)}</td>
+          <td class="text-end" style="color:#8e44ad">Rs.${fmt(d.advances)}</td>
+          <td class="text-end text-danger">Rs.${fmt(d.expenses)}</td>
+          <td class="text-end ${net >= 0 ? 'profit-pos' : 'profit-neg'}">Rs.${fmt(Math.abs(net))}</td>
+          <td class="text-center">${badge}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ── Expense Detail ────────────────────────────────────────────
+    function renderExpenseDetail(txns) {
+      const cats = {};
+      txns.filter(t => t.transaction_type === 'Expense').forEach(t => {
+        const cat = t.expense_type
+          || (t.description && t.description.includes(':') ? t.description.split(':')[0].trim() : null)
+          || 'Miscellaneous';
+        cats[cat] = (cats[cat] || 0) + (parseFloat(t.amount) || 0);
+      });
+
+      const entries = Object.entries(cats).sort((a, b) => b[1] - a[1]);
+      const total   = entries.reduce((s, [, v]) => s + v, 0);
+
+      if (!entries.length) {
+        el('expense-detail-list').innerHTML = '<div class="text-center text-muted py-3">Is period mein koi expense nahi</div>';
+        return;
+      }
+
+      el('expense-detail-list').innerHTML = entries.map(([cat, amount]) => {
+        const pct = total > 0 ? ((amount / total) * 100).toFixed(1) : 0;
+        return `<div class="py-2" style="border-bottom:1px solid #f0f2f5;">
           <div class="d-flex justify-content-between mb-1">
-            <span style="font-size:14px;font-weight:600;">${cat}</span>
-            <span style="font-size:13px;color:var(--danger);font-weight:700;">Rs.${fmt(amount)}</span>
+            <span style="font-size:13px;font-weight:600;">${cat}</span>
+            <span style="font-size:13px;color:#c0392b;font-weight:700;">
+              Rs.${fmt(amount)} <small class="text-muted">(${pct}%)</small>
+            </span>
           </div>
           <div style="height:6px;background:#f0f2f5;border-radius:3px;">
-            <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#e74c3c,#f39c12);border-radius:3px;"></div>
+            <div class="exp-prog" style="width:${pct}%;"></div>
           </div>
-          <small style="color:#aaa;">${pct}% of total expenses</small>
-        </div>
-      </div>`;
-    }).join('');
-  }
-
-  // ── Cash Advance Table ─────────────────────────────────────
-  function renderAdvanceTable(advances){
-    if(!advances.length){
-      el('advance-tbody').innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">Is period mein koi cash advance nahi</td></tr>';
-      return;
+        </div>`;
+      }).join('');
     }
 
-    el('advance-tbody').innerHTML = advances.map(a => {
-      const statusMap = {
-        'pending': '<span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">Pending</span>',
-        'partial': '<span style="background:#cce5ff;color:#004085;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">Partial</span>',
-        'cleared': '<span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">Cleared</span>',
-      };
-      return `<tr>
-        <td><strong>${a.customers?.name||'N/A'}</strong> <small class="text-muted">(#${a.customers?.sr_no||'-'})</small></td>
-        <td>${new Date(a.advance_date).toLocaleDateString('en-PK')}</td>
-        <td class="fw-bold" style="color:#8e44ad">Rs.${fmt(a.amount)}</td>
-        <td>${a.reason||'-'}</td>
-        <td>${statusMap[a.status] || a.status}</td>
-      </tr>`;
-    }).join('');
-  }
-
-  // ── Charts ─────────────────────────────────────────────────
-  function renderCharts(txns){
-    // Monthly bar chart (last 6 months)
-    const now = new Date();
-    const months6 = [];
-    for(let i=5; i>=0; i--){
-      const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
-      months6.push({
-        key: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,
-        lbl: d.toLocaleDateString('en-PK', {month:'short', year:'2-digit'}),
-        sales: 0, expenses: 0
-      });
-    }
-
-    txns.forEach(t => {
-      const d = new Date(t.created_at);
-      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      const m = months6.find(m => m.key === key);
-      if(!m) return;
-      const a = parseFloat(t.amount)||0;
-      if(t.transaction_type==='Credit') m.sales += a;
-      if(t.transaction_type==='Expense' || t.transaction_type==='Advance') m.expenses += a;
-    });
-
-    if(monthlyChart) monthlyChart.destroy();
-    monthlyChart = new Chart(el('monthlyChart'), {
-      type: 'bar',
-      data: {
-        labels: months6.map(m => m.lbl),
-        datasets: [
-          {
-            label: 'Sales (Income)',
-            data: months6.map(m => m.sales),
-            backgroundColor: 'rgba(30,132,73,0.8)',
-            borderRadius: 5
-          },
-          {
-            label: 'Expenses + Advances',
-            data: months6.map(m => m.expenses),
-            backgroundColor: 'rgba(192,57,43,0.8)',
-            borderRadius: 5
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { position: 'bottom' } },
-        scales: { y: { beginAtZero: true, ticks: { callback: v => 'Rs.'+(v/1000)+'k' } } }
+    // ── Advance Table ─────────────────────────────────────────────
+    function renderAdvanceTable(advances) {
+      if (!advances.length) {
+        el('advance-tbody').innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">Is period mein koi cash advance nahi</td></tr>';
+        return;
       }
-    });
+      const statusMap = {
+        pending: '<span class="badge" style="background:#fff3cd;color:#856404;">Pending</span>',
+        partial: '<span class="badge" style="background:#cce5ff;color:#004085;">Partial</span>',
+        cleared: '<span class="badge" style="background:#d4edda;color:#155724;">Cleared</span>',
+      };
+      el('advance-tbody').innerHTML = advances.map(a => `<tr>
+        <td><strong>${a.customers?.name || 'N/A'}</strong> <small class="text-muted">(#${a.customers?.sr_no || '-'})</small></td>
+        <td>${fmtDate(a.advance_date)}</td>
+        <td class="text-end fw-bold" style="color:#8e44ad">Rs.${fmt(a.amount)}</td>
+        <td>${a.reason || '-'}</td>
+        <td class="text-center">${statusMap[a.status] || a.status}</td>
+      </tr>`).join('');
+    }
 
-    // Expense pie chart
-    const expCats = {};
-    txns.filter(t => t.transaction_type==='Expense').forEach(t => {
-      const desc = t.description||'Other';
-      const cat = desc.includes(':') ? desc.split(':')[0].trim() : 'Other';
-      expCats[cat] = (expCats[cat]||0) + (parseFloat(t.amount)||0);
-    });
+    // ── Charts ────────────────────────────────────────────────────
+    function renderCharts(txns) {
+      const now = new Date();
+      const months6 = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months6.push({
+          key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+          lbl: d.toLocaleDateString('en-PK', { month: 'short', year: '2-digit' }),
+          sales: 0, expenses: 0, net: 0
+        });
+      }
 
-    const expEntries = Object.entries(expCats).sort((a,b)=>b[1]-a[1]).slice(0,6);
-    const colors = ['#e74c3c','#f39c12','#3498db','#2ecc71','#9b59b6','#1abc9c'];
+      txns.forEach(t => {
+        const d   = new Date(t.created_at);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const m   = months6.find(m => m.key === key);
+        if (!m) return;
+        const a = parseFloat(t.amount) || 0;
+        if (t.transaction_type === 'Credit') m.sales += a;
+        if (t.transaction_type === 'Expense' || t.transaction_type === 'Advance') m.expenses += a;
+      });
+      months6.forEach(m => { m.net = m.sales - m.expenses; });
 
-    if(expenseChart) expenseChart.destroy();
-
-    if(expEntries.length){
-      expenseChart = new Chart(el('expenseChart'), {
-        type: 'doughnut',
+      if (monthlyChart) monthlyChart.destroy();
+      monthlyChart = new Chart(el('monthlyChart'), {
+        type: 'bar',
         data: {
-          labels: expEntries.map(([k]) => k),
-          datasets: [{ data: expEntries.map(([,v]) => v), backgroundColor: colors, borderWidth: 2 }]
+          labels: months6.map(m => m.lbl),
+          datasets: [
+            { label: 'Sales', data: months6.map(m => m.sales), backgroundColor: 'rgba(30,132,73,.8)', borderRadius: 5 },
+            { label: 'Kharche+Advance', data: months6.map(m => m.expenses), backgroundColor: 'rgba(192,57,43,.8)', borderRadius: 5 },
+            { label: 'Net', data: months6.map(m => m.net), type: 'line', borderColor: '#2980b9', backgroundColor: 'transparent', tension: 0.4, pointRadius: 4, borderWidth: 2 }
+          ]
         },
         options: {
           responsive: true,
-          plugins: { legend: { display: false } },
-          cutout: '60%'
+          plugins: { legend: { position: 'bottom' } },
+          scales: { y: { beginAtZero: true, ticks: { callback: v => 'Rs.' + (v / 1000).toFixed(0) + 'k' } } }
         }
       });
 
-      // Legend
-      el('expense-legend').innerHTML = expEntries.map(([cat,amt],i) => `
-        <div class="d-flex justify-content-between align-items-center py-1" style="font-size:12px;">
-          <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${colors[i]};margin-right:6px;"></span>${cat}</span>
-          <span class="fw-bold">Rs.${fmt(amt)}</span>
-        </div>`).join('');
-    } else {
-      el('expenseChart').parentElement.innerHTML = '<div class="text-center text-muted py-4">Koi expense data nahi</div>';
+      // Expense pie
+      const cats = {};
+      txns.filter(t => t.transaction_type === 'Expense').forEach(t => {
+        const cat = t.expense_type || 'Other';
+        cats[cat] = (cats[cat] || 0) + (parseFloat(t.amount) || 0);
+      });
+      const expE   = Object.entries(cats).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      const colors = ['#e74c3c', '#f39c12', '#3498db', '#2ecc71', '#9b59b6', '#1abc9c'];
+
+      if (expenseChart) expenseChart.destroy();
+
+      if (expE.length) {
+        expenseChart = new Chart(el('expenseChart'), {
+          type: 'doughnut',
+          data: {
+            labels: expE.map(([k]) => k),
+            datasets: [{ data: expE.map(([, v]) => v), backgroundColor: colors, borderWidth: 2 }]
+          },
+          options: { responsive: true, plugins: { legend: { display: false } }, cutout: '60%' }
+        });
+        el('expense-legend').innerHTML = expE.map(([cat, amt], i) =>
+          `<div class="d-flex justify-content-between py-1" style="font-size:11px;">
+            <span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${colors[i]};margin-right:5px;"></span>${cat}</span>
+            <span class="fw-bold">Rs.${fmt(amt)}</span>
+          </div>`).join('');
+      } else {
+        el('expenseChart').parentElement.innerHTML = '<div class="text-center text-muted py-4 small">Koi expense data nahi</div>';
+      }
     }
-  }
 
-  // ── Export CSV ─────────────────────────────────────────────
-  window.exportCSV = function(){
-    const txns = allData.transactions;
-    if(!txns.length){ alert('Koi data nahi export karne ke liye'); return; }
-
-    const rows = [['Date','Customer','Type','Amount','Description']];
-    txns.forEach(t => {
-      rows.push([
-        new Date(t.created_at).toLocaleDateString('en-PK'),
+    // ── Export CSV ────────────────────────────────────────────────
+    window.exportCSV = function () {
+      if (!_allTxns.length) { alert('Koi data nahi export karne ke liye'); return; }
+      const rows = [['Date', 'Customer', 'Type', 'Amount', 'Expense Type', 'Description']];
+      _allTxns.forEach(t => rows.push([
+        fmtDate(t.created_at),
         t.customers?.name || 'N/A',
         t.transaction_type,
-        t.amount,
-        (t.description||'').replace(/,/g,' ')
-      ]);
-    });
+        t.amount || 0,
+        t.expense_type || '',
+        (t.description || '').replace(/,/g, ' ')
+      ]));
+      const csv  = rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url;
+      a.download = `profit-loss-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+    };
 
-    const csv = rows.map(r => r.join(',')).join('\n');
-    const blob = new Blob([csv], {type:'text/csv'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `profit-loss-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-  };
+    // Expose for HTML buttons
+    window.runReport = loadReport;
 
-  // ── Init ───────────────────────────────────────────────────
-  document.addEventListener('DOMContentLoaded', () => {
-    // Set default dates
-    const now = new Date();
-    el('date-from').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
-    el('date-to').value   = now.toISOString().split('T')[0];
-
-    // Wait for auth to be ready
-    const checkAuth = setInterval(async () => {
-      const sb = getSupabase();
-      if(!sb) return; // still loading
-      try {
-        const { data } = await sb.auth.getUser();
-        if(data?.user){
-          clearInterval(checkAuth);
-          await loadReport();
-        }
-      } catch(e) {
-        console.warn('Auth check error:', e);
-      }
-    }, 300);
-
-    // Timeout fallback
-    setTimeout(() => clearInterval(checkAuth), 10000);
-  });
-
-  window.loadReport = loadReport;
-})();
-</script>
-
-<!-- Footer -->
-<!-- <footer class="no-print" style="margin-left:240px; background:#fff; border-top:1px solid #e0e6ed; padding:18px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:13px; color:#7f8c8d;">
-  <div>
-    <strong style="color:#1a5276;">⛽ Khalid &amp; Sons Petroleum</strong>
-    &nbsp;|&nbsp; Profit &amp; Loss Management System
-  </div>
-  <div>
-    &copy; <script>document.write(new Date().getFullYear())</script> All rights reserved &nbsp;|&nbsp;
-    <a href="dashboard.html" style="color:#1a5276;text-decoration:none;">Dashboard</a> &nbsp;|&nbsp;
-    <a href="transactions.html" style="color:#1a5276;text-decoration:none;">Transactions</a> &nbsp;|&nbsp;
-    <a href="reports.html" style="color:#1a5276;text-decoration:none;">Reports</a>
-  </div>
-</footer> -->
-<!-- <style>
-  @media (max-width: 768px) {
-    footer { margin-left: 0 !important; justify-content: center; text-align: center; }
-  }
-</style> -->
+  })();
+  </script>
 </body>
 </html>
-<!-- 
-transactions-COMPLETE-v5.js -->
