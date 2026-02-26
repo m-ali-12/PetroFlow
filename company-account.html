@@ -1,768 +1,500 @@
 <!DOCTYPE html>
-<html lang="en" data-page="company-account">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Go Company Account — Khalid & Sons</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Go Company Account | Khalid & Sons Petroleum</title>
+  <link rel="icon" type="image/png" href="assets/logo.jfif">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/styles.css">
   <style>
     :root {
-      --ink:     #0f1923;
-      --paper:   #f5f3ee;
-      --ledger:  #e8e4db;
-      --accent:  #c0392b;
-      --green:   #1a6b3c;
-      --blue:    #1a3a6b;
-      --gold:    #b7860b;
-      --border:  #c4bfb4;
-      --shadow:  0 2px 8px rgba(0,0,0,0.10);
+      --ink:    #0f1923;
+      --accent: #c0392b;
+      --green:  #1a6b3c;
+      --blue:   #1a3a6b;
+      --gold:   #b7860b;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'IBM Plex Sans', sans-serif;
-      background: var(--paper);
-      color: var(--ink);
-      min-height: 100vh;
-    }
-
-    /* ── Header ── */
-    .page-header {
-      background: var(--ink);
-      color: #fff;
-      padding: 18px 28px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 3px solid var(--accent);
-    }
-    .page-header h1 {
-      font-size: 1.3rem;
-      font-weight: 700;
-      letter-spacing: -.3px;
-    }
-    .page-header .sub { font-size: 12px; color: #aaa; margin-top: 2px; font-family: 'IBM Plex Mono', monospace; }
-    .action-bar {
-      display: flex; gap: 8px; flex-wrap: wrap;
-    }
-
-    /* ── Summary Cards ── */
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      padding: 24px 28px 0;
-    }
-    .sum-card {
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 18px 20px;
-      box-shadow: var(--shadow);
-      position: relative;
-      overflow: hidden;
-    }
-    .sum-card::before {
-      content: '';
-      position: absolute;
-      left: 0; top: 0; bottom: 0;
-      width: 4px;
-    }
-    .sum-card.red::before  { background: var(--accent); }
-    .sum-card.green::before{ background: var(--green); }
-    .sum-card.blue::before { background: var(--blue); }
-    .sum-card.gold::before { background: var(--gold); }
-    .sum-card .label {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: .8px;
-      text-transform: uppercase;
-      color: #888;
-      margin-bottom: 6px;
-    }
-    .sum-card .value {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--ink);
-    }
-    .sum-card .value.danger { color: var(--accent); }
-    .sum-card .value.success{ color: var(--green); }
-    .sum-card .sub-label {
-      font-size: 11px;
-      color: #999;
-      margin-top: 4px;
-    }
-
-    /* ── Credit Usage Bar ── */
-    .credit-bar-wrap {
-      margin: 20px 28px 0;
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 16px 20px;
-    }
-    .credit-bar-wrap .label { font-size: 12px; font-weight: 600; color: #555; margin-bottom: 8px; }
-    .progress { height: 18px; border-radius: 4px; background: var(--ledger); }
-
-    /* ── Tabs ── */
-    .content-area { padding: 24px 28px; }
-    .nav-tabs .nav-link {
-      color: var(--ink);
-      font-size: 13px;
-      font-weight: 600;
-      border: none;
-      border-bottom: 3px solid transparent;
-      padding: 8px 18px;
-    }
-    .nav-tabs .nav-link.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
-      background: none;
-    }
-
-    /* ── Tables ── */
-    .ledger-table-wrap {
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      overflow: hidden;
-      margin-top: 16px;
-    }
-    .ledger-table { width: 100%; border-collapse: collapse; }
-    .ledger-table thead th {
-      background: var(--ink);
-      color: #fff;
-      padding: 11px 14px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: .5px;
-      text-transform: uppercase;
-      border: none;
-    }
-    .ledger-table tbody tr:hover { background: #fdfaf5; }
-    .ledger-table tbody tr + tr { border-top: 1px solid var(--ledger); }
-
-    /* ── Buttons ── */
-    .btn-ink {
-      background: var(--ink); color: #fff; border: none; border-radius: 5px;
-      padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
-    }
-    .btn-ink:hover { background: #1e2d3d; }
-    .btn-red   { background: var(--accent); color: #fff; border: none; border-radius: 5px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .btn-green { background: var(--green);  color: #fff; border: none; border-radius: 5px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .btn-blue  { background: var(--blue);   color: #fff; border: none; border-radius: 5px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .btn-gold  { background: var(--gold);   color: #fff; border: none; border-radius: 5px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; }
-
-    /* ── Modals ── */
-    .modal-header { background: var(--ink); color: #fff; border: none; }
-    .modal-header .btn-close { filter: invert(1); }
-    .modal-footer { border-top: 1px solid var(--ledger); }
-    .form-label { font-size: 12px; font-weight: 600; color: #555; margin-bottom: 4px; }
-    .form-control, .form-select {
-      font-size: 13px;
-      border-color: var(--border);
-    }
-    .form-control:focus, .form-select:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px rgba(192,57,43,.15);
-    }
-    .total-display {
-      font-family: 'IBM Plex Mono', monospace;
-      font-weight: 700;
-      font-size: 1.1rem;
-      color: var(--accent);
-      padding: 8px 12px;
-      background: #ffeaea;
-      border-radius: 5px;
-      border: 1px solid #f5c6c6;
-    }
-
-    /* ── Filter Bar ── */
-    .filter-bar {
-      display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;
-      background: #fff; border: 1px solid var(--border); border-radius: 6px;
-      padding: 14px 18px; margin-top: 0;
-    }
-    .filter-bar .form-group { display: flex; flex-direction: column; gap: 3px; }
-    .filter-bar label { font-size: 11px; font-weight: 600; color: #777; }
-
-    /* Toast */
-    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
-
-    @media (max-width: 768px) {
-      .summary-grid { padding: 16px; }
-      .content-area { padding: 16px; }
-      .page-header { flex-direction: column; gap: 12px; align-items: flex-start; }
-    }
+    .sum-card { border-radius:8px; padding:18px 20px; position:relative; overflow:hidden; border:1px solid #dee2e6; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+    .sum-card::before { content:''; position:absolute; left:0;top:0;bottom:0;width:4px; }
+    .sum-card.red::before   { background:var(--accent); }
+    .sum-card.green::before { background:var(--green); }
+    .sum-card.blue::before  { background:var(--blue); }
+    .sum-card.gold::before  { background:var(--gold); }
+    .sum-card .s-label { font-size:11px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#888;margin-bottom:5px; }
+    .sum-card .s-value { font-family:'Courier New',monospace;font-size:1.25rem;font-weight:800;color:var(--ink); }
+    .sum-card .s-value.danger  { color:var(--accent); }
+    .sum-card .s-value.success { color:var(--green); }
+    .sum-card .s-sub { font-size:11px;color:#aaa;margin-top:3px; }
+    .nav-tabs .nav-link { font-size:13px;font-weight:600;color:#555; }
+    .nav-tabs .nav-link.active { color:var(--accent);border-bottom:2px solid var(--accent); }
+    .ledger-wrap { background:#fff;border:1px solid #dee2e6;border-radius:8px;overflow:hidden;margin-top:14px; }
+    .ledger-tbl  { width:100%;border-collapse:collapse; }
+    .ledger-tbl thead th { background:var(--ink);color:#fff;padding:10px 13px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px; }
+    .ledger-tbl tbody tr:hover { background:#f9f9f9; }
+    .ledger-tbl tbody tr+tr { border-top:1px solid #f0f0f0; }
+    .ledger-tbl td { padding:10px 13px;font-size:13px;vertical-align:middle; }
+    .filter-bar { background:#fff;border:1px solid #dee2e6;border-radius:8px;padding:14px 18px; }
+    .total-box  { background:#fff3cd;border:1px solid #ffc107;border-radius:5px;padding:8px 14px;font-weight:800;font-size:1.05rem;color:#856404;display:none; }
+    .modal-hdr-green { background:var(--green);color:#fff; }
+    .modal-hdr-blue  { background:var(--blue);color:#fff; }
+    .modal-hdr-ink   { background:var(--ink);color:#fff; }
+    .modal-hdr-gold  { background:var(--gold);color:#fff; }
+    .modal-hdr-green .btn-close,
+    .modal-hdr-blue  .btn-close,
+    .modal-hdr-ink   .btn-close,
+    .modal-hdr-gold  .btn-close { filter:invert(1); }
+    .progress { height:16px;border-radius:4px; }
   </style>
 </head>
-<body>
 
-<!-- ── Header ────────────────────────────────────────── -->
-<div class="page-header">
-  <div>
-    <h1>⛽ Go Company cc — Account No. 9</h1>
-    <div class="sub" id="sum-company-name">Company Credit Account — Stock Supplier</div>
-  </div>
-  <div class="action-bar">
-    <button class="btn-green" data-bs-toggle="modal" data-bs-target="#stockPurchaseModal">
-      <i class="bi bi-truck me-1"></i>Stock Purchase
-    </button>
-    <button class="btn-blue" data-bs-toggle="modal" data-bs-target="#memberCardModal">
-      <i class="bi bi-credit-card me-1"></i>Member Card Usage
-    </button>
-    <button class="btn-ink" data-bs-toggle="modal" data-bs-target="#repaymentModal">
-      <i class="bi bi-check2-circle me-1"></i>Repayment
-    </button>
-    <button class="btn-gold" data-bs-toggle="modal" data-bs-target="#dualExpenseModal">
-      <i class="bi bi-receipt me-1"></i>Expense Entry
-    </button>
-  </div>
-</div>
+<body data-page="company-account">
 
+  <!-- Navbar — same placeholder as customers.html -->
+  <div id="navbar-placeholder"></div>
 
-<!-- ── Summary Cards ──────────────────────────────────── -->
-<div class="summary-grid">
-  <div class="sum-card green">
-    <div class="label">Initial Credit Given</div>
-    <div class="value success" id="sum-initial-credit">Rs. —</div>
-    <div class="sub-label">Total credit from company</div>
-  </div>
-  <div class="sum-card red">
-    <div class="label">Stock Purchased</div>
-    <div class="value danger" id="sum-stock-purchased">Rs. —</div>
-    <div class="sub-label">Petrol + Diesel + Mobil</div>
-  </div>
-  <div class="sum-card gold">
-    <div class="label">Total Charges</div>
-    <div class="value" style="color:var(--gold)" id="sum-total-charges">Rs. —</div>
-    <div class="sub-label">ATM + Bank + Misc fees</div>
-  </div>
-  <div class="sum-card blue">
-    <div class="label">Total Repaid</div>
-    <div class="value success" id="sum-total-repaid">Rs. —</div>
-    <div class="sub-label">Check + Online payments</div>
-  </div>
-  <div class="sum-card red">
-    <div class="label" style="color:var(--accent)">⚠️ Net Payable to Company</div>
-    <div class="value danger" id="sum-net-payable">Rs. —</div>
-    <div class="sub-label">= Credit + Stock + Charges − Repaid</div>
-  </div>
-  <div class="sum-card green">
-    <div class="label">Remaining Credit Limit</div>
-    <div class="value" id="sum-remaining-credit">Rs. —</div>
-    <div class="sub-label">Available to use</div>
-  </div>
-  <div class="sum-card gold">
-    <div class="label">Linked Expenses</div>
-    <div class="value" style="color:var(--gold)" id="sum-linked-expenses">Rs. —</div>
-    <div class="sub-label">Dual-role accounts (e.g. Acc.3)</div>
-  </div>
-  <div class="sum-card blue">
-    <div class="label">Grand Total Expenses</div>
-    <div class="value" id="sum-grand-expenses">Rs. —</div>
-    <div class="sub-label">All expense transactions</div>
-  </div>
-</div>
+  <div class="container py-4">
 
-<!-- Credit usage bar -->
-<div class="credit-bar-wrap">
-  <div class="label">Credit Utilisation</div>
-  <div class="progress">
-    <div class="progress-bar bg-success" id="credit-usage-bar" style="width:0%;transition:width .6s ease;">0% used</div>
-  </div>
-</div>
-
-
-<!-- ── Tabs ───────────────────────────────────────────── -->
-<div class="content-area">
-  <ul class="nav nav-tabs" id="companyTabs">
-    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-transactions">All Transactions</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-stock"        onclick="window.loadStockHistory()">Stock Ledger</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-member"       onclick="window.loadMemberUsageSummary()">Member Usage</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-repayments"   onclick="window.loadRepaymentHistory()">Repayments</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-expenses"     onclick="window.loadExpenseLedger()">Expense Ledger</a></li>
-  </ul>
-
-  <div class="tab-content mt-3">
-
-    <!-- Tab 1: All Transactions -->
-    <div class="tab-pane fade show active" id="tab-transactions">
-      <div class="filter-bar mb-3">
-        <div class="form-group">
-          <label>From Date</label>
-          <input type="date" class="form-control form-control-sm" id="cfilter-date-from">
-        </div>
-        <div class="form-group">
-          <label>To Date</label>
-          <input type="date" class="form-control form-control-sm" id="cfilter-date-to">
-        </div>
-        <div class="form-group">
-          <label>Type</label>
-          <select class="form-select form-select-sm" id="cfilter-type" style="min-width:160px;">
-            <option value="">All Types</option>
-            <option value="stock_purchase">Stock Purchase</option>
-            <option value="member_usage">Member Card</option>
-            <option value="atm_charge">ATM Charge</option>
-            <option value="misc_charge">Misc Charge</option>
-            <option value="repayment_check">Repayment (Check)</option>
-            <option value="repayment_online">Repayment (Online)</option>
-            <option value="adjustment">Adjustment</option>
-          </select>
-        </div>
-        <button class="btn-ink btn-sm" id="btn-apply-company-filter" style="padding:6px 14px;margin-top:14px;">
-          <i class="bi bi-funnel"></i> Filter
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div>
+        <h3 class="mb-0"><i class="bi bi-building me-2 text-danger"></i>Go Company cc — Account No. 9</h3>
+        <small class="text-muted" id="sum-company-name">Company Credit Account — Stock Supplier</small>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#stockPurchaseModal">
+          <i class="bi bi-truck me-1"></i>Stock Purchase
         </button>
-        <button class="btn btn-outline-secondary btn-sm" id="btn-clear-company-filter" style="margin-top:14px;">
-          Clear
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#memberCardModal">
+          <i class="bi bi-credit-card me-1"></i>Member Card
         </button>
-        <div style="margin-left:auto;margin-top:14px;display:flex;gap:10px;font-family:'IBM Plex Mono',monospace;font-size:12px;align-items:center;">
-          <span>In: <strong id="ctxn-total-in" style="color:var(--green)">—</strong></span>
-          <span>Out: <strong id="cxtn-total-out" style="color:var(--accent)">—</strong></span>
-          <span>Net Owed: <strong id="cxtn-net" style="color:var(--accent)">—</strong></span>
-        </div>
-      </div>
-
-      <div class="ledger-table-wrap">
-        <table class="ledger-table">
-          <thead>
-            <tr>
-              <th>#</th><th>Date</th><th>Type</th><th>Amount</th>
-              <th>Charges</th><th>Net</th><th>Member</th><th>Details</th><th>Del</th>
-            </tr>
-          </thead>
-          <tbody id="company-txn-table">
-            <tr><td colspan="9" class="text-center py-4 text-muted">Loading...</td></tr>
-          </tbody>
-        </table>
+        <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#repaymentModal">
+          <i class="bi bi-check2-circle me-1"></i>Repayment
+        </button>
+        <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#dualExpenseModal">
+          <i class="bi bi-receipt me-1"></i>Expense Entry
+        </button>
       </div>
     </div>
 
-    <!-- Tab 2: Stock Ledger -->
-    <div class="tab-pane fade" id="tab-stock">
-      <div class="ledger-table-wrap">
-        <table class="ledger-table">
-          <thead>
-            <tr><th>Fuel Type</th><th>Purchases</th><th>Total Liters</th><th>Avg Price</th><th>Stock Value</th><th>Charges</th><th>Net Payable</th></tr>
-          </thead>
-          <tbody id="stock-breakdown-table">
-            <tr><td colspan="7" class="text-center py-3 text-muted">Loading...</td></tr>
-          </tbody>
-        </table>
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-3 col-6"><div class="sum-card green">
+        <div class="s-label">Initial Credit</div>
+        <div class="s-value success" id="sum-initial-credit">Rs. —</div>
+        <div class="s-sub">Credit from company</div>
+      </div></div>
+      <div class="col-md-3 col-6"><div class="sum-card red">
+        <div class="s-label">Stock Purchased</div>
+        <div class="s-value danger" id="sum-stock-purchased">Rs. —</div>
+        <div class="s-sub">Petrol + Diesel + Mobil</div>
+      </div></div>
+      <div class="col-md-3 col-6"><div class="sum-card gold">
+        <div class="s-label">Total Charges</div>
+        <div class="s-value" style="color:var(--gold)" id="sum-total-charges">Rs. —</div>
+        <div class="s-sub">ATM + Bank + Misc</div>
+      </div></div>
+      <div class="col-md-3 col-6"><div class="sum-card blue">
+        <div class="s-label">Total Repaid</div>
+        <div class="s-value success" id="sum-total-repaid">Rs. —</div>
+        <div class="s-sub">Check + Online</div>
+      </div></div>
+      <div class="col-md-3 col-6"><div class="sum-card red">
+        <div class="s-label" style="color:var(--accent)">⚠️ Net Payable</div>
+        <div class="s-value danger" id="sum-net-payable">Rs. —</div>
+        <div class="s-sub">Credit+Stock+Charges−Repaid</div>
+      </div></div>
+      <div class="col-md-3 col-6"><div class="sum-card green">
+        <div class="s-label">Remaining Limit</div>
+        <div class="s-value" id="sum-remaining-credit">Rs. —</div>
+        <div class="s-sub">Available to use</div>
+      </div></div>
+      <div class="col-md-3 col-6"><div class="sum-card gold">
+        <div class="s-label">Linked Expenses</div>
+        <div class="s-value" style="color:var(--gold)" id="sum-linked-expenses">Rs. —</div>
+        <div class="s-sub">Dual-role accounts</div>
+      </div></div>
+      <div class="col-md-3 col-6"><div class="sum-card blue">
+        <div class="s-label">Grand Expenses</div>
+        <div class="s-value" id="sum-grand-expenses">Rs. —</div>
+        <div class="s-sub">All expense transactions</div>
+      </div></div>
+    </div>
+
+    <!-- Credit Usage Bar -->
+    <div class="card shadow-sm mb-3 p-3">
+      <div class="d-flex justify-content-between mb-1">
+        <small class="fw-bold text-muted">Credit Utilisation</small>
+        <small class="text-muted" id="credit-limit-label">Limit: Rs. —</small>
+      </div>
+      <div class="progress">
+        <div class="progress-bar bg-success" id="credit-usage-bar" style="width:0%;transition:width .6s ease;font-size:11px;font-weight:700;">0%</div>
       </div>
     </div>
 
-    <!-- Tab 3: Member Usage -->
-    <div class="tab-pane fade" id="tab-member">
-      <div class="ledger-table-wrap">
-        <table class="ledger-table">
-          <thead>
-            <tr><th>#</th><th>Member</th><th>Fuel</th><th>Uses</th><th>Liters</th><th>Stock Value</th><th>Charges</th><th>Grand Total</th></tr>
-          </thead>
-          <tbody id="member-usage-summary-table">
-            <tr><td colspan="8" class="text-center py-3 text-muted">Click "Member Usage" tab to load</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <!-- Tabs -->
+    <ul class="nav nav-tabs" id="companyTabs">
+      <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-transactions">All Transactions</a></li>
+      <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-stock"      onclick="window.loadStockHistory()">Stock Ledger</a></li>
+      <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-member"     onclick="window.loadMemberUsageSummary()">Member Usage</a></li>
+      <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-repayments" onclick="window.loadRepaymentHistory()">Repayments</a></li>
+      <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-expenses"   onclick="window.loadExpenseLedger()">Expense Ledger</a></li>
+    </ul>
 
-    <!-- Tab 4: Repayments -->
-    <div class="tab-pane fade" id="tab-repayments">
-      <div class="mb-2" style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--green);">
-        Total Repaid: <span id="repayment-total">—</span>
-      </div>
-      <div class="ledger-table-wrap">
-        <table class="ledger-table">
-          <thead>
-            <tr><th>#</th><th>Date</th><th>Amount</th><th>Method</th><th>Reference</th><th>Notes</th><th>Status</th></tr>
-          </thead>
-          <tbody id="repayment-history-table">
-            <tr><td colspan="7" class="text-center py-3 text-muted">Loading...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <div class="tab-content mt-3">
 
-    <!-- Tab 5: Expense Ledger -->
-    <div class="tab-pane fade" id="tab-expenses">
-      <div class="ledger-table-wrap">
-        <table class="ledger-table">
-          <thead>
-            <tr><th>Date</th><th>Acc#</th><th>Account</th><th>Category</th><th>Amount</th><th>Description</th><th>Paid From</th></tr>
-          </thead>
-          <tbody id="expense-ledger-table">
-            <tr><td colspan="7" class="text-center py-3 text-muted">Click "Expense Ledger" tab to load</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-
-<!-- ══════════════════════════════════════════════════════
-     MODALS
-═══════════════════════════════════════════════════════ -->
-
-<!-- Modal 1: Stock Purchase -->
-<div class="modal fade" id="stockPurchaseModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">📦 Stock Purchase (Company Credit)</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form id="stockPurchaseForm">
-        <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-12">
-              <label class="form-label">Fuel Type *</label>
-              <select class="form-select" id="sp-fuel-type" required>
-                <option value="">-- Select --</option>
-                <option value="Petrol">⛽ Petrol</option>
-                <option value="Diesel">🛢️ Diesel</option>
-                <option value="Mobil Oil">🔧 Mobil Oil</option>
-              </select>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Liters *</label>
-              <input type="number" class="form-control" id="sp-liters" placeholder="0.00" step="0.01" min="0" required>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Unit Price (Rs./L) *</label>
-              <input type="number" class="form-control" id="sp-unit-price" placeholder="0.00" step="0.01" min="0" required>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Charges (ATM/Bank)</label>
-              <input type="number" class="form-control" id="sp-charges" placeholder="0.00" step="0.01" min="0">
-            </div>
-            <div class="col-6">
-              <label class="form-label">Purchase Date</label>
-              <input type="date" class="form-control" id="sp-date">
-            </div>
-            <div class="col-6">
-              <label class="form-label">Invoice No.</label>
-              <input type="text" class="form-control" id="sp-invoice-no" placeholder="Optional">
-            </div>
-            <div class="col-6">
-              <label class="form-label">Truck No.</label>
-              <input type="text" class="form-control" id="sp-truck-no" placeholder="Optional">
-            </div>
-            <div class="col-12">
-              <label class="form-label">Notes</label>
-              <textarea class="form-control" id="sp-notes" rows="2" placeholder="Optional notes..."></textarea>
-            </div>
-            <div class="col-12">
-              <div class="total-display" id="sp-total-display" style="display:none;"></div>
-            </div>
+      <!-- Tab 1: All Transactions -->
+      <div class="tab-pane fade show active" id="tab-transactions">
+        <div class="filter-bar mb-3 d-flex flex-wrap gap-2 align-items-end">
+          <div>
+            <label class="form-label mb-1" style="font-size:11px;font-weight:700;">From Date</label>
+            <input type="date" class="form-control form-control-sm" id="cfilter-date-from">
           </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn-green" style="padding:7px 20px;">
-            <i class="bi bi-check2 me-1"></i>Record Purchase
+          <div>
+            <label class="form-label mb-1" style="font-size:11px;font-weight:700;">To Date</label>
+            <input type="date" class="form-control form-control-sm" id="cfilter-date-to">
+          </div>
+          <div>
+            <label class="form-label mb-1" style="font-size:11px;font-weight:700;">Type</label>
+            <select class="form-select form-select-sm" id="cfilter-type" style="min-width:160px;">
+              <option value="">All Types</option>
+              <option value="stock_purchase">Stock Purchase</option>
+              <option value="member_usage">Member Card</option>
+              <option value="atm_charge">ATM Charge</option>
+              <option value="misc_charge">Misc Charge</option>
+              <option value="repayment_check">Repayment (Check)</option>
+              <option value="repayment_online">Repayment (Online)</option>
+              <option value="adjustment">Adjustment</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-apply-company-filter">
+            <i class="bi bi-funnel"></i> Filter
           </button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-
-<!-- Modal 2: Member Card Usage -->
-<div class="modal fade" id="memberCardModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">💳 Member Card Usage</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form id="memberCardForm">
-        <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-12">
-              <label class="form-label">Member *</label>
-              <select class="form-select" id="mcu-member-id" required>
-                <option value="">-- Select Member --</option>
-              </select>
-              <small id="mcu-member-name" style="color:#888;font-size:11px;"></small>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Fuel Type *</label>
-              <select class="form-select" id="mcu-fuel-type" required>
-                <option value="">-- Select --</option>
-                <option value="Petrol">⛽ Petrol</option>
-                <option value="Diesel">🛢️ Diesel</option>
-                <option value="Mobil Oil">🔧 Mobil Oil</option>
-              </select>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Liters *</label>
-              <input type="number" class="form-control" id="mcu-liters" placeholder="0.00" step="0.01" min="0" required>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Unit Price *</label>
-              <input type="number" class="form-control" id="mcu-unit-price" placeholder="0.00" step="0.01" min="0" required>
-            </div>
-            <div class="col-6">
-              <label class="form-label">ATM Charges</label>
-              <input type="number" class="form-control" id="mcu-atm-charges" placeholder="0.00" step="0.01" min="0">
-            </div>
-            <div class="col-6">
-              <label class="form-label">Misc Charges</label>
-              <input type="number" class="form-control" id="mcu-misc-charges" placeholder="0.00" step="0.01" min="0">
-            </div>
-            <div class="col-12">
-              <label class="form-label">Usage Date</label>
-              <input type="date" class="form-control" id="mcu-date">
-            </div>
-            <div class="col-12">
-              <label class="form-label">Notes</label>
-              <textarea class="form-control" id="mcu-notes" rows="2" placeholder="Optional..."></textarea>
-            </div>
-            <div class="col-12">
-              <div class="total-display" id="mcu-total-display"></div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn-blue" style="padding:7px 20px;">
-            <i class="bi bi-check2 me-1"></i>Record Usage
+          <button class="btn btn-secondary btn-sm" id="btn-clear-company-filter">
+            <i class="bi bi-x-circle"></i> Clear
           </button>
+          <div class="ms-auto d-flex gap-3 align-items-center" style="font-size:12px;font-family:'Courier New',monospace;">
+            <span>In: <strong id="ctxn-total-in" class="text-success">—</strong></span>
+            <span>Out: <strong id="cxtn-total-out" class="text-danger">—</strong></span>
+            <span>Net Owed: <strong id="cxtn-net" class="text-danger">—</strong></span>
+          </div>
         </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-
-<!-- Modal 3: Repayment -->
-<div class="modal fade" id="repaymentModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">✅ Repayment to Go Company</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="ledger-wrap">
+          <div class="table-responsive">
+            <table class="ledger-tbl">
+              <thead><tr>
+                <th>#</th><th>Date</th><th>Type</th><th>Amount</th>
+                <th>Charges</th><th>Net</th><th>Member</th><th>Details</th><th></th>
+              </tr></thead>
+              <tbody id="company-txn-table">
+                <tr><td colspan="9" class="text-center py-4 text-muted">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-      <form id="repaymentForm">
-        <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-12">
-              <label class="form-label">Amount (Rs.) *</label>
-              <input type="number" class="form-control" id="rp-amount" placeholder="0.00" step="0.01" min="0" required>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Payment Method *</label>
-              <select class="form-select" id="rp-payment-mode" required>
-                <option value="">-- Select --</option>
-                <option value="check">🏷️ Check</option>
-                <option value="online">🌐 Online Transfer</option>
-                <option value="cash">💵 Cash</option>
-                <option value="other">📋 Other</option>
-              </select>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Reference No. (Check# / TxID)</label>
-              <input type="text" class="form-control" id="rp-reference-no" placeholder="Optional">
-            </div>
-            <div class="col-12">
-              <label class="form-label">Payment Date</label>
-              <input type="date" class="form-control" id="rp-date">
-            </div>
-            <div class="col-12">
-              <label class="form-label">Notes</label>
-              <textarea class="form-control" id="rp-notes" rows="2" placeholder="Optional..."></textarea>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn-ink" style="padding:7px 20px;">
-            <i class="bi bi-check2-circle me-1"></i>Record Repayment
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
 
-
-<!-- Modal 4: Dual-Role Expense -->
-<div class="modal fade" id="dualExpenseModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header" style="background:var(--gold);">
-        <h5 class="modal-title">💸 Expense Entry (Dual Account)</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      <!-- Tab 2: Stock Ledger -->
+      <div class="tab-pane fade" id="tab-stock">
+        <div class="ledger-wrap"><div class="table-responsive">
+          <table class="ledger-tbl">
+            <thead><tr><th>Fuel Type</th><th>Purchases</th><th>Total Liters</th><th>Avg Price</th><th>Stock Value</th><th>Charges</th><th>Net Payable</th></tr></thead>
+            <tbody id="stock-breakdown-table"><tr><td colspan="7" class="text-center py-3 text-muted">Tab open hone par load hoga...</td></tr></tbody>
+          </table>
+        </div></div>
       </div>
-      <form id="dualExpenseForm">
-        <div class="modal-body">
-          <div class="alert alert-warning py-2" style="font-size:12px;">
-            <i class="bi bi-info-circle me-1"></i>
-            Yeh entry <strong>Expense section</strong> mein bhi jayegi <strong>aur</strong> selected account ke ledger mein bhi record hogi.
+
+      <!-- Tab 3: Member Usage -->
+      <div class="tab-pane fade" id="tab-member">
+        <div class="ledger-wrap"><div class="table-responsive">
+          <table class="ledger-tbl">
+            <thead><tr><th>#</th><th>Member</th><th>Fuel</th><th>Uses</th><th>Liters</th><th>Stock Value</th><th>Charges</th><th>Grand Total</th></tr></thead>
+            <tbody id="member-usage-summary-table"><tr><td colspan="8" class="text-center py-3 text-muted">Tab open hone par load hoga...</td></tr></tbody>
+          </table>
+        </div></div>
+      </div>
+
+      <!-- Tab 4: Repayments -->
+      <div class="tab-pane fade" id="tab-repayments">
+        <p class="fw-bold text-success mb-2" style="font-family:'Courier New',monospace;">Total Repaid: <span id="repayment-total">—</span></p>
+        <div class="ledger-wrap"><div class="table-responsive">
+          <table class="ledger-tbl">
+            <thead><tr><th>#</th><th>Date</th><th>Amount</th><th>Method</th><th>Reference</th><th>Notes</th><th>Status</th></tr></thead>
+            <tbody id="repayment-history-table"><tr><td colspan="7" class="text-center py-3 text-muted">Loading...</td></tr></tbody>
+          </table>
+        </div></div>
+      </div>
+
+      <!-- Tab 5: Expense Ledger -->
+      <div class="tab-pane fade" id="tab-expenses">
+        <div class="ledger-wrap"><div class="table-responsive">
+          <table class="ledger-tbl">
+            <thead><tr><th>Date</th><th>Acc#</th><th>Account</th><th>Category</th><th>Amount</th><th>Description</th><th>Paid From</th></tr></thead>
+            <tbody id="expense-ledger-table"><tr><td colspan="7" class="text-center py-3 text-muted">Tab open hone par load hoga...</td></tr></tbody>
+          </table>
+        </div></div>
+      </div>
+
+    </div><!-- /tab-content -->
+  </div><!-- /container -->
+
+
+  <!-- ══ MODAL 1: Stock Purchase ══════════════════════════ -->
+  <div class="modal fade" id="stockPurchaseModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="stockPurchaseForm">
+          <div class="modal-header modal-hdr-green">
+            <h5 class="modal-title"><i class="bi bi-truck me-2"></i>Stock Purchase (Company Credit)</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-          <div class="row g-3">
-            <div class="col-12">
-              <label class="form-label">Account (Dual Role) *</label>
-              <select class="form-select" id="dre-account-id" required>
-                <option value="">-- Account Select Karein --</option>
-              </select>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Expense Category *</label>
-              <select class="form-select" id="dre-expense-type" required>
-                <option value="">-- Category --</option>
-                <option>Kiraaya / Rent</option>
-                <option>Transport / Karaya Gari</option>
-                <option>Bijli Bill</option>
-                <option>Gas Bill</option>
-                <option>Mazdoor Tankhwah</option>
-                <option>Machine Repair</option>
-                <option>Bank Charges</option>
-                <option>Miscellaneous</option>
-              </select>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Amount (Rs.) *</label>
-              <input type="number" class="form-control" id="dre-amount" placeholder="0.00" step="0.01" min="0" required>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Description *</label>
-              <input type="text" class="form-control" id="dre-description" placeholder="e.g. November mahine ka kiraya" required>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Paid From *</label>
-              <select class="form-select" id="dre-paid-from" required>
-                <option value="">-- Source --</option>
-                <option value="Cash">💵 Cash</option>
-                <option value="Bank Alflah">🏦 Bank Alflah (k.&.s)</option>
-                <option value="Bank ABL">🏦 Bank ABL khata</option>
-                <option value="Go Company Credit">🏢 Go Company Credit</option>
-              </select>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Date</label>
-              <input type="date" class="form-control" id="dre-date">
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Fuel Type *</label>
+                <select class="form-select" id="sp-fuel-type" required>
+                  <option value="">-- Select --</option>
+                  <option value="Petrol">⛽ Petrol</option>
+                  <option value="Diesel">🛢️ Diesel</option>
+                  <option value="Mobil Oil">🔧 Mobil Oil</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label">Liters *</label>
+                <input type="number" class="form-control" id="sp-liters" placeholder="0.00" step="0.01" min="0" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label">Unit Price (Rs./L) *</label>
+                <input type="number" class="form-control" id="sp-unit-price" placeholder="0.00" step="0.01" min="0" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label">Charges (ATM/Bank)</label>
+                <input type="number" class="form-control" id="sp-charges" placeholder="0.00" step="0.01" min="0" value="0">
+              </div>
+              <div class="col-6">
+                <label class="form-label">Purchase Date</label>
+                <input type="date" class="form-control" id="sp-date">
+              </div>
+              <div class="col-6">
+                <label class="form-label">Invoice No.</label>
+                <input type="text" class="form-control" id="sp-invoice-no" placeholder="Optional">
+              </div>
+              <div class="col-6">
+                <label class="form-label">Truck No.</label>
+                <input type="text" class="form-control" id="sp-truck-no" placeholder="Optional">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Notes</label>
+                <textarea class="form-control" id="sp-notes" rows="2" placeholder="Optional..."></textarea>
+              </div>
+              <div class="col-12"><div class="total-box" id="sp-total-display"></div></div>
             </div>
           </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn-gold" style="padding:7px 20px;">
-            <i class="bi bi-check2 me-1"></i>Record Expense
-          </button>
-        </div>
-      </form>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-success"><i class="bi bi-check2 me-1"></i>Record Purchase</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
-</div>
 
 
-<!-- Toast -->
-<div class="toast-container">
-  <div id="liveToast" class="toast" role="alert">
-    <div class="toast-header">
-      <strong class="me-auto" id="toast-title">—</strong>
-      <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+  <!-- ══ MODAL 2: Member Card Usage ══════════════════════ -->
+  <div class="modal fade" id="memberCardModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="memberCardForm">
+          <div class="modal-header modal-hdr-blue">
+            <h5 class="modal-title"><i class="bi bi-credit-card me-2"></i>Member Card Usage</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Member *</label>
+                <!-- ✅ Live from customers table -->
+                <select class="form-select" id="mcu-member-id" required>
+                  <option value="">-- Member Select Karein --</option>
+                </select>
+                <small class="text-primary fw-bold" id="mcu-member-balance" style="font-size:11px;"></small>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Fuel Type *</label>
+                <select class="form-select" id="mcu-fuel-type" required>
+                  <option value="">-- Select --</option>
+                  <option value="Petrol">⛽ Petrol</option>
+                  <option value="Diesel">🛢️ Diesel</option>
+                  <option value="Mobil Oil">🔧 Mobil Oil</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label">Liters *</label>
+                <input type="number" class="form-control" id="mcu-liters" placeholder="0.00" step="0.01" min="0" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label">Unit Price *</label>
+                <input type="number" class="form-control" id="mcu-unit-price" placeholder="0.00" step="0.01" min="0" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label">ATM Charges</label>
+                <input type="number" class="form-control" id="mcu-atm-charges" placeholder="0.00" step="0.01" min="0" value="0">
+              </div>
+              <div class="col-6">
+                <label class="form-label">Misc Charges</label>
+                <input type="number" class="form-control" id="mcu-misc-charges" placeholder="0.00" step="0.01" min="0" value="0">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Usage Date</label>
+                <input type="date" class="form-control" id="mcu-date">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Notes</label>
+                <textarea class="form-control" id="mcu-notes" rows="2" placeholder="Optional..."></textarea>
+              </div>
+              <div class="col-12"><div class="total-box" id="mcu-total-display"></div></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-1"></i>Record Usage</button>
+          </div>
+        </form>
+      </div>
     </div>
-    <div class="toast-body" id="toast-message">—</div>
   </div>
-</div>
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
-<!-- Your existing Supabase client init script goes here -->
-<!-- <script src="supabase-init.js"></script> -->
+  <!-- ══ MODAL 3: Repayment ═══════════════════════════════ -->
+  <div class="modal fade" id="repaymentModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="repaymentForm">
+          <div class="modal-header modal-hdr-ink">
+            <h5 class="modal-title"><i class="bi bi-check2-circle me-2"></i>Repayment to Go Company</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Amount (Rs.) *</label>
+                <input type="number" class="form-control" id="rp-amount" placeholder="0.00" step="0.01" min="0" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Payment Method *</label>
+                <select class="form-select" id="rp-payment-mode" required>
+                  <option value="">-- Select --</option>
+                  <option value="check">🏷️ Check</option>
+                  <option value="online">🌐 Online Transfer</option>
+                  <option value="cash">💵 Cash</option>
+                  <option value="other">📋 Other</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Reference No. (Check# / TxID)</label>
+                <input type="text" class="form-control" id="rp-reference-no" placeholder="Optional">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Payment Date</label>
+                <input type="date" class="form-control" id="rp-date">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Notes</label>
+                <textarea class="form-control" id="rp-notes" rows="2" placeholder="Optional..."></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-dark"><i class="bi bi-check2-circle me-1"></i>Record Repayment</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
-<!-- Extra tab loaders -->
-<script>
-  window.loadMemberUsageSummary = async function() {
-    const tbody = document.getElementById('member-usage-summary-table');
-    if (!tbody) return;
-    try {
-      const { data, error } = await window.supabaseClient
-        .from('v_member_usage_summary').select('*');
-      if (error) throw error;
-      const rows = data || [];
-      if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-3 text-muted">Koi member usage nahi</td></tr>';
-        return;
-      }
-      let grandTotal = 0;
-      tbody.innerHTML = rows.map((r, i) => {
-        grandTotal += parseFloat(r.grand_total) || 0;
-        return `<tr>
-          <td style="padding:10px 12px;color:#888;">${i+1}</td>
-          <td style="padding:10px 12px;font-weight:600;">#${r.member_no} ${r.member_name}</td>
-          <td style="padding:10px 12px;">${r.fuel_type}</td>
-          <td style="padding:10px 12px;">${r.usage_count}</td>
-          <td style="padding:10px 12px;">${Number(r.total_liters).toLocaleString('en-PK',{minimumFractionDigits:2})} L</td>
-          <td style="padding:10px 12px;">Rs. ${Number(r.stock_value).toLocaleString('en-PK',{minimumFractionDigits:2})}</td>
-          <td style="padding:10px 12px;color:#b7860b;">Rs. ${Number(r.total_charges).toLocaleString('en-PK',{minimumFractionDigits:2})}</td>
-          <td style="padding:10px 12px;font-weight:800;color:#c0392b;">Rs. ${Number(r.grand_total).toLocaleString('en-PK',{minimumFractionDigits:2})}</td>
-        </tr>`;
-      }).join('') +
-      `<tr style="background:#f8f9fa;font-weight:800;">
-        <td colspan="7" style="padding:10px 12px;text-align:right;">GRAND TOTAL:</td>
-        <td style="padding:10px 12px;color:#c0392b;font-size:16px;">Rs. ${grandTotal.toLocaleString('en-PK',{minimumFractionDigits:2})}</td>
-      </tr>`;
-    } catch(e) {
-      tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-2">${e.message}</td></tr>`;
-    }
-  };
 
-  window.loadExpenseLedger = async function() {
-    const tbody = document.getElementById('expense-ledger-table');
-    if (!tbody) return;
-    try {
-      const { data, error } = await window.supabaseClient
-        .from('v_expense_ledger').select('*').limit(100);
-      if (error) throw error;
-      const rows = data || [];
-      if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-3 text-muted">Koi expense nahi</td></tr>';
-        return;
-      }
-      tbody.innerHTML = rows.map(r => `<tr>
-        <td style="padding:10px 12px;font-size:12px;">${new Date(r.expense_date).toLocaleDateString('en-PK')}</td>
-        <td style="padding:10px 12px;font-weight:700;">#${r.account_no||'-'}</td>
-        <td style="padding:10px 12px;">${r.account_name}${r.is_expense_also?'<span style="background:#fff3cd;color:#856404;font-size:10px;padding:1px 6px;border-radius:3px;margin-left:6px;font-weight:700;">DUAL</span>':''}</td>
-        <td style="padding:10px 12px;font-size:12px;">${r.category||'-'}</td>
-        <td style="padding:10px 12px;font-weight:700;color:#c0392b;">Rs. ${Number(r.amount).toLocaleString('en-PK',{minimumFractionDigits:2})}</td>
-        <td style="padding:10px 12px;font-size:12px;color:#555;">${r.description||'-'}</td>
-        <td style="padding:10px 12px;font-size:12px;">${r.paid_from||'-'}</td>
-      </tr>`).join('');
-    } catch(e) {
-      tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-2">${e.message}</td></tr>`;
-    }
-  };
+  <!-- ══ MODAL 4: Expense Entry (Dual Account) ════════════ -->
+  <div class="modal fade" id="dualExpenseModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="dualExpenseForm">
+          <div class="modal-header modal-hdr-gold">
+            <h5 class="modal-title"><i class="bi bi-receipt me-2"></i>Expense Entry (Dual Account)</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-warning py-2 mb-3" style="font-size:12px;">
+              <i class="bi bi-info-circle me-1"></i>
+              Yeh entry <strong>Expense section</strong> mein bhi jayegi <strong>aur</strong> selected account ke ledger mein bhi record hogi.
+            </div>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Account (Dual Role) *</label>
+                <!-- ✅ Live from customers table — same list as customers page -->
+                <select class="form-select" id="dre-account-id" required>
+                  <option value="">-- Account Select Karein --</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Expense Category *</label>
+                <!-- ✅ Live from expense_categories table -->
+                <select class="form-select" id="dre-expense-type" required>
+                  <option value="">-- Category --</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Amount (Rs.) *</label>
+                <input type="number" class="form-control" id="dre-amount" placeholder="0.00" step="0.01" min="0" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Description *</label>
+                <input type="text" class="form-control" id="dre-description" placeholder="e.g. November mahine ka kiraya" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label">Paid From *</label>
+                <!-- ✅ Live from customers table — bank & cash accounts -->
+                <select class="form-select" id="dre-paid-from" required>
+                  <option value="">-- Source --</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-control" id="dre-date">
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-warning"><i class="bi bi-check2 me-1"></i>Record Expense</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
-  // Set today's date on all date inputs when modals open
-  document.querySelectorAll('.modal').forEach(modal => {
-    modal.addEventListener('show.bs.modal', () => {
-      const today = new Date().toISOString().split('T')[0];
-      modal.querySelectorAll('input[type="date"]').forEach(inp => {
-        if (!inp.value) inp.value = today;
-      });
-    });
-  });
 
-  // Show total-display divs
-  ['sp-total-display','mcu-total-display'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      const obs = new MutationObserver(() => {
-        el.style.display = el.textContent.trim() ? 'block' : 'none';
-      });
-      obs.observe(el, { childList: true, subtree: true });
-    }
-  });
-</script>
+  <!-- Toast — same as customers.html -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+    <div id="liveToast" class="toast" role="alert">
+      <div class="toast-header">
+        <strong class="me-auto" id="toast-title">Info</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body" id="toast-message">...</div>
+    </div>
+  </div>
 
-<script src="company-account.js"></script>
+  <!-- Footer — same placeholder as customers.html -->
+  <div id="footer-placeholder"></div>
+
+  <!-- Scripts — exact same order as customers.html -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/company-account.js"></script>
 </body>
 </html>
