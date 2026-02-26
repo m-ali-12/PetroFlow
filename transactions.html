@@ -48,6 +48,9 @@
       <button class="btn btn-warning" data-bs-target="#expenseModal" data-bs-toggle="modal">
         <i class="bi bi-wallet2 me-1"></i>Expense
       </button>
+      <button class="btn btn-secondary" data-bs-target="#cashAdvanceModal" data-bs-toggle="modal">
+        <i class="bi bi-cash-coin me-1"></i>Cash Advance
+      </button>
     </div>
   </div>
 
@@ -89,6 +92,15 @@
         </div>
       </div>
     </div>
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm h-100" style="border-left:4px solid #6f42c1;">
+        <div class="card-body text-center py-2">
+          <h6 class="text-muted mb-1">Cash Advances</h6>
+          <h4 class="mb-0" style="color:#6f42c1;" id="total-advance">Rs. 0</h4>
+          <small class="text-muted" id="advance-count">0 advances</small>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Filters Card -->
@@ -116,6 +128,7 @@
             <option value="Credit">Credit (Sales)</option>
             <option value="Debit">Debit (Vasooli)</option>
             <option value="Expense">Expense</option>
+            <option value="Advance">Cash Advance</option>
           </select>
         </div>
       </div>
@@ -189,6 +202,47 @@
     <div id="pagination-container"></div>
   </div>
 
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- CASH ADVANCE LIST SECTION                             -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="card shadow-sm mt-4" id="advance-list-card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center" style="border-left:4px solid #6f42c1;">
+      <h6 class="mb-0" style="color:#6f42c1;"><i class="bi bi-cash-coin me-2"></i>Cash Advance List — Khata Baqi</h6>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge" style="background:#6f42c1;" id="advance-list-count">0 advances</span>
+        <select class="form-select form-select-sm" id="advance-filter-status" style="width:140px;">
+          <option value="">Sab Dikhao</option>
+          <option value="pending" selected>Sirf Pending</option>
+          <option value="cleared">Cleared</option>
+        </select>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm mb-0">
+          <thead>
+            <tr style="background:#f3eeff;">
+              <th style="padding:10px 12px;color:#6f42c1;">#</th>
+              <th style="padding:10px 12px;color:#6f42c1;">Customer</th>
+              <th style="padding:10px 12px;color:#6f42c1;">Taareekh</th>
+              <th style="padding:10px 12px;color:#6f42c1;">Advance Amount</th>
+              <th style="padding:10px 12px;color:#6f42c1;">Wajah</th>
+              <th style="padding:10px 12px;color:#6f42c1;">Customer Balance</th>
+              <th style="padding:10px 12px;color:#6f42c1;">Status</th>
+              <th style="padding:10px 12px;color:#6f42c1;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="advance-list-tbody">
+            <tr><td colspan="8" class="text-center py-4 text-muted">
+              <div class="spinner-border spinner-border-sm text-primary me-2"></div>Loading...
+            </td></tr>
+          </tbody>
+          <tfoot id="advance-list-tfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /container -->
 
 <!-- NEW SALE MODAL -->
@@ -203,7 +257,8 @@
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label">Customer *</label>
-            <select class="form-select" id="sale-customer" required><option value="">Select Customer</option></select>
+            <input type="hidden" id="sale-customer-hidden">
+            <div id="sale-customer-container"></div>
           </div>
           <div class="mb-3">
             <label class="form-label">Fuel Type *</label>
@@ -282,7 +337,10 @@
           <button class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
         </div>
         <div class="modal-body">
-          <div class="mb-3"><label class="form-label">Customer *</label><select class="form-select" id="vasooli-customer" required><option value="">Select Customer</option></select></div>
+          <div class="mb-3"><label class="form-label">Customer *</label>
+            <input type="hidden" id="vasooli-customer-hidden">
+            <div id="vasooli-customer-container"></div>
+          </div>
           <div class="mb-3">
             <label class="form-label">Fuel Category (Optional)</label>
             <select class="form-select" id="vasooli-fuel-category">
@@ -328,7 +386,7 @@
           <button class="btn-close" data-bs-dismiss="modal" type="button"></button>
         </div>
         <div class="modal-body">
-          <div class="mb-3"><label class="form-label">Expense Type *</label><select class="form-select" id="expense-type" required><option value="">Select Type</option><option value="Salary">Salary (Tankhuwa)</option><option value="Bills">Bills (Bijli/Gas)</option><option value="Maintenance">Maintenance</option><option value="Fuel Purchase">Fuel Purchase</option><option value="Other">Other</option></select></div>
+          <div class="mb-3"><label class="form-label">Expense Type *</label><select class="form-select" id="expense-type" required><option value="">-- Loading categories... --</option></select></div>
           <div class="mb-3"><label class="form-label">Pay From Account *</label><select class="form-select" id="expense-account" required><option value="">Select Account</option><option value="Owner">Owner Account</option><option value="Cash">Cash</option><option value="Bank">Bank</option></select></div>
           <div class="mb-3"><label class="form-label">Amount *</label><div class="input-group"><span class="input-group-text">Rs.</span><input class="form-control" id="expense-amount" required step="0.01" type="number"/></div></div>
           <div class="mb-3"><label class="form-label">Description *</label><input class="form-control" id="expense-description" required type="text"/></div>
@@ -336,6 +394,92 @@
         <div class="modal-footer">
           <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
           <button class="btn btn-warning" type="submit"><i class="bi bi-check-circle me-1"></i>Save Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- CASH ADVANCE MODAL -->
+<div class="modal fade" id="cashAdvanceModal" tabindex="-1">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <form id="cashAdvanceForm">
+        <div class="modal-header" style="background:#6f42c1;" class="text-white">
+          <h5 class="modal-title text-white"><i class="bi bi-cash-coin me-2"></i>Cash Advance</h5>
+          <button class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info py-2 mb-3" style="font-size:13px;">
+            <i class="bi bi-info-circle me-1"></i>
+            <strong>Cash Advance:</strong> Jab customer sirf paisa le kar jata hai — koi petrol/diesel nahi kharida. Yeh customer ke khate mein add ho jata hai.
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Customer <span class="text-danger">*</span></label>
+            <input type="hidden" id="advance-customer-hidden">
+            <!-- Search box -->
+            <div style="position:relative;">
+              <input type="text" id="advance-cust-search"
+                class="form-control mb-1"
+                placeholder="🔍 Sr# ya naam likhein... (e.g. 5 ya Ali)"
+                autocomplete="off"
+                style="border:2px solid #6f42c1;">
+              <!-- Dropdown list — always built by JS -->
+              <div id="advance-cust-list"
+                style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;
+                  background:#fff;border:1px solid #6f42c1;border-radius:6px;
+                  max-height:200px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,0.15);">
+              </div>
+            </div>
+            <!-- Selected customer display -->
+            <div id="advance-cust-selected" style="display:none;background:#f3eeff;border:1px solid #6f42c1;
+              border-radius:6px;padding:8px 12px;margin-top:4px;display:none;justify-content:space-between;align-items:center;">
+              <span id="advance-cust-selected-text" style="font-weight:600;color:#6f42c1;"></span>
+              <span id="advance-cust-balance" style="font-size:12px;font-weight:700;"></span>
+              <button type="button" onclick="window.clearAdvanceCustomer()" style="background:none;border:none;color:#dc3545;font-size:16px;cursor:pointer;padding:0 4px;">✕</button>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Amount (Rs.) <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text">Rs.</span>
+              <input type="number" id="advance-amount" class="form-control" placeholder="0.00" step="0.01" min="0" required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Wajah (Reason) <span class="text-danger">*</span></label>
+            <select id="advance-reason" class="form-select" required>
+              <option value="">-- Select Karein --</option>
+              <option value="Ghar ka kharcha">🏠 Ghar ka kharcha</option>
+              <option value="Dawai / Ilaj">💊 Dawai / Ilaj</option>
+              <option value="Bacha ki fees">📚 Bacha ki fees</option>
+              <option value="Shadi / Function">💒 Shadi / Function</option>
+              <option value="Emergency">🚨 Emergency</option>
+              <option value="Kiraya">🏘️ Kiraya</option>
+              <option value="Business zaroorat">💼 Business zaroorat</option>
+              <option value="Safar / Transport">🚗 Safar / Transport</option>
+              <option value="Other">📦 Other (Notes mein likhein)</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Taareekh</label>
+            <input type="date" id="advance-date" class="form-control">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Extra Notes (Optional)</label>
+            <textarea id="advance-notes" class="form-control" rows="2" placeholder="Koi aur baat..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn" style="background:#6f42c1;color:#fff;">
+            <i class="bi bi-check-circle me-1"></i>Save & Print Parchi
+          </button>
         </div>
       </form>
     </div>
@@ -359,6 +503,6 @@
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/app.js"></script>
-<script src="js/transactions-COMPLETE.js"></script>
+<script src="js/transactions-COMPLETE-v5.js"></script>
 </body>
 </html>
