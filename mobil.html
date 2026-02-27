@@ -491,7 +491,7 @@
 <!-- =============================================================== -->
 <div class="modal fade" id="mobilExpenseModal" tabindex="-1">
 <div class="modal-dialog"><div class="modal-content">
-<form id="mobilExpenseForm" onsubmit="event.preventDefault(); window.addMobilExpense();">
+<form id="mobilExpenseForm" onsubmit="event.preventDefault(); handleMobilExpense();">
 <div class="modal-header bg-warning">
   <h5 class="modal-title"><i class="bi bi-wallet2 me-2"></i>Expense / Kharch</h5>
   <button class="btn-close" type="button" data-bs-dismiss="modal"></button>
@@ -716,7 +716,7 @@
    MOBIL PAGE — Product search + Customer search (exact same as
    transactions-COMPLETE-v5.js) + Price management
 ================================================================ */
-const supabase = window.supabaseClient;
+var supabase = window.supabaseClient;
 
 let allProducts      = [];
 let allCustomers     = [];
@@ -750,9 +750,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   ['receive-date','sale-date','price-effective-date']
     .forEach(id => { const e=el(id); if(e) e.value=today; });
 
-  await loadCustomers();          // customers pehle load karo (sale dropdown)
-  initAllMobilDropdowns();        // sale customer dropdown
-  // NOTE: loadExpenseCategories() aur initExpenseDropdown() mobil-management.js mein call hote hain
+  await loadCustomers();          // customers pehle load karo
+  await loadExpenseCategories();  // expense categories
+  initAllMobilDropdowns();        // sale + expense customer dropdowns
   await loadProducts();           // mobil products
   renderProductStockTable();
   renderManagePricesTable();
@@ -772,8 +772,30 @@ async function loadCustomers(){
 }
 
 /* ================================================================
-   SALE CUSTOMER DROPDOWN
-   (Expense dropdown mobil-management.js mein initExpenseDropdown() se handle hota hai)
+   EXPENSE CATEGORIES — exact copy from transactions-COMPLETE-v5.js
+================================================================ */
+async function loadExpenseCategories(){
+  try{
+    const {data} = await supabase.from('expense_categories').select('*').order('name');
+    expenseCategories = (data && data.length) ? data : [
+      {name:'Bijli Bill',icon:'⚡'},{name:'Gas Bill',icon:'🔥'},
+      {name:'Paani Bill',icon:'💧'},{name:'Kiraaya',icon:'🏠'},
+      {name:'Petrol/Diesel Stock',icon:'⛽'},{name:'Mazdoor Tankhwah',icon:'👷'},
+      {name:'Machine Repair',icon:'🔧'},{name:'Khaana/Chai',icon:'☕'},
+      {name:'Transport',icon:'🚛'},{name:'Stationery',icon:'📋'},
+      {name:'Bank Charges',icon:'🏦'},{name:'Mobile/Internet',icon:'📱'},
+      {name:'Miscellaneous',icon:'📦'}
+    ];
+    const expEl = el('expense-type');
+    if(expEl) expEl.innerHTML =
+      '<option value="">-- Category Select Karein --</option>'+
+      expenseCategories.map(c=>`<option value="${c.name}">${c.icon||''} ${c.name}</option>`).join('');
+  }catch(e){ console.error('loadExpenseCategories:',e); }
+}
+
+/* ================================================================
+   ALL CUSTOMER DROPDOWNS — same buildSearchDropdown as transactions-v5
+   Keys: 'sale' (green), 'expense' (orange)
 ================================================================ */
 function initAllMobilDropdowns(){
   const configs = [
@@ -783,6 +805,13 @@ function initAllMobilDropdowns(){
       hiddenId:'sale-customer-hidden', selectedBoxId:'sale-cust-selected',
       selectedTextId:'sale-cust-selected-text', selectedBalId:'sale-cust-balance',
       custFilter: ()=>true
+    },
+    {
+      key:'expense', color:'#e67e22', modalId:'mobilExpenseModal',
+      searchId:'expense-cust-search', listId:'expense-cust-list',
+      hiddenId:'expense-customer-hidden', selectedBoxId:'expense-cust-selected',
+      selectedTextId:'expense-cust-selected-text', selectedBalId:'expense-cust-balance',
+      custFilter: c=>c.category!=='Owner'
     }
   ];
 
@@ -876,6 +905,70 @@ function initAllMobilDropdowns(){
       });
     }
   });
+
+}
+
+/* ================================================================
+   HANDLE EXPENSE — same as transactions-COMPLETE-v5.js handleExpense()
+================================================================ */
+async function handleMobilExpense(){
+  const amount      = parseFloat(el('expense-amount')?.value)||0;
+  const description = el('expense-description')?.value||'';
+  const expType     = el('expense-type')?.value;
+  const account     = el('expense-account')?.value;
+  const cust        = selectedCustomers.expense;
+
+  if(!amount)     { alert('Amount enter karein'); return; }
+  if(!description){ alert('Description enter karein'); return; }
+  if(!expType)    { alert('Category select karein'); return; }
+  if(!account)    { alert('Account select karein'); return; }
+
+  try{
+    let custId = null;
+
+    if(cust){
+      // \u2705 Customer selected — transaction insert + balance update
+      custId = parseInt(cust.id);
+      const {error} = await supabase.from('transactions').insert([{
+        customer_id:      custId,
+        transaction_type: 'Expense',
+        amount,
+        description:      `${expType}: ${description} (From: ${account})`
+      }]);
+      if(error) throw error;
+      // Customer balance mein expense add karo
+      const newBal = (parseFloat(cust.balance)||0) + amount;
+      await supabase.from('customers').update({balance: newBal}).eq('id', custId);
+      const lc = allCustomers.find(c=>c.id==custId); if(lc) lc.balance = newBal;
+
+    } else {
+      // Owner account se — sirf transaction insert
+      const {data:owner} = await supabase.from('customers')
+        .select('id').eq('category','Owner').maybeSingle();
+      if(owner){ custId = owner.id; }
+      else{
+        const {data:no, error:ce} = await supabase.from('customers')
+          .insert([{sr_no:0, name:'Owner', category:'Owner', balance:0}]).select().single();
+        if(ce) throw ce;
+        custId = no.id;
+      }
+      const {error} = await supabase.from('transactions').insert([{
+        customer_id:      custId,
+        transaction_type: 'Expense',
+        amount,
+        description:      `${expType}: ${description} (From: ${account})`
+      }]);
+      if(error) throw error;
+    }
+
+    showToast('success','Kamyab!','Expense record ho gaya!');
+    closeModal('mobilExpenseModal');
+    selectedCustomers.expense = null;
+    await loadCustomers();
+    initAllMobilDropdowns();
+    if(typeof loadMobilData === 'function') loadMobilData();
+
+  }catch(e){ alert('Expense Error: '+e.message); }
 }
 
 /* ================================================================
