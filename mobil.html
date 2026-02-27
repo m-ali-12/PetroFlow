@@ -1110,16 +1110,6 @@ async function receiveMobilStock() {
   renderProductStockTable();
   if(typeof loadMobilData === 'function') loadMobilData();
 }
-  }]);
-
-  if(error) { showToast('error','Error',error.message); return; }
-  showToast('success','Done!',`${prodName} — ${qty} units received!`);
-  bootstrap.Modal.getInstance(document.getElementById('receiveMobilModal'))?.hide();
-  document.getElementById('receiveMobilForm').reset();
-  clearProductSelection('receive');
-  renderProductStockTable();
-  if(typeof loadMobilData === 'function') loadMobilData();
-}
 
 /* ================================================================
    SALE SAVE — same pattern as transactions-COMPLETE-v5.js
@@ -1159,15 +1149,6 @@ async function saleMobilOil() {
   el('saleMobilForm')?.reset();
   clearProductSelection('sale');
   selectedCustomers.sale = null;
-  renderProductStockTable();
-  if(typeof loadMobilData === 'function') loadMobilData();
-}
-
-  if(error){ showToast('error','Error',error.message); return; }
-  showToast('success','Sale Done!',`${prodName} — Rs.${fmt(total)} sale!`);
-  bootstrap.Modal.getInstance(el('saleMobilModal'))?.hide();
-  el('saleMobilForm')?.reset();
-  clearProductSelection('sale');
   renderProductStockTable();
   if(typeof loadMobilData === 'function') loadMobilData();
 }
