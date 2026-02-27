@@ -909,14 +909,15 @@ function initAllMobilDropdowns(){
 }
 
 /* ================================================================
-   HANDLE EXPENSE — same as transactions-COMPLETE-v5.js handleExpense()
+   HANDLE EXPENSE — EXACT same logic as handleExpense() in
+   transactions-COMPLETE-v5.js
 ================================================================ */
 async function handleMobilExpense(){
   const amount      = parseFloat(el('expense-amount')?.value)||0;
   const description = el('expense-description')?.value||'';
   const expType     = el('expense-type')?.value;
   const account     = el('expense-account')?.value;
-  const cust        = selectedCustomers.expense;
+  const cust        = selectedCustomers.expense;  // optional
 
   if(!amount)     { alert('Amount enter karein'); return; }
   if(!description){ alert('Description enter karein'); return; }
@@ -925,45 +926,37 @@ async function handleMobilExpense(){
 
   try{
     let custId = null;
-
     if(cust){
-      // \u2705 Customer selected — transaction insert + balance update
+      // Customer selected — usi ke account pe charge lagao
       custId = parseInt(cust.id);
-      const {error} = await supabase.from('transactions').insert([{
-        customer_id:      custId,
-        transaction_type: 'Expense',
-        amount,
-        description:      `${expType}: ${description} (From: ${account})`
-      }]);
-      if(error) throw error;
-      // Customer balance mein expense add karo
-      const newBal = (parseFloat(cust.balance)||0) + amount;
-      await supabase.from('customers').update({balance: newBal}).eq('id', custId);
-      const lc = allCustomers.find(c=>c.id==custId); if(lc) lc.balance = newBal;
-
     } else {
-      // Owner account se — sirf transaction insert
+      // Owner account — transactions.js se same logic
       const {data:owner} = await supabase.from('customers')
         .select('id').eq('category','Owner').maybeSingle();
       if(owner){ custId = owner.id; }
       else{
         const {data:no, error:ce} = await supabase.from('customers')
-          .insert([{sr_no:0, name:'Owner', category:'Owner', balance:0}]).select().single();
+          .insert([{sr_no:0, name:'Owner', category:'Owner', balance:0}])
+          .select().single();
         if(ce) throw ce;
         custId = no.id;
       }
-      const {error} = await supabase.from('transactions').insert([{
-        customer_id:      custId,
-        transaction_type: 'Expense',
-        amount,
-        description:      `${expType}: ${description} (From: ${account})`
-      }]);
-      if(error) throw error;
     }
+
+    // transactions table mein insert — same columns as transactions.js
+    const {error} = await supabase.from('transactions').insert([{
+      customer_id:      custId,
+      transaction_type: 'Expense',
+      amount,
+      description:      `${expType}: ${description} (From: ${account})`
+    }]);
+    if(error) throw error;
 
     showToast('success','Kamyab!','Expense record ho gaya!');
     closeModal('mobilExpenseModal');
     selectedCustomers.expense = null;
+
+    // Customer list refresh
     await loadCustomers();
     initAllMobilDropdowns();
     if(typeof loadMobilData === 'function') loadMobilData();
