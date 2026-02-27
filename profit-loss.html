@@ -333,13 +333,14 @@
 
       try {
         const sb = window.supabaseClient;
-        const { data: { user } } = await sb.auth.getUser();
 
-        if (!user) {
-          el('metric-cards').innerHTML = `<div class="col-12 text-center py-4 text-danger">
-            <i class="bi bi-lock me-2"></i>Login karein pehle
-          </div>`;
-          return;
+        // Auth check — skip if authentication is disabled
+        let userId = null;
+        try {
+          const { data: authData } = await sb.auth.getUser();
+          userId = authData?.user?.id || null;
+        } catch (authErr) {
+          console.warn('Auth not available, proceeding without user filter:', authErr);
         }
 
         const { from, to } = getDateRange();
@@ -347,24 +348,27 @@
         const toISO   = new Date(to).toISOString();
 
         // Transactions
-        const { data: txns, error: txErr } = await sb
+        let txQuery = sb
           .from('transactions')
           .select('id, transaction_type, charges, description, created_at, expense_type, customers(name, sr_no)')
-          .eq('user_id', user.id)
           .gte('created_at', fromISO)
           .lte('created_at', toISO)
           .order('created_at', { ascending: true });
+        if (userId) txQuery = txQuery.eq('user_id', userId);
 
+        const { data: txns, error: txErr } = await txQuery;
         if (txErr) throw txErr;
 
         // Cash advances
-        const { data: advances } = await sb
+        let advQuery = sb
           .from('cash_advances')
           .select('id, amount, reason, advance_date, status, customers(name, sr_no)')
-          .eq('user_id', user.id)
           .gte('advance_date', from.toISOString().split('T')[0])
           .lte('advance_date', to.toISOString().split('T')[0])
           .order('advance_date', { ascending: false });
+        if (userId) advQuery = advQuery.eq('user_id', userId);
+
+        const { data: advances } = await advQuery;
 
         _allTxns = txns   || [];
         _allAdv  = advances || [];
