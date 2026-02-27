@@ -399,26 +399,20 @@
 </div>
 <div class="modal-body">
 
-  <!-- Customer Search — same as transactions.html -->
+  <!-- Customer Search -->
   <div class="mb-3">
     <label class="form-label fw-bold">Customer *</label>
-    <input type="hidden" id="sale-customer-hidden">
-    <div style="position:relative;">
+    <div class="cust-search-wrap">
+      <input type="hidden" id="sale-customer-id">
       <input type="text" id="sale-cust-search" class="form-control"
-        placeholder="🔍 Sr# ya naam likhein..." autocomplete="off">
-      <div id="sale-cust-list"
-        style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;
-          background:#fff;border:1px solid #198754;border-radius:6px;
-          max-height:200px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.15);">
-      </div>
+        placeholder="🔍 Sr# ya naam likhein..." autocomplete="off"
+        oninput="searchCustomers('sale')" onfocus="searchCustomers('sale')">
+      <div id="sale-cust-dropdown" class="cust-dropdown"></div>
     </div>
-    <div id="sale-cust-selected"
-      style="display:none;background:#f0fff4;border:1px solid #198754;border-radius:6px;
-        padding:8px 12px;margin-top:4px;justify-content:space-between;align-items:center;">
-      <span id="sale-cust-selected-text" style="font-weight:600;color:#198754;"></span>
-      <span id="sale-cust-balance" style="font-size:12px;font-weight:700;margin-left:8px;"></span>
-      <button type="button" onclick="window.clear_sd_sale()"
-        style="background:none;border:none;color:#dc3545;font-size:16px;cursor:pointer;padding:0 4px;margin-left:auto;">✕</button>
+    <div id="sale-cust-badge" class="selected-cust-badge d-flex mt-1">
+      <span id="sale-cust-badge-text" class="fw-semibold" style="color:#198754;"></span>
+      <button type="button" class="btn-close btn-sm ms-auto"
+        onclick="clearCustSelection('sale')"></button>
     </div>
   </div>
 
@@ -486,81 +480,88 @@
 </div></div></div>
 
 <!-- =============================================================== -->
-<!-- =============================================================== -->
-<!-- MODAL 3: EXPENSE — Exact same as transactions page             -->
+<!-- MODAL 3: EXPENSE — Customer search added                        -->
 <!-- =============================================================== -->
 <div class="modal fade" id="mobilExpenseModal" tabindex="-1">
 <div class="modal-dialog"><div class="modal-content">
-<form id="mobilExpenseForm" onsubmit="event.preventDefault(); handleMobilExpense();">
+<form id="mobilExpenseForm" onsubmit="event.preventDefault(); addMobilExpense();">
 <div class="modal-header bg-warning">
   <h5 class="modal-title"><i class="bi bi-wallet2 me-2"></i>Expense / Kharch</h5>
   <button class="btn-close" type="button" data-bs-dismiss="modal"></button>
 </div>
 <div class="modal-body">
 
-  <!-- Customer (Optional) — EXACT same HTML as transactions.html -->
+  <!-- Customer (Optional) — same style as transactions page -->
   <div class="mb-3">
-    <label class="form-label">Customer (Optional)
-      <small class="text-muted fw-normal">— Agar kisi customer ki taraf se expense hai</small>
+    <label class="form-label fw-semibold">
+      Customer (Optional)
+      <span class="text-muted fw-normal" style="font-size:12px;">— Agar kisi customer ki taraf se expense hai</span>
     </label>
-    <input type="hidden" id="expense-customer-hidden">
-    <div style="position:relative;">
-      <input type="text" id="expense-cust-search" class="form-control"
+    <div class="cust-search-wrap">
+      <input type="hidden" id="exp-customer-id">
+      <input type="text" id="exp-cust-search" class="form-control"
         placeholder="🔍 Sr# ya naam likhein... (blank chhodo = Owner account)"
-        autocomplete="off">
-      <div id="expense-cust-list"
-        style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;
-          background:#fff;border:1px solid #e67e22;border-radius:6px;
-          max-height:200px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.15);">
-      </div>
+        autocomplete="off"
+        style="border:2px solid #ffc107;"
+        oninput="searchCustomers('exp')" onfocus="searchCustomers('exp')">
+      <div id="exp-cust-dropdown" class="cust-dropdown"></div>
     </div>
-    <div id="expense-cust-selected"
-      style="display:none;background:#fff8f0;border:1px solid #e67e22;border-radius:6px;
-        padding:8px 12px;margin-top:4px;justify-content:space-between;align-items:center;">
-      <span id="expense-cust-selected-text" style="font-weight:600;color:#e67e22;"></span>
-      <span id="expense-cust-balance" style="font-size:12px;font-weight:700;margin-left:8px;"></span>
-      <button type="button" onclick="window.clear_sd_expense()"
-        style="background:none;border:none;color:#dc3545;font-size:16px;cursor:pointer;padding:0 4px;margin-left:auto;">✕</button>
+    <div id="exp-cust-badge" class="selected-cust-badge d-flex mt-1"
+      style="background:#fffbea; border-color:#ffc10730;">
+      <span id="exp-cust-badge-text" class="fw-semibold" style="color:#856404;"></span>
+      <button type="button" class="btn-close btn-sm ms-auto"
+        onclick="clearCustSelection('exp')"></button>
     </div>
   </div>
 
-  <!-- Expense Type from DB (same as transactions) -->
   <div class="mb-3">
-    <label class="form-label">Expense Type *</label>
-    <select class="form-select" id="expense-type" required>
-      <option value="">-- Loading categories... --</option>
+    <label class="form-label fw-bold">Expense Type *</label>
+    <select id="expense-type" class="form-select" required>
+      <option value="">-- Category Select Karein --</option>
+      <option value="Transport">🚛 Transport</option>
+      <option value="Labour">👷 Labour / Mazdoor</option>
+      <option value="Storage">🏪 Storage</option>
+      <option value="Bijli Bill">💡 Bijli Bill</option>
+      <option value="Gas Bill">🔥 Gas Bill</option>
+      <option value="Kiraaya">🏠 Kiraaya</option>
+      <option value="Machine Repair">🔧 Machine Repair</option>
+      <option value="Khaana/Chai">☕ Khaana/Chai</option>
+      <option value="Bank Charges">🏦 Bank Charges</option>
+      <option value="Mobile/Internet">📱 Mobile/Internet</option>
+      <option value="Other">📋 Other</option>
     </select>
   </div>
 
-  <!-- Pay From Account -->
   <div class="mb-3">
-    <label class="form-label">Pay From Account *</label>
-    <select class="form-select" id="expense-account" required>
+    <label class="form-label fw-bold">Pay From Account *</label>
+    <select id="exp-pay-account" class="form-select" required>
       <option value="">Select Account</option>
-      <option value="Owner">Owner Account</option>
-      <option value="Cash">Cash</option>
-      <option value="Bank">Bank</option>
+      <option value="Cash">💵 Cash</option>
+      <option value="Bank">🏦 Bank</option>
+      <option value="Owner">👤 Owner</option>
     </select>
   </div>
 
-  <!-- Amount -->
   <div class="mb-3">
-    <label class="form-label">Amount *</label>
+    <label class="form-label fw-bold">Amount *</label>
     <div class="input-group">
       <span class="input-group-text">Rs.</span>
-      <input class="form-control" id="expense-amount" required step="0.01" type="number" placeholder="0.00"/>
+      <input id="expense-amount-mobil" class="form-control" type="number" step="0.01" min="0.01" required
+        placeholder="0.00">
     </div>
   </div>
-
-  <!-- Description -->
   <div class="mb-3">
-    <label class="form-label">Description *</label>
-    <input class="form-control" id="expense-description" required type="text"
-      placeholder="Expense ki tafseel likhein..."/>
+    <label class="form-label fw-bold">Date *</label>
+    <input id="expense-date" class="form-control" type="date" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label fw-bold">Description *</label>
+    <textarea id="expense-description-mobil" class="form-control" rows="2" required
+      placeholder="Expense ki tafseel likhein..."></textarea>
   </div>
 </div>
 <div class="modal-footer">
-  <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+  <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
   <button class="btn btn-warning fw-bold" type="submit">
     <i class="bi bi-check-circle me-1"></i>Save Expense
   </button>
@@ -713,300 +714,79 @@
 
 <script>
 /* ================================================================
-   MOBIL PAGE — Product search + Customer search (exact same as
-   transactions-COMPLETE-v5.js) + Price management
+   MOBIL PAGE — Product search + Customer search + Price management
+   All functions integrated — mobil-management.js ke saath kaam karega
 ================================================================ */
 const supabase = window.supabaseClient;
 
-let allProducts      = [];
-let allCustomers     = [];
-let expenseCategories= [];
-// Same structure as transactions-COMPLETE-v5.js
-let selectedCustomers = { sale: null, vasooli: null, advance: null, expense: null };
+let allProducts   = [];   // from mobil_products + current price
+let allCustomers  = [];   // from customers table
 let today = new Date().toISOString().slice(0,10);
 
-function el(id){ return document.getElementById(id); }
-function fmt(n){ return Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function formatVolume(ml){ return ml>=1000?(ml/1000)+'L':ml+'ml'; }
-
-function showToast(type, title, msg) {
-  const t = el('liveToast');
-  if(!t){ alert(title+': '+msg); return; }
-  el('toast-title').textContent   = title;
-  el('toast-message').textContent = msg;
-  t.className='toast '+(type==='success'?'bg-success text-white':type==='error'?'bg-danger text-white':'bg-warning text-dark');
-  new bootstrap.Toast(t,{delay:3500}).show();
-}
-
-function closeModal(id){
-  const m=el(id);
-  if(m){ const i=bootstrap.Modal.getInstance(m); if(i) i.hide(); }
-  const f=document.querySelector('#'+id+' form');
-  if(f) f.reset();
-}
-
+/* ── Set today's date in all date inputs ── */
 document.addEventListener('DOMContentLoaded', async () => {
-  // Date inputs today set karo
-  ['receive-date','sale-date','price-effective-date']
-    .forEach(id => { const e=el(id); if(e) e.value=today; });
-
-  await loadCustomers();          // customers pehle load karo
-  await loadExpenseCategories();  // expense categories
-  initAllMobilDropdowns();        // sale + expense customer dropdowns
-  await loadProducts();           // mobil products
+  ['receive-date','sale-date','expense-date','price-effective-date']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value = today; });
+  await loadProducts();
+  await loadCustomers();
   renderProductStockTable();
   renderManagePricesTable();
 
+  // Load existing mobil transactions (from existing mobil-management.js)
   if(typeof loadMobilData === 'function') loadMobilData();
 });
 
 /* ================================================================
-   LOAD CUSTOMERS — same as transactions.js
+   LOAD DATA
 ================================================================ */
-async function loadCustomers(){
-  const {data,error} = await supabase
-    .from('customers')
-    .select('id, sr_no, name, phone, category, balance')
-    .order('sr_no');
-  if(!error && data) allCustomers = data;
-}
-
-/* ================================================================
-   EXPENSE CATEGORIES — exact copy from transactions-COMPLETE-v5.js
-================================================================ */
-async function loadExpenseCategories(){
-  try{
-    const {data} = await supabase.from('expense_categories').select('*').order('name');
-    expenseCategories = (data && data.length) ? data : [
-      {name:'Bijli Bill',icon:'⚡'},{name:'Gas Bill',icon:'🔥'},
-      {name:'Paani Bill',icon:'💧'},{name:'Kiraaya',icon:'🏠'},
-      {name:'Petrol/Diesel Stock',icon:'⛽'},{name:'Mazdoor Tankhwah',icon:'👷'},
-      {name:'Machine Repair',icon:'🔧'},{name:'Khaana/Chai',icon:'☕'},
-      {name:'Transport',icon:'🚛'},{name:'Stationery',icon:'📋'},
-      {name:'Bank Charges',icon:'🏦'},{name:'Mobile/Internet',icon:'📱'},
-      {name:'Miscellaneous',icon:'📦'}
-    ];
-    const expEl = el('expense-type');
-    if(expEl) expEl.innerHTML =
-      '<option value="">-- Category Select Karein --</option>'+
-      expenseCategories.map(c=>`<option value="${c.name}">${c.icon||''} ${c.name}</option>`).join('');
-  }catch(e){ console.error('loadExpenseCategories:',e); }
-}
-
-/* ================================================================
-   ALL CUSTOMER DROPDOWNS — same buildSearchDropdown as transactions-v5
-   Keys: 'sale' (green), 'expense' (orange)
-================================================================ */
-function initAllMobilDropdowns(){
-  const configs = [
-    {
-      key:'sale',    color:'#198754', modalId:'saleMobilModal',
-      searchId:'sale-cust-search',   listId:'sale-cust-list',
-      hiddenId:'sale-customer-hidden', selectedBoxId:'sale-cust-selected',
-      selectedTextId:'sale-cust-selected-text', selectedBalId:'sale-cust-balance',
-      custFilter: ()=>true
-    },
-    {
-      key:'expense', color:'#e67e22', modalId:'mobilExpenseModal',
-      searchId:'expense-cust-search', listId:'expense-cust-list',
-      hiddenId:'expense-customer-hidden', selectedBoxId:'expense-cust-selected',
-      selectedTextId:'expense-cust-selected-text', selectedBalId:'expense-cust-balance',
-      custFilter: c=>c.category!=='Owner'
-    }
-  ];
-
-  configs.forEach(opts => {
-    const searchEl = el(opts.searchId);
-    const listEl   = el(opts.listId);
-    const hiddenEl = el(opts.hiddenId);
-    const boxEl    = el(opts.selectedBoxId);
-    const textEl   = el(opts.selectedTextId);
-    const balEl    = el(opts.selectedBalId);
-    const color    = opts.color;
-    if(!searchEl || !listEl) return;
-
-    searchEl.style.border = `2px solid ${color}`;
-    const customers = allCustomers.filter(opts.custFilter);
-
-    function renderList(q){
-      const filtered = q
-        ? customers.filter(c =>
-            c.name.toLowerCase().includes(q.toLowerCase()) ||
-            String(c.sr_no||'').includes(q))
-        : customers;
-
-      if(!filtered.length){
-        listEl.innerHTML=`<div style="padding:12px;color:#888;text-align:center;font-size:13px;">Koi nahi mila</div>`;
-        listEl.style.display='block'; return;
-      }
-
-      listEl.innerHTML = filtered.map(c => {
-        const bal = parseFloat(c.balance)||0;
-        return `<div class="sd-item-${opts.key}" data-id="${c.id}"
-          style="padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;
-                 align-items:center;border-bottom:1px solid #f5f5f5;font-size:14px;">
-          <span>
-            <span style="background:${color};color:#fff;border-radius:4px;
-              padding:1px 7px;font-size:11px;font-weight:700;margin-right:8px;">#${c.sr_no||'-'}</span>
-            ${c.name}
-          </span>
-          <span style="font-size:12px;font-weight:700;color:${bal>0?'#dc3545':'#198754'};">
-            Rs.${fmt(bal)}
-          </span>
-        </div>`;
-      }).join('');
-
-      listEl.style.display = 'block';
-
-      listEl.querySelectorAll(`.sd-item-${opts.key}`).forEach(item => {
-        item.addEventListener('mouseenter', ()=> item.style.background='#f8f9ff');
-        item.addEventListener('mouseleave', ()=> item.style.background='');
-        item.addEventListener('mousedown', e => {
-          e.preventDefault();
-          const cust = customers.find(c => c.id == item.dataset.id);
-          if(!cust) return;
-          selectedCustomers[opts.key] = cust;
-          if(hiddenEl) hiddenEl.value = cust.id;
-          searchEl.value = '';
-          listEl.style.display = 'none';
-          if(textEl) textEl.textContent = `#${cust.sr_no||'-'} — ${cust.name}`;
-          if(balEl){
-            const b = parseFloat(cust.balance)||0;
-            balEl.textContent = b>0 ? `⚠️ Khata Baqi: Rs.${fmt(b)}` : `✅ Account Saaf`;
-            balEl.style.color = b>0 ? '#dc3545' : '#198754';
-          }
-          if(boxEl) boxEl.style.display = 'flex';
-          searchEl.style.display = 'none';
-        });
-      });
-    }
-
-    searchEl.addEventListener('input',  ()=> renderList(searchEl.value));
-    searchEl.addEventListener('focus',  ()=> renderList(searchEl.value));
-    searchEl.addEventListener('blur',   ()=> setTimeout(()=>{ listEl.style.display='none'; }, 200));
-
-    window['clear_sd_'+opts.key] = function(){
-      selectedCustomers[opts.key] = null;
-      if(hiddenEl) hiddenEl.value = '';
-      searchEl.value=''; searchEl.style.display='block';
-      if(boxEl) boxEl.style.display='none';
-      listEl.style.display='none';
-      searchEl.focus();
-    };
-
-    const modalEl = el(opts.modalId);
-    if(modalEl){
-      modalEl.addEventListener('show.bs.modal', ()=>{
-        selectedCustomers[opts.key] = null;
-        if(hiddenEl) hiddenEl.value='';
-        searchEl.value=''; searchEl.style.display='block';
-        if(boxEl) boxEl.style.display='none';
-        listEl.style.display='none';
-      });
-    }
-  });
-
-  // Expense form submit
-  el('mobilExpenseForm')?.addEventListener('submit', e=>{ e.preventDefault(); handleMobilExpense(); });
-}
-
-/* ================================================================
-   HANDLE EXPENSE — EXACT same logic as handleExpense() in
-   transactions-COMPLETE-v5.js
-================================================================ */
-async function handleMobilExpense(){
-  const amount      = parseFloat(el('expense-amount')?.value)||0;
-  const description = el('expense-description')?.value||'';
-  const expType     = el('expense-type')?.value;
-  const account     = el('expense-account')?.value;
-  const cust        = selectedCustomers.expense;  // optional
-
-  if(!amount)     { alert('Amount enter karein'); return; }
-  if(!description){ alert('Description enter karein'); return; }
-  if(!expType)    { alert('Category select karein'); return; }
-  if(!account)    { alert('Account select karein'); return; }
-
-  try{
-    let custId = null;
-    if(cust){
-      // Customer selected — usi ke account pe charge lagao
-      custId = parseInt(cust.id);
-    } else {
-      // Owner account — transactions.js se same logic
-      const {data:owner} = await supabase.from('customers')
-        .select('id').eq('category','Owner').maybeSingle();
-      if(owner){ custId = owner.id; }
-      else{
-        const {data:no, error:ce} = await supabase.from('customers')
-          .insert([{sr_no:0, name:'Owner', category:'Owner', balance:0}])
-          .select().single();
-        if(ce) throw ce;
-        custId = no.id;
-      }
-    }
-
-    // transactions table mein insert — same columns as transactions.js
-    const {error} = await supabase.from('transactions').insert([{
-      customer_id:      custId,
-      transaction_type: 'Expense',
-      amount,
-      description:      `${expType}: ${description} (From: ${account})`
-    }]);
-    if(error) throw error;
-
-    showToast('success','Kamyab!','Expense record ho gaya!');
-    closeModal('mobilExpenseModal');
-    selectedCustomers.expense = null;
-
-    // Customer list refresh
-    await loadCustomers();
-    initAllMobilDropdowns();
-    if(typeof loadMobilData === 'function') loadMobilData();
-
-  }catch(e){ alert('Expense Error: '+e.message); }
-}
-
-/* ================================================================
-   LOAD PRODUCTS
-================================================================ */
-async function loadProducts(){
-  const {data,error} = await supabase
+async function loadProducts() {
+  const { data, error } = await supabase
     .from('v_mobil_products_current')
     .select('*')
     .order('sort_order');
-  if(!error && data){
+  if(!error && data) {
     allProducts = data;
-    const cnt = el('product-count'); if(cnt) cnt.textContent = data.length+' products';
-    const sel = el('price-product-select');
-    if(sel){
+    document.getElementById('product-count').textContent = data.length + ' products';
+    // Populate price product select
+    const sel = document.getElementById('price-product-select');
+    if(sel) {
       sel.innerHTML = '<option value="">-- Product Select Karein --</option>' +
-        data.map(p=>`<option value="${p.id}" data-price="${p.current_sale_price||0}">
-          ${p.name}${p.volume_ml?' ('+formatVolume(p.volume_ml)+')':''}${p.grade?' '+p.grade:''} — Rs.${fmt(p.current_sale_price)}</option>`).join('');
+        data.map(p => `<option value="${p.id}" data-price="${p.current_sale_price||0}">
+          ${p.name}${p.volume_ml?' ('+formatVolume(p.volume_ml)+')':''} — Rs.${fmt(p.current_sale_price)}</option>`).join('');
     }
   }
+}
+
+async function loadCustomers() {
+  const { data, error } = await supabase
+    .from('customers')
+    .select('id, sr_no, name, phone, category, balance')
+    .order('sr_no');
+  if(!error && data) allCustomers = data.filter(c => c.category !== 'Owner');
 }
 
 /* ================================================================
    PRODUCT SEARCH DROPDOWN
 ================================================================ */
 function searchProducts(prefix) {
-  const q = (el(prefix+'-product-search')?.value||'').toLowerCase();
-  const dd = el(prefix+'-product-dropdown');
+  const q = (document.getElementById(prefix+'-product-search')?.value||'').toLowerCase();
+  const dd = document.getElementById(prefix+'-product-dropdown');
   if(!dd) return;
 
   const filtered = q
     ? allProducts.filter(p =>
         p.name.toLowerCase().includes(q) ||
         (p.grade||'').toLowerCase().includes(q) ||
-        (p.category||'').toLowerCase().includes(q))
+        (p.category||'').toLowerCase().includes(q)
+      )
     : allProducts;
 
-  if(!filtered.length){ dd.style.display='none'; return; }
+  if(!filtered.length) { dd.style.display='none'; return; }
 
   // Group by category
   const groups = {};
   filtered.forEach(p => {
-    if(!groups[p.category]) groups[p.category]=[];
+    if(!groups[p.category]) groups[p.category] = [];
     groups[p.category].push(p);
   });
 
@@ -1014,7 +794,7 @@ function searchProducts(prefix) {
   Object.keys(groups).forEach(cat => {
     html += `<div class="pd-cat">${cat}</div>`;
     groups[cat].forEach(p => {
-      const label = p.name+(p.volume_ml?' '+formatVolume(p.volume_ml):'')+(p.grade?' ('+p.grade+')':'');
+      const label = p.name + (p.volume_ml ? ' '+formatVolume(p.volume_ml) : '') + (p.grade?' ('+p.grade+')':'');
       html += `<div class="pd-item" onmousedown="selectProduct('${prefix}',${p.id},'${label.replace(/'/g,"\\'")}','${p.category}',${p.current_sale_price||0})">
         <span>${label}</span>
         <span class="pd-price">Rs.${fmt(p.current_sale_price)}</span>
@@ -1027,29 +807,31 @@ function searchProducts(prefix) {
 }
 
 function selectProduct(prefix, id, label, category, price) {
-  el(prefix+'-product-id').value     = id;
-  el(prefix+'-category').value       = category;
-  el(prefix+'-product-search').value = label;
-  el(prefix+'-product-dropdown').style.display = 'none';
+  document.getElementById(prefix+'-product-id').value    = id;
+  document.getElementById(prefix+'-category').value      = category;
+  document.getElementById(prefix+'-product-search').value = label;
+  document.getElementById(prefix+'-product-dropdown').style.display = 'none';
 
-  const badge     = el(prefix+'-product-badge');
-  const badgeText = el(prefix+'-product-badge-text');
-  if(badge && badgeText){
-    badgeText.textContent = label+' — Rs.'+fmt(price);
-    badge.style.display   = 'flex';
+  const badge = document.getElementById(prefix+'-product-badge');
+  const badgeText = document.getElementById(prefix+'-product-badge-text');
+  if(badge && badgeText) {
+    badgeText.textContent = label + ' — Rs.' + fmt(price);
+    badge.style.display = 'flex';
   }
-  const rateField = el(prefix+'-rate');
+
+  // Auto-fill rate field
+  const rateField = document.getElementById(prefix+'-rate');
   if(rateField && !rateField.value) rateField.value = price;
   calcTotal(prefix);
 }
 
 function clearProductSelection(prefix) {
-  el(prefix+'-product-id').value     = '';
-  el(prefix+'-category').value       = '';
-  el(prefix+'-product-search').value = '';
-  const badge = el(prefix+'-product-badge');
+  document.getElementById(prefix+'-product-id').value = '';
+  document.getElementById(prefix+'-category').value  = '';
+  document.getElementById(prefix+'-product-search').value = '';
+  const badge = document.getElementById(prefix+'-product-badge');
   if(badge) badge.style.display = 'none';
-  const rateField = el(prefix+'-rate');
+  const rateField = document.getElementById(prefix+'-rate');
   if(rateField) rateField.value = '';
   calcTotal(prefix);
 }
@@ -1058,41 +840,95 @@ document.addEventListener('click', e => {
   document.querySelectorAll('.product-dropdown').forEach(dd => {
     if(!dd.closest('.product-search-wrap')?.contains(e.target)) dd.style.display='none';
   });
+  document.querySelectorAll('.cust-dropdown').forEach(dd => {
+    if(!dd.closest('.cust-search-wrap')?.contains(e.target)) dd.style.display='none';
+  });
 });
+
+/* ================================================================
+   CUSTOMER SEARCH DROPDOWN (for sale + expense modals)
+================================================================ */
+function searchCustomers(prefix) {
+  const q = (document.getElementById(prefix+'-cust-search')?.value||'').toLowerCase();
+  const dd = document.getElementById(prefix+'-cust-dropdown');
+  if(!dd) return;
+
+  const filtered = q
+    ? allCustomers.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        String(c.sr_no).includes(q)
+      )
+    : allCustomers.slice(0, 40);
+
+  if(!filtered.length) { dd.style.display='none'; return; }
+
+  dd.innerHTML = filtered.map(c => {
+    const bal = parseFloat(c.balance||0);
+    return `<div class="cd-item" onmousedown="selectCustomer('${prefix}',${c.id},'${c.name.replace(/'/g,"\\'")}',${c.sr_no||0})">
+      <span>
+        <span style="background:#ffc107;color:#212529;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700;margin-right:6px;">#${c.sr_no||'-'}</span>
+        ${c.name}
+      </span>
+      <span style="font-size:12px;font-weight:700;color:${bal>0?'#dc3545':'#198754'};">Rs.${fmt(bal)}</span>
+    </div>`;
+  }).join('');
+
+  dd.style.display = 'block';
+}
+
+function selectCustomer(prefix, id, name, srNo) {
+  document.getElementById(prefix+'-customer-id').value = id;
+  document.getElementById(prefix+'-cust-search').value = '';
+  document.getElementById(prefix+'-cust-dropdown').style.display = 'none';
+
+  const badge = document.getElementById(prefix+'-cust-badge');
+  const badgeText = document.getElementById(prefix+'-cust-badge-text');
+  if(badge && badgeText) {
+    badgeText.textContent = '#'+srNo+' — '+name;
+    badge.style.display = 'flex';
+  }
+}
+
+function clearCustSelection(prefix) {
+  document.getElementById(prefix+'-customer-id').value = '';
+  document.getElementById(prefix+'-cust-search').value = '';
+  const badge = document.getElementById(prefix+'-cust-badge');
+  if(badge) badge.style.display = 'none';
+}
 
 /* ================================================================
    CALC TOTAL
 ================================================================ */
 function calcTotal(prefix) {
-  const qty  = parseFloat(el(prefix+'-quantity')?.value)||0;
-  const rate = parseFloat(el(prefix+'-rate')?.value)||0;
-  const amtEl = el(prefix+'-amount');
-  if(amtEl) amtEl.value = (qty*rate).toFixed(2);
+  const qty  = parseFloat(document.getElementById(prefix+'-quantity')?.value)||0;
+  const rate = parseFloat(document.getElementById(prefix+'-rate')?.value)||0;
+  const amtEl = document.getElementById(prefix+'-amount');
+  if(amtEl) amtEl.value = (qty * rate).toFixed(2);
 }
 
 /* ================================================================
    RECEIVE STOCK SAVE
 ================================================================ */
 async function receiveMobilStock() {
-  const productId = el('receive-product-id')?.value;
-  const category  = el('receive-category')?.value;
-  const prodName  = el('receive-product-search')?.value;
-  const supplier  = el('receive-supplier')?.value||'';
-  const qty       = parseFloat(el('receive-quantity')?.value)||0;
-  const rate      = parseFloat(el('receive-rate')?.value)||0;
-  const total     = parseFloat(el('receive-amount')?.value)||0;
-  const date      = el('receive-date')?.value;
-  const invoice   = el('receive-invoice')?.value||'';
-  const notes     = el('receive-notes')?.value||'';
+  const productId = document.getElementById('receive-product-id')?.value;
+  const category  = document.getElementById('receive-category')?.value;
+  const prodName  = document.getElementById('receive-product-search')?.value;
+  const supplier  = document.getElementById('receive-supplier')?.value||'';
+  const qty       = parseFloat(document.getElementById('receive-quantity')?.value)||0;
+  const rate      = parseFloat(document.getElementById('receive-rate')?.value)||0;
+  const total     = parseFloat(document.getElementById('receive-amount')?.value)||0;
+  const date      = document.getElementById('receive-date')?.value;
+  const invoice   = document.getElementById('receive-invoice')?.value||'';
+  const notes     = document.getElementById('receive-notes')?.value||'';
 
-  if(!productId){ alert('Product select karein'); return; }
-  if(!qty)      { alert('Quantity enter karein'); return; }
-  if(!rate)     { alert('Rate enter karein'); return; }
+  if(!productId) { alert('Product select karein'); return; }
+  if(!qty)       { alert('Quantity enter karein'); return; }
+  if(!rate)      { alert('Rate enter karein'); return; }
 
-  const {error} = await supabase.from('mobil_arrivals').insert([{
+  const { error } = await supabase.from('mobil_arrivals').insert([{
     product_id:   parseInt(productId),
     product_name: prodName,
-    category,
+    category:     category,
     supplier,
     quantity:     qty,
     rate,
@@ -1100,16 +936,6 @@ async function receiveMobilStock() {
     arrival_date: date,
     invoice_no:   invoice,
     notes
-  }]);
-
-  if(error){ showToast('error','Error',error.message); return; }
-  showToast('success','Done!',`${prodName} — ${qty} units received!`);
-  bootstrap.Modal.getInstance(el('receiveMobilModal'))?.hide();
-  el('receiveMobilForm').reset();
-  clearProductSelection('receive');
-  renderProductStockTable();
-  if(typeof loadMobilData === 'function') loadMobilData();
-}
   }]);
 
   if(error) { showToast('error','Error',error.message); return; }
@@ -1122,26 +948,27 @@ async function receiveMobilStock() {
 }
 
 /* ================================================================
-   SALE SAVE — same pattern as transactions-COMPLETE-v5.js
+   SALE SAVE
 ================================================================ */
 async function saleMobilOil() {
-  const cust      = selectedCustomers.sale;  // from dropdown
-  const productId = el('sale-product-id')?.value;
-  const category  = el('sale-category')?.value;
-  const prodName  = el('sale-product-search')?.value;
-  const qty       = parseFloat(el('sale-quantity')?.value)||0;
-  const rate      = parseFloat(el('sale-rate')?.value)||0;
-  const total     = parseFloat(el('sale-amount')?.value)||0;
-  const date      = el('sale-date')?.value;
-  const payType   = el('sale-payment-type')?.value||'cash';
-  const notes     = el('sale-notes')?.value||'';
+  const custId    = document.getElementById('sale-customer-id')?.value;
+  const custBadge = document.getElementById('sale-cust-badge-text')?.textContent||'Walk-in';
+  const productId = document.getElementById('sale-product-id')?.value;
+  const category  = document.getElementById('sale-category')?.value;
+  const prodName  = document.getElementById('sale-product-search')?.value;
+  const qty       = parseFloat(document.getElementById('sale-quantity')?.value)||0;
+  const rate      = parseFloat(document.getElementById('sale-rate')?.value)||0;
+  const total     = parseFloat(document.getElementById('sale-amount')?.value)||0;
+  const date      = document.getElementById('sale-date')?.value;
+  const payType   = document.getElementById('sale-payment-type')?.value||'cash';
+  const notes     = document.getElementById('sale-notes')?.value||'';
 
-  if(!productId){ alert('Product select karein'); return; }
-  if(!qty)      { alert('Quantity enter karein'); return; }
+  if(!productId) { alert('Product select karein'); return; }
+  if(!qty)       { alert('Quantity enter karein'); return; }
 
-  const {error} = await supabase.from('mobil_sales').insert([{
-    customer_id:   cust ? parseInt(cust.id) : null,
-    customer_name: cust ? `#${cust.sr_no||'-'} — ${cust.name}` : 'Walk-in',
+  const { error } = await supabase.from('mobil_sales').insert([{
+    customer_id:   custId ? parseInt(custId) : null,
+    customer_name: custBadge,
     product_id:    parseInt(productId),
     product_name:  prodName,
     category,
@@ -1153,46 +980,71 @@ async function saleMobilOil() {
     notes
   }]);
 
-  if(error){ showToast('error','Error',error.message); return; }
+  if(error) { showToast('error','Error',error.message); return; }
   showToast('success','Sale Done!',`${prodName} — Rs.${fmt(total)} sale!`);
-  bootstrap.Modal.getInstance(el('saleMobilModal'))?.hide();
-  el('saleMobilForm')?.reset();
+  bootstrap.Modal.getInstance(document.getElementById('saleMobilModal'))?.hide();
+  document.getElementById('saleMobilForm').reset();
   clearProductSelection('sale');
-  selectedCustomers.sale = null;
+  clearCustSelection('sale');
   renderProductStockTable();
   if(typeof loadMobilData === 'function') loadMobilData();
 }
 
-  if(error){ showToast('error','Error',error.message); return; }
-  showToast('success','Sale Done!',`${prodName} — Rs.${fmt(total)} sale!`);
-  bootstrap.Modal.getInstance(el('saleMobilModal'))?.hide();
-  el('saleMobilForm')?.reset();
-  clearProductSelection('sale');
-  renderProductStockTable();
-  if(typeof loadMobilData === 'function') loadMobilData();
-}
+/* ================================================================
+   EXPENSE SAVE
+================================================================ */
+async function addMobilExpense() {
+  const custId    = document.getElementById('exp-customer-id')?.value;
+  const expType   = document.getElementById('expense-type')?.value;
+  const account   = document.getElementById('exp-pay-account')?.value;
+  const amount    = parseFloat(document.getElementById('expense-amount-mobil')?.value)||0;
+  const date      = document.getElementById('expense-date')?.value;
+  const desc      = document.getElementById('expense-description-mobil')?.value;
 
+  if(!expType)  { alert('Expense type select karein'); return; }
+  if(!account)  { alert('Account select karein'); return; }
+  if(!amount)   { alert('Amount enter karein'); return; }
+  if(!desc)     { alert('Description likhein'); return; }
+
+  const { error } = await supabase.from('transactions').insert([{
+    customer_id:      custId ? parseInt(custId) : null,
+    transaction_type: 'Expense',
+    expense_type:     expType,
+    expense_account:  account,
+    amount,
+    description:      desc,
+    created_at:       new Date(date).toISOString(),
+    entry_month:      date.slice(0,7)
+  }]);
+
+  if(error) { showToast('error','Error',error.message); return; }
+  showToast('success','Saved!',`Expense Rs.${fmt(amount)} save ho gaya!`);
+  bootstrap.Modal.getInstance(document.getElementById('mobilExpenseModal'))?.hide();
+  document.getElementById('mobilExpenseForm').reset();
+  clearCustSelection('exp');
+}
 
 /* ================================================================
    PRODUCT STOCK TABLE
 ================================================================ */
 async function renderProductStockTable() {
-  const tbody = el('product-stock-table');
+  const tbody = document.getElementById('product-stock-table');
   if(!tbody) return;
-  const {data,error} = await supabase.from('v_mobil_stock_balance').select('*');
-  if(error||!data){ tbody.innerHTML='<tr><td colspan="7" class="text-center text-muted">Error loading</td></tr>'; return; }
+  const { data, error } = await supabase.from('v_mobil_stock_balance').select('*');
+  if(error || !data) { tbody.innerHTML='<tr><td colspan="7" class="text-center text-muted">Error loading</td></tr>'; return; }
 
+  // Merge with current prices
   const priceMap = {};
   allProducts.forEach(p => priceMap[p.id] = p.current_sale_price);
 
   tbody.innerHTML = data.map(row => {
     const bal = parseFloat(row.stock_balance);
-    const price = priceMap[row.product_id]||0;
-    const catColor = row.category==='Car Mobil'?'#0d6efd':'#198754';
+    const price = priceMap[row.product_id] || 0;
+    const catColor = row.category === 'Car Mobil' ? '#0d6efd' : '#198754';
     return `<tr>
       <td><strong>${row.product_name}</strong></td>
       <td><span style="background:${catColor}20;color:${catColor};padding:2px 8px;border-radius:4px;font-size:12px;">${row.category}</span></td>
-      <td>${row.volume_ml?formatVolume(row.volume_ml):'—'}</td>
+      <td>${row.volume_ml ? formatVolume(row.volume_ml) : '—'}</td>
       <td class="text-end fw-bold text-success">Rs.${fmt(price)}</td>
       <td class="text-end fw-bold" style="color:${bal>0?'#198754':'#dc3545'};">${bal}</td>
       <td class="text-end text-muted">${row.total_sold}</td>
@@ -1203,19 +1055,19 @@ async function renderProductStockTable() {
         </button>
       </td>
     </tr>`;
-  }).join('')||'<tr><td colspan="7" class="text-center text-muted py-3">Koi product nahi</td></tr>';
+  }).join('') || '<tr><td colspan="7" class="text-center text-muted py-3">Koi product nahi</td></tr>';
 }
 
 /* ================================================================
    MANAGE PRICES TABLE
 ================================================================ */
-function renderManagePricesTable(){
-  const tbody = el('manage-prices-table');
-  if(!tbody||!allProducts.length) return;
-  tbody.innerHTML = allProducts.map(p=>`<tr>
+function renderManagePricesTable() {
+  const tbody = document.getElementById('manage-prices-table');
+  if(!tbody || !allProducts.length) return;
+  tbody.innerHTML = allProducts.map(p => `<tr>
     <td><strong>${p.name}</strong></td>
     <td><small>${p.category}</small></td>
-    <td>${p.volume_ml?formatVolume(p.volume_ml):'—'}</td>
+    <td>${p.volume_ml ? formatVolume(p.volume_ml) : '—'}</td>
     <td class="text-end fw-bold text-success">Rs.${fmt(p.current_sale_price)}</td>
     <td class="text-center">
       <button class="btn btn-sm btn-outline-warning"
@@ -1226,63 +1078,69 @@ function renderManagePricesTable(){
   </tr>`).join('');
 }
 
-function onPriceProductChange(){
-  const sel = el('price-product-select');
+function onPriceProductChange() {
+  const sel = document.getElementById('price-product-select');
   const opt = sel?.options[sel.selectedIndex];
-  const info = el('price-current-info');
-  if(opt?.value && info){
-    info.innerHTML=`Mojuda price: <strong class="text-success">Rs.${fmt(parseFloat(opt.dataset.price)||0)}</strong>`;
-    el('price-new-sale')?.focus();
+  const info = document.getElementById('price-current-info');
+  if(opt?.value && info) {
+    const curPrice = parseFloat(opt.dataset.price)||0;
+    info.innerHTML = `Mojuda price: <strong class="text-success">Rs.${fmt(curPrice)}</strong>`;
+    document.getElementById('price-new-sale').focus();
   }
 }
 
-function quickPriceUpdate(productId, productName, currentPrice){
-  const sel = el('price-product-select');
+function quickPriceUpdate(productId, productName, currentPrice) {
+  const sel = document.getElementById('price-product-select');
   if(sel) sel.value = productId;
   onPriceProductChange();
-  const pns = el('price-new-sale'); if(pns) pns.value = currentPrice;
-  new bootstrap.Modal(el('managePricesModal')).show();
+  document.getElementById('price-new-sale').value = currentPrice;
+  new bootstrap.Modal(document.getElementById('managePricesModal')).show();
 }
 
-async function savePriceUpdate(){
-  const productId = el('price-product-select')?.value;
-  const newPrice  = parseFloat(el('price-new-sale')?.value)||0;
-  const effDate   = el('price-effective-date')?.value||today;
-  const notes     = el('price-notes')?.value||'';
+async function savePriceUpdate() {
+  const productId  = document.getElementById('price-product-select')?.value;
+  const newPrice   = parseFloat(document.getElementById('price-new-sale')?.value)||0;
+  const effDate    = document.getElementById('price-effective-date')?.value || today;
+  const notes      = document.getElementById('price-notes')?.value||'';
 
-  if(!productId){ alert('Product select karein'); return; }
-  if(!newPrice) { alert('Naya price enter karein'); return; }
+  if(!productId) { alert('Product select karein'); return; }
+  if(!newPrice)  { alert('Naya price enter karein'); return; }
 
-  const {error} = await supabase.from('mobil_product_prices').insert([{
-    product_id:parseInt(productId), sale_price:newPrice, effective_date:effDate, notes
+  const { error } = await supabase.from('mobil_product_prices').insert([{
+    product_id:     parseInt(productId),
+    sale_price:     newPrice,
+    effective_date: effDate,
+    notes
   }]);
-  if(error){ showToast('error','Error',error.message); return; }
+
+  if(error) { showToast('error','Error',error.message); return; }
   showToast('success','Price Updated!',`New price Rs.${fmt(newPrice)} set ho gaya!`);
   await loadProducts();
   renderProductStockTable();
   renderManagePricesTable();
-  const pns=el('price-new-sale'); if(pns) pns.value='';
-  const pno=el('price-notes'); if(pno) pno.value='';
+  document.getElementById('price-new-sale').value = '';
+  document.getElementById('price-notes').value = '';
 }
 
-async function saveNewProduct(){
-  const name     = el('new-prod-name')?.value?.trim();
-  const brand    = el('new-prod-brand')?.value?.trim()||'GO';
-  const grade    = el('new-prod-grade')?.value?.trim()||null;
-  const volume   = parseInt(el('new-prod-volume')?.value)||null;
-  const category = el('new-prod-category')?.value||'Car Mobil';
-  const price    = parseFloat(el('new-prod-price')?.value)||0;
+async function saveNewProduct() {
+  const name     = document.getElementById('new-prod-name')?.value?.trim();
+  const brand    = document.getElementById('new-prod-brand')?.value?.trim()||'GO';
+  const grade    = document.getElementById('new-prod-grade')?.value?.trim()||null;
+  const volume   = parseInt(document.getElementById('new-prod-volume')?.value)||null;
+  const category = document.getElementById('new-prod-category')?.value||'Car Mobil';
+  const price    = parseFloat(document.getElementById('new-prod-price')?.value)||0;
 
-  if(!name) { alert('Product naam likhein'); return; }
-  if(!price){ alert('Starting price enter karein'); return; }
+  if(!name)  { alert('Product naam likhein'); return; }
+  if(!price) { alert('Starting price enter karein'); return; }
 
-  const {data:prod, error:pe} = await supabase.from('mobil_products')
-    .insert([{name, brand, grade, volume_ml:volume, category, sort_order:allProducts.length+1}])
+  const { data:prod, error:pe } = await supabase.from('mobil_products')
+    .insert([{ name, brand, grade, volume_ml:volume, category, sort_order: allProducts.length+1 }])
     .select().single();
-  if(pe){ showToast('error','Error',pe.message); return; }
+
+  if(pe) { showToast('error','Error',pe.message); return; }
 
   await supabase.from('mobil_product_prices').insert([{
-    product_id:prod.id, sale_price:price, effective_date:today, notes:'Initial price'
+    product_id: prod.id, sale_price: price, effective_date: today, notes: 'Initial price'
   }]);
 
   showToast('success','Product Added!',`${name} add ho gaya!`);
@@ -1290,10 +1148,25 @@ async function saveNewProduct(){
   renderProductStockTable();
   renderManagePricesTable();
   ['new-prod-name','new-prod-grade','new-prod-volume','new-prod-price']
-    .forEach(id=>{ const e=el(id); if(e) e.value=''; });
+    .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
 }
 
-// Placeholders — mobil-management.js provide karega
+/* ================================================================
+   HELPERS
+================================================================ */
+function fmt(n) { return Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function formatVolume(ml) { return ml >= 1000 ? (ml/1000)+'L' : ml+'ml'; }
+
+function showToast(type, title, msg) {
+  const t = document.getElementById('liveToast');
+  if(!t) { alert(title+': '+msg); return; }
+  document.getElementById('toast-title').textContent = title;
+  document.getElementById('toast-message').textContent = msg;
+  t.className = 'toast ' + (type==='success'?'bg-success text-white':type==='error'?'bg-danger text-white':'bg-warning text-dark');
+  new bootstrap.Toast(t,{delay:3500}).show();
+}
+
+// Placeholder — aapka existing mobil-management.js ye functions provide karega
 function applyMobilFilters(){}
 function clearMobilFilters(){}
 function printMobilTransactions(){}
