@@ -1002,6 +1002,11 @@
   var currentPage     = 1;
   var pageSize        = 15;
 
+  // -- Expense state - same as transactions-COMPLETE-v5.js ----
+  var allCustomers      = [];
+  var expenseCategories = [];
+  var selectedCustomers = { expense: null };
+
   function $(id) { return document.getElementById(id); }
 
   function fmt(n) {
@@ -1097,17 +1102,134 @@
   }
 
   // ── CUSTOMER DROPDOWN ──────────────────────────────────────
-  async function loadCustomerDropdown() {
+  // == LOAD CUSTOMERS - same as transactions-COMPLETE-v5.js ==
+  async function loadCustomers() {
     try {
-      var r = await supabase.from('customers').select('id,sr_no,name,category').order('sr_no',{ascending:true});
+      var r = await supabase.from('customers').select('id,sr_no,name,category,balance').order('sr_no',{ascending:true});
       if (r.error) throw r.error;
-      var sel = $('sale-customer'); if (!sel) return;
-      sel.innerHTML = '<option value="">-- Customer Select Karein --</option>';
-      (r.data||[]).filter(function(c){ return (c.category||'').toLowerCase()!=='owner'; })
-        .forEach(function(c){
-          sel.innerHTML += '<option value="'+c.id+'">'+(c.sr_no||'')+' - '+c.name+'</option>';
+      allCustomers = r.data || [];
+      // Legacy simple dropdown (sale-customer) bhi update karo
+      var sel = $('sale-customer');
+      if (sel) {
+        sel.innerHTML = '<option value="">-- Customer Select Karein --</option>';
+        allCustomers.filter(function(c){ return (c.category||'').toLowerCase()!=='owner'; })
+          .forEach(function(c){
+            sel.innerHTML += '<option value="'+c.id+'">'+(c.sr_no||'')+' - '+c.name+'</option>';
+          });
+      }
+    } catch(e) { console.error('loadCustomers:', e); }
+  }
+
+  // == LOAD EXPENSE CATEGORIES - exact copy from transactions-COMPLETE-v5.js ==
+  async function loadExpenseCategories() {
+    try {
+      var r = await supabase.from('expense_categories').select('*').order('name');
+      expenseCategories = (r.data && r.data.length) ? r.data : [
+        {name:'Bijli Bill',icon:'\u26a1'},{name:'Gas Bill',icon:'\ud83d\udd25'},
+        {name:'Paani Bill',icon:'\ud83d\udca7'},{name:'Kiraaya',icon:'\ud83c\udfe0'},
+        {name:'Petrol/Diesel Stock',icon:'\u26fd'},{name:'Mazdoor Tankhwah',icon:'\ud83d\udc77'},
+        {name:'Machine Repair',icon:'\ud83d\udd27'},{name:'Khaana/Chai',icon:'\u2615'},
+        {name:'Transport',icon:'\ud83d\ude9b'},{name:'Stationery',icon:'\ud83d\udccb'},
+        {name:'Bank Charges',icon:'\ud83c\udfe6'},{name:'Mobile/Internet',icon:'\ud83d\udcf1'},
+        {name:'Miscellaneous',icon:'\ud83d\udce6'}
+      ];
+      var expEl = $('expense-type');
+      if (expEl) {
+        expEl.innerHTML = '<option value="">-- Category Select Karein --</option>' +
+          expenseCategories.map(function(c){
+            return '<option value="'+c.name+'">'+(c.icon||'')+' '+c.name+'</option>';
+          }).join('');
+      }
+    } catch(e) { console.error('loadExpenseCategories:', e); }
+  }
+
+  // == EXPENSE CUSTOMER SEARCHABLE DROPDOWN - EXACT same pattern as transactions-COMPLETE-v5.js ==
+  function initExpenseDropdown() {
+    var searchEl = $('expense-cust-search');
+    var listEl   = $('expense-cust-list');
+    var hiddenEl = $('expense-customer-hidden');
+    var boxEl    = $('expense-cust-selected');
+    var textEl   = $('expense-cust-selected-text');
+    var balEl    = $('expense-cust-balance');
+    var color    = '#e67e22';
+    if (!searchEl || !listEl) return;
+
+    searchEl.style.border = '2px solid ' + color;
+    var customers = allCustomers.filter(function(c){ return c.category !== 'Owner'; });
+
+    function renderList(q) {
+      var filtered = q
+        ? customers.filter(function(c){
+            return c.name.toLowerCase().includes(q.toLowerCase()) ||
+                   String(c.sr_no||'').includes(q);
+          })
+        : customers;
+
+      if (!filtered.length) {
+        listEl.innerHTML = '<div style="padding:12px;color:#888;text-align:center;font-size:13px;">Koi nahi mila</div>';
+        listEl.style.display = 'block'; return;
+      }
+
+      listEl.innerHTML = filtered.map(function(c) {
+        var bal = parseFloat(c.balance)||0;
+        return '<div class="sd-item-expense" data-id="'+c.id+'"' +
+          ' style="padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;' +
+          'align-items:center;border-bottom:1px solid #f5f5f5;font-size:14px;">' +
+          '<span>' +
+          '<span style="background:'+color+';color:#fff;border-radius:4px;padding:1px 7px;font-size:11px;font-weight:700;margin-right:8px;">#'+(c.sr_no||'-')+'</span>' +
+          c.name +
+          '</span>' +
+          '<span style="font-size:12px;font-weight:700;color:'+(bal>0?'#dc3545':'#198754')+';">Rs.'+fmt(bal)+'</span>' +
+          '</div>';
+      }).join('');
+      listEl.style.display = 'block';
+
+      listEl.querySelectorAll('.sd-item-expense').forEach(function(item) {
+        item.addEventListener('mouseenter', function(){ item.style.background='#f8f9ff'; });
+        item.addEventListener('mouseleave', function(){ item.style.background=''; });
+        item.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          var cust = customers.find(function(c){ return c.id == item.dataset.id; });
+          if (!cust) return;
+          selectedCustomers.expense = cust;
+          if (hiddenEl) hiddenEl.value = cust.id;
+          searchEl.value = '';
+          listEl.style.display = 'none';
+          if (textEl) textEl.textContent = '#'+(cust.sr_no||'-')+' \u2014 '+cust.name;
+          if (balEl) {
+            var b = parseFloat(cust.balance)||0;
+            balEl.textContent = b > 0 ? '\u26a0\ufe0f Khata Baqi: Rs.'+fmt(b) : '\u2705 Account Saaf';
+            balEl.style.color = b > 0 ? '#dc3545' : '#198754';
+          }
+          if (boxEl) boxEl.style.display = 'flex';
+          searchEl.style.display = 'none';
         });
-    } catch(e) { console.error('loadCustomerDropdown:', e); }
+      });
+    }
+
+    searchEl.addEventListener('input',  function(){ renderList(searchEl.value); });
+    searchEl.addEventListener('focus',  function(){ renderList(searchEl.value); });
+    searchEl.addEventListener('blur',   function(){ setTimeout(function(){ listEl.style.display='none'; }, 200); });
+
+    window.clear_sd_expense = function() {
+      selectedCustomers.expense = null;
+      if (hiddenEl) hiddenEl.value = '';
+      searchEl.value = ''; searchEl.style.display = 'block';
+      if (boxEl) boxEl.style.display = 'none';
+      listEl.style.display = 'none';
+      searchEl.focus();
+    };
+
+    var modalEl = $('mobilExpenseModal');
+    if (modalEl) {
+      modalEl.addEventListener('show.bs.modal', function() {
+        selectedCustomers.expense = null;
+        if (hiddenEl) hiddenEl.value = '';
+        searchEl.value = ''; searchEl.style.display = 'block';
+        if (boxEl) boxEl.style.display = 'none';
+        listEl.style.display = 'none';
+      });
+    }
   }
 
   // ── BUILD allRecords from settings ─────────────────────────
@@ -1363,112 +1485,151 @@
   // WINDOW FUNCTIONS
   // ══════════════════════════════════════════════════════════
 
-  // == OLD FUNCTIONS DISABLED - mobil.html handles these now ==
-  //   window.receiveMobilStock = async function() {
-  //     var mobilType = $('receive-mobil-type') ? $('receive-mobil-type').value : '';
-  //     var supplier  = $('receive-supplier')   ? $('receive-supplier').value   : '';
-  //     var qty       = parseFloat($('receive-quantity') ? $('receive-quantity').value : 0);
-  //     var rate      = parseFloat($('receive-rate')     ? $('receive-rate').value     : 0);
-  //     var total     = parseFloat($('receive-amount')   ? $('receive-amount').value   : 0) || (qty*rate);
-  //     var date      = $('receive-date')    ? $('receive-date').value    : '';
-  //     var invoice   = $('receive-invoice') ? $('receive-invoice').value : '';
-  //     var notes     = $('receive-notes')   ? $('receive-notes').value   : '';
+  window.receiveMobilStock = async function() {
+    var mobilType = $('receive-mobil-type') ? $('receive-mobil-type').value : '';
+    var supplier  = $('receive-supplier')   ? $('receive-supplier').value   : '';
+    var qty       = parseFloat($('receive-quantity') ? $('receive-quantity').value : 0);
+    var rate      = parseFloat($('receive-rate')     ? $('receive-rate').value     : 0);
+    var total     = parseFloat($('receive-amount')   ? $('receive-amount').value   : 0) || (qty*rate);
+    var date      = $('receive-date')    ? $('receive-date').value    : '';
+    var invoice   = $('receive-invoice') ? $('receive-invoice').value : '';
+    var notes     = $('receive-notes')   ? $('receive-notes').value   : '';
 
-  //     if (!mobilType || !qty || !rate || !date) {
-  //       showToast('Mobil Type, Quantity, Rate aur Date zaroor bharein', 'error'); return;
-  //     }
-  //     try {
-  //       var s = await getSettings();
-  //       if (!s) throw new Error('Settings row nahi mili');
-  //       var arrivals = Array.isArray(s.mobil_arrivals) ? s.mobil_arrivals : [];
-  //       arrivals.push({ id:Date.now().toString(), date:date, type:mobilType, supplier:supplier,
-  //         qty:qty, rate:rate, total:total, invoice:invoice, notes:notes, created_at:new Date().toISOString() });
-  //       await patchSettings(s.id, { mobil_arrivals: arrivals });
-  //       showToast(qty+' L '+mobilType+' stock add ho gaya!', 'success');
-  //       var m = bootstrap.Modal.getInstance($('receiveMobilModal')); if(m) m.hide();
-  //       if ($('receiveMobilForm')) $('receiveMobilForm').reset();
-  //       var today = new Date().toISOString().split('T')[0];
-  //       if ($('receive-date')) $('receive-date').value = today;
-  //       loadMobilStock(); loadMobilTransactions();
-  //     } catch(e) { console.error(e); showToast('Error: '+e.message,'error'); }
-  //   };
+    if (!mobilType || !qty || !rate || !date) {
+      showToast('Mobil Type, Quantity, Rate aur Date zaroor bharein', 'error'); return;
+    }
+    try {
+      var s = await getSettings();
+      if (!s) throw new Error('Settings row nahi mili');
+      var arrivals = Array.isArray(s.mobil_arrivals) ? s.mobil_arrivals : [];
+      arrivals.push({ id:Date.now().toString(), date:date, type:mobilType, supplier:supplier,
+        qty:qty, rate:rate, total:total, invoice:invoice, notes:notes, created_at:new Date().toISOString() });
+      await patchSettings(s.id, { mobil_arrivals: arrivals });
+      showToast(qty+' L '+mobilType+' stock add ho gaya!', 'success');
+      var m = bootstrap.Modal.getInstance($('receiveMobilModal')); if(m) m.hide();
+      if ($('receiveMobilForm')) $('receiveMobilForm').reset();
+      var today = new Date().toISOString().split('T')[0];
+      if ($('receive-date')) $('receive-date').value = today;
+      loadMobilStock(); loadMobilTransactions();
+    } catch(e) { console.error(e); showToast('Error: '+e.message,'error'); }
+  };
 
-  //   window.saleMobilOil = async function() {
-  //     var custSel    = $('sale-customer');
-  //     var customerId = custSel ? custSel.value : '';
-  //     var custName   = (custSel && custSel.selectedIndex>=0)
-  //       ? custSel.options[custSel.selectedIndex].text.replace(/^\d+\s*-\s*/,'') : '';
-  //     var mobilType   = $('sale-mobil-type')   ? $('sale-mobil-type').value   : '';
-  //     var qty         = parseFloat($('sale-quantity')    ? $('sale-quantity').value    : 0);
-  //     var rate        = parseFloat($('sale-rate')        ? $('sale-rate').value        : 0);
-  //     var amount      = parseFloat($('sale-amount')      ? $('sale-amount').value      : 0) || (qty*rate);
-  //     var date        = $('sale-date')         ? $('sale-date').value         : '';
-  //     var paymentType = $('sale-payment-type') ? $('sale-payment-type').value : 'cash';
-  //     var notes       = $('sale-notes')        ? $('sale-notes').value        : '';
+  window.saleMobilOil = async function() {
+    var custSel    = $('sale-customer');
+    var customerId = custSel ? custSel.value : '';
+    var custName   = (custSel && custSel.selectedIndex>=0)
+      ? custSel.options[custSel.selectedIndex].text.replace(/^\d+\s*-\s*/,'') : '';
+    var mobilType   = $('sale-mobil-type')   ? $('sale-mobil-type').value   : '';
+    var qty         = parseFloat($('sale-quantity')    ? $('sale-quantity').value    : 0);
+    var rate        = parseFloat($('sale-rate')        ? $('sale-rate').value        : 0);
+    var amount      = parseFloat($('sale-amount')      ? $('sale-amount').value      : 0) || (qty*rate);
+    var date        = $('sale-date')         ? $('sale-date').value         : '';
+    var paymentType = $('sale-payment-type') ? $('sale-payment-type').value : 'cash';
+    var notes       = $('sale-notes')        ? $('sale-notes').value        : '';
 
-  //     if (!mobilType || !qty || !rate || !date) {
-  //       showToast('Mobil Type, Quantity, Rate aur Date zaroor bharein','error'); return;
-  //     }
-  //     try {
-  //       var s = await getSettings();
-  //       if (!s) throw new Error('Settings row nahi mili');
-  //       var arrivals = Array.isArray(s.mobil_arrivals) ? s.mobil_arrivals : [];
-  //       var sales    = Array.isArray(s.mobil_sales)    ? s.mobil_sales    : [];
-  //       var arrived  = arrivals.filter(function(r){ return r.type===mobilType; })
-  //                              .reduce(function(t,r){ return t+(parseFloat(r.qty)||0); },0);
-  //       var sold     = sales.filter(function(r){ return r.type===mobilType; })
-  //                           .reduce(function(t,r){ return t+(parseFloat(r.qty)||0); },0);
-  //       var avail    = Math.max(0, arrived-sold);
-  //       if (avail < qty) {
-  //         showToast(mobilType+' ka stock sirf '+fmt(avail)+' L hai!','error'); return;
-  //       }
-  //       sales.push({ id:Date.now().toString(), date:date, type:mobilType,
-  //         customer:custName, customer_id:customerId, qty:qty, rate:rate,
-  //         amount:amount, payment:paymentType, notes:notes, created_at:new Date().toISOString() });
-  //       await patchSettings(s.id, { mobil_sales: sales });
-  //       if (paymentType==='credit' && customerId) {
-  //         var cr = await supabase.from('customers').select('balance').eq('id',customerId).maybeSingle();
-  //         if (!cr.error && cr.data) {
-  //           var nb = (parseFloat(cr.data.balance)||0)+amount;
-  //           await supabase.from('customers').update({balance:nb}).eq('id',customerId);
-  //         }
-  //         showToast('Sale! Rs.'+fmt(amount)+' Udhaar add ho gaya','success');
-  //       } else {
-  //         showToast('Sale! Rs.'+fmt(amount)+' Cash','success');
-  //       }
-  //       var m = bootstrap.Modal.getInstance($('saleMobilModal')); if(m) m.hide();
-  //       if ($('saleMobilForm')) $('saleMobilForm').reset();
-  //       var today = new Date().toISOString().split('T')[0];
-  //       if ($('sale-date')) $('sale-date').value = today;
-  //       await setupPriceAutoFill();
-  //       loadMobilStock(); loadMobilTransactions();
-  //     } catch(e) { console.error(e); showToast('Error: '+e.message,'error'); }
-  //   };
+    if (!mobilType || !qty || !rate || !date) {
+      showToast('Mobil Type, Quantity, Rate aur Date zaroor bharein','error'); return;
+    }
+    try {
+      var s = await getSettings();
+      if (!s) throw new Error('Settings row nahi mili');
+      var arrivals = Array.isArray(s.mobil_arrivals) ? s.mobil_arrivals : [];
+      var sales    = Array.isArray(s.mobil_sales)    ? s.mobil_sales    : [];
+      var arrived  = arrivals.filter(function(r){ return r.type===mobilType; })
+                             .reduce(function(t,r){ return t+(parseFloat(r.qty)||0); },0);
+      var sold     = sales.filter(function(r){ return r.type===mobilType; })
+                          .reduce(function(t,r){ return t+(parseFloat(r.qty)||0); },0);
+      var avail    = Math.max(0, arrived-sold);
+      if (avail < qty) {
+        showToast(mobilType+' ka stock sirf '+fmt(avail)+' L hai!','error'); return;
+      }
+      sales.push({ id:Date.now().toString(), date:date, type:mobilType,
+        customer:custName, customer_id:customerId, qty:qty, rate:rate,
+        amount:amount, payment:paymentType, notes:notes, created_at:new Date().toISOString() });
+      await patchSettings(s.id, { mobil_sales: sales });
+      if (paymentType==='credit' && customerId) {
+        var cr = await supabase.from('customers').select('balance').eq('id',customerId).maybeSingle();
+        if (!cr.error && cr.data) {
+          var nb = (parseFloat(cr.data.balance)||0)+amount;
+          await supabase.from('customers').update({balance:nb}).eq('id',customerId);
+        }
+        showToast('Sale! Rs.'+fmt(amount)+' Udhaar add ho gaya','success');
+      } else {
+        showToast('Sale! Rs.'+fmt(amount)+' Cash','success');
+      }
+      var m = bootstrap.Modal.getInstance($('saleMobilModal')); if(m) m.hide();
+      if ($('saleMobilForm')) $('saleMobilForm').reset();
+      var today = new Date().toISOString().split('T')[0];
+      if ($('sale-date')) $('sale-date').value = today;
+      await setupPriceAutoFill();
+      loadMobilStock(); loadMobilTransactions();
+    } catch(e) { console.error(e); showToast('Error: '+e.message,'error'); }
+  };
 
-  //   window.addMobilExpense = async function() {
-  //     var expType = $('expense-type')              ? $('expense-type').value              : '';
-  //     var amount  = parseFloat($('expense-amount-mobil') ? $('expense-amount-mobil').value : 0);
-  //     var date    = $('expense-date')              ? $('expense-date').value              : '';
-  //     var desc    = $('expense-description-mobil') ? $('expense-description-mobil').value : '';
-  //     if (!expType || !amount || !date || !desc) {
-  //       showToast('Tamam fields zaroor bharein','error'); return;
-  //     }
-  //     try {
-  //       var or = await supabase.from('customers').select('id').eq('category','Owner').maybeSingle();
-  //       var tx = await supabase.from('transactions').insert([{
-  //         customer_id: or.data ? or.data.id : null,
-  //         transaction_type:'Expense', amount:amount, liters:0,
-  //         description:'Mobil Expense - '+expType+': '+desc,
-  //         created_at: new Date(date+'T00:00:00').toISOString()
-  //       }]);
-  //       if (tx.error) throw tx.error;
-  //       showToast('Expense save ho gaya!','success');
-  //       var m = bootstrap.Modal.getInstance($('mobilExpenseModal')); if(m) m.hide();
-  //       if ($('mobilExpenseForm')) $('mobilExpenseForm').reset();
-  //       var today = new Date().toISOString().split('T')[0];
-  //       if ($('expense-date')) $('expense-date').value = today;
-  //     } catch(e) { console.error(e); showToast('Error: '+e.message,'error'); }
-  //   };
+  // == HANDLE EXPENSE - exact same pattern as handleExpense() in transactions-COMPLETE-v5.js ==
+  window.addMobilExpense = async function() {
+    var amount      = parseFloat($('expense-amount') ? $('expense-amount').value : 0) || 0;
+    var description = $('expense-description') ? ($('expense-description').value||'') : '';
+    var expType     = $('expense-type')         ? $('expense-type').value              : '';
+    var account     = $('expense-account')      ? $('expense-account').value           : '';
+    var cust        = selectedCustomers.expense;  // optional
+
+    if (!amount)     { showToast('Amount enter karein','error');     return; }
+    if (!description){ showToast('Description enter karein','error'); return; }
+    if (!expType)    { showToast('Category select karein','error');   return; }
+    if (!account)    { showToast('Account select karein','error');    return; }
+
+    try {
+      var custId = null;
+      if (cust) {
+        // Customer selected - transaction insert + balance update (same as transactions-v5)
+        custId = parseInt(cust.id);
+        var tx = await supabase.from('transactions').insert([{
+          customer_id:      custId,
+          transaction_type: 'Expense',
+          amount:           amount,
+          description:      expType + ': ' + description + ' (From: ' + account + ')'
+        }]);
+        if (tx.error) throw tx.error;
+        // Customer ka balance update - expense amount add karo
+        var newBal = (parseFloat(cust.balance)||0) + amount;
+        await supabase.from('customers').update({balance: newBal}).eq('id', custId);
+        var lc = allCustomers.find(function(c){ return c.id == custId; });
+        if (lc) lc.balance = newBal;
+      } else {
+        // Owner account se - sirf transaction insert
+        var ownerRes = await supabase.from('customers').select('id').eq('category','Owner').maybeSingle();
+        if (ownerRes.data) {
+          custId = ownerRes.data.id;
+        } else {
+          var newOwner = await supabase.from('customers')
+            .insert([{sr_no:0, name:'Owner', category:'Owner', balance:0}])
+            .select().single();
+          if (newOwner.error) throw newOwner.error;
+          custId = newOwner.data.id;
+        }
+        var tx2 = await supabase.from('transactions').insert([{
+          customer_id:      custId,
+          transaction_type: 'Expense',
+          amount:           amount,
+          description:      expType + ': ' + description + ' (From: ' + account + ')'
+        }]);
+        if (tx2.error) throw tx2.error;
+      }
+
+      showToast('Expense record ho gaya!','success');
+      selectedCustomers.expense = null;
+      // Modal band karo aur form reset
+      var m = bootstrap.Modal.getInstance($('mobilExpenseModal')); if(m) m.hide();
+      var f = document.querySelector('#mobilExpenseModal form'); if(f) f.reset();
+      // Dropdown reset
+      if (typeof window.clear_sd_expense === 'function') window.clear_sd_expense();
+      // Customers reload karo taake balance updated rahe
+      await loadCustomers();
+      initExpenseDropdown();
+      if (typeof loadMobilData === 'function') loadMobilData();
+    } catch(e) { console.error(e); showToast('Expense Error: '+e.message,'error'); }
+  };
 
   window.deleteMobilArrival = async function(id) {
     if (!confirm('Yeh arrival record delete karein?')) return;
@@ -1502,13 +1663,13 @@
     var today = new Date().toISOString().split('T')[0];
     if ($('receive-date')) $('receive-date').value = today;
     if ($('sale-date'))    $('sale-date').value    = today;
-    if ($('expense-date')) $('expense-date').value = today;
-
     setupAutoCalc('receive-quantity','receive-rate','receive-amount');
     setupAutoCalc('sale-quantity','sale-rate','sale-amount');
 
     await setupPriceAutoFill();
-    await loadCustomerDropdown();
+    await loadCustomers();          // customers + sale dropdown
+    await loadExpenseCategories();  // expense type dropdown
+    initExpenseDropdown();          // expense searchable customer dropdown
     await loadMobilStock();
     await loadMobilTransactions();
 
