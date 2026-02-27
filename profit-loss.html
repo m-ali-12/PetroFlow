@@ -337,21 +337,36 @@
 
       try {
         const sb = window.supabaseClient;
+        if (!sb) throw new Error('Supabase client not initialized');
 
-        // Auth check — skip if authentication is disabled
+        // Auth check
         let userId = null;
         try {
           const { data: authData } = await sb.auth.getUser();
           userId = authData?.user?.id || null;
+          console.log('User ID:', userId);
         } catch (authErr) {
-          console.warn('Auth not available, proceeding without user filter:', authErr);
+          console.warn('Auth not available, no user filter');
         }
 
         const { from, to } = getDateRange();
         const fromISO = from.toISOString();
-        const toISO   = new Date(to).toISOString();
+        const toISO   = to.toISOString();
+        console.log('Date range:', fromISO, 'to', toISO);
 
-        // Transactions
+        // DEBUG: Test without any filter first
+        const { data: testTxns, error: testErr } = await sb
+          .from('transactions')
+          .select('id, transaction_type, charges, created_at, user_id')
+          .limit(10);
+        console.log('DEBUG - Raw transactions (no filter):', testTxns, 'Error:', testErr);
+        if (testTxns?.length > 0) {
+          console.log('Types found:', [...new Set(testTxns.map(t => t.transaction_type))]);
+          console.log('User IDs found:', [...new Set(testTxns.map(t => t.user_id))]);
+          console.log('Sample date:', testTxns[0].created_at);
+        }
+
+        // Main transactions query
         let txQuery = sb
           .from('transactions')
           .select('id, transaction_type, charges, description, created_at, expense_type, customers(name, sr_no)')
@@ -361,9 +376,10 @@
         if (userId) txQuery = txQuery.eq('user_id', userId);
 
         const { data: txns, error: txErr } = await txQuery;
+        console.log('Filtered transactions:', txns?.length, 'Error:', txErr);
         if (txErr) throw txErr;
 
-        // Cash advances
+        // Cash advances query
         let advQuery = sb
           .from('cash_advances')
           .select('id, amount, reason, advance_date, status, customers(name, sr_no)')
@@ -372,10 +388,25 @@
           .order('advance_date', { ascending: false });
         if (userId) advQuery = advQuery.eq('user_id', userId);
 
-        const { data: advances } = await advQuery;
+        const { data: advances, error: advErr } = await advQuery;
+        console.log('Advances:', advances?.length, 'Error:', advErr);
 
         _allTxns = txns   || [];
         _allAdv  = advances || [];
+
+        // Show warning if no data at all
+        if (_allTxns.length === 0 && (!testTxns || testTxns.length === 0)) {
+          el('metric-cards').innerHTML = `
+            <div class="col-12">
+              <div class="alert alert-warning mb-0">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                <strong>Koi data nahi mila</strong><br>
+                <small>Possible reasons: RLS enabled (login required), table empty, ya date range mein transactions nahi. Console mein (F12) details dekhein.</small>
+              </div>
+            </div>`;
+          renderCharts(_allTxns);
+          return;
+        }
 
         renderMetricCards(_allTxns, _allAdv);
         renderMonthlyTable(_allTxns);
