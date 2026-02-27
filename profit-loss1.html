@@ -349,7 +349,7 @@
         // Transactions
         const { data: txns, error: txErr } = await sb
           .from('transactions')
-          .select('id, transaction_type, charges, description, created_at, expense_type, customers(name, sr_no)')
+          .select('id, transaction_type, amount, description, created_at, expense_type, customers(name, sr_no)')
           .eq('user_id', user.id)
           .gte('created_at', fromISO)
           .lte('created_at', toISO)
@@ -390,7 +390,7 @@
       let sCnt = 0, vCnt = 0, eCnt = 0, aCnt = 0;
 
       txns.forEach(t => {
-        const a = parseFloat(t.charges) || 0;
+        const a = parseFloat(t.amount) || 0;
         if (t.transaction_type === 'Credit')  { sales    += a; sCnt++; }
         if (t.transaction_type === 'Debit')   { vasooli  += a; vCnt++; }
         if (t.transaction_type === 'Expense') { expenses += a; eCnt++; }
@@ -457,7 +457,7 @@
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         const lbl = d.toLocaleDateString('en-PK', { month: 'long', year: 'numeric' });
         if (!months[key]) months[key] = { lbl, sales: 0, vasooli: 0, expenses: 0, advances: 0 };
-        const a = parseFloat(t.charges) || 0;
+        const a = parseFloat(t.amount) || 0;
         if (t.transaction_type === 'Credit')  months[key].sales    += a;
         if (t.transaction_type === 'Debit')   months[key].vasooli  += a;
         if (t.transaction_type === 'Expense') months[key].expenses += a;
@@ -515,7 +515,7 @@
         const key = d.toISOString().split('T')[0];
         const lbl = d.toLocaleDateString('en-PK', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
         if (!days[key]) days[key] = { lbl, sales: 0, vasooli: 0, expenses: 0, advances: 0 };
-        const a = parseFloat(t.charges) || 0;
+        const a = parseFloat(t.amount) || 0;
         if (t.transaction_type === 'Credit')  days[key].sales    += a;
         if (t.transaction_type === 'Debit')   days[key].vasooli  += a;
         if (t.transaction_type === 'Expense') days[key].expenses += a;
@@ -555,7 +555,7 @@
         const cat = t.expense_type
           || (t.description && t.description.includes(':') ? t.description.split(':')[0].trim() : null)
           || 'Miscellaneous';
-        cats[cat] = (cats[cat] || 0) + (parseFloat(t.charges) || 0);
+        cats[cat] = (cats[cat] || 0) + (parseFloat(t.amount) || 0);
       });
 
       const entries = Object.entries(cats).sort((a, b) => b[1] - a[1]);
@@ -620,7 +620,7 @@
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         const m   = months6.find(m => m.key === key);
         if (!m) return;
-        const a = parseFloat(t.charges) || 0;
+        const a = parseFloat(t.amount) || 0;
         if (t.transaction_type === 'Credit') m.sales += a;
         if (t.transaction_type === 'Expense' || t.transaction_type === 'Advance') m.expenses += a;
       });
@@ -648,7 +648,7 @@
       const cats = {};
       txns.filter(t => t.transaction_type === 'Expense').forEach(t => {
         const cat = t.expense_type || 'Other';
-        cats[cat] = (cats[cat] || 0) + (parseFloat(t.charges) || 0);
+        cats[cat] = (cats[cat] || 0) + (parseFloat(t.amount) || 0);
       });
       const expE   = Object.entries(cats).sort((a, b) => b[1] - a[1]).slice(0, 6);
       const colors = ['#e74c3c', '#f39c12', '#3498db', '#2ecc71', '#9b59b6', '#1abc9c'];
@@ -682,7 +682,7 @@
         fmtDate(t.created_at),
         t.customers?.name || 'N/A',
         t.transaction_type,
-        t.charges || 0,
+        t.amount || 0,
         t.expense_type || '',
         (t.description || '').replace(/,/g, ' ')
       ]));
