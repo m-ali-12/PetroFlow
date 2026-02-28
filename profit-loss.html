@@ -260,37 +260,62 @@
     let _allAdv  = [];
 
     // ── Date Range ────────────────────────────────────────────────
+    // Helper: "YYYY-MM-DD" se timezone-safe ISO strings banao
+    function dateToStartISO(dateStr) {
+      // e.g. "2026-02-01" → "2026-02-01T00:00:00+05:00" (PKT)
+      return dateStr + 'T00:00:00+05:00';
+    }
+    function dateToEndISO(dateStr) {
+      return dateStr + 'T23:59:59+05:00';
+    }
+    function toDateStr(year, month, day) {
+      return year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+    }
+
     function getDateRange() {
       const period = el('report-period').value;
-      const now = new Date();
-      let from, to = new Date();
+      const now    = new Date();
+      const Y = now.getFullYear();
+      const M = now.getMonth();   // 0-based
+      const D = now.getDate();
+
+      let fromStr, toStr;
 
       if (period === 'today') {
-        from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        to   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+        fromStr = toDateStr(Y, M, D);
+        toStr   = fromStr;
       } else if (period === 'this_week') {
-        const day = now.getDay();
-        from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
+        const day = now.getDay(); // 0=Sun
+        const weekStart = new Date(Y, M, D - day);
+        fromStr = toDateStr(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate());
+        toStr   = toDateStr(Y, M, D);
       } else if (period === 'this_month') {
-        from = new Date(now.getFullYear(), now.getMonth(), 1);
+        fromStr = toDateStr(Y, M, 1);
+        toStr   = toDateStr(Y, M, D);
       } else if (period === 'last_month') {
-        from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        to   = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+        const lmEnd = new Date(Y, M, 0); // last day of prev month
+        fromStr = toDateStr(Y, M - 1, 1);
+        toStr   = toDateStr(lmEnd.getFullYear(), lmEnd.getMonth(), lmEnd.getDate());
       } else if (period === 'this_year') {
-        from = new Date(now.getFullYear(), 0, 1);
+        fromStr = toDateStr(Y, 0, 1);
+        toStr   = toDateStr(Y, M, D);
       } else if (period === 'last_year') {
-        from = new Date(now.getFullYear() - 1, 0, 1);
-        to   = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59);
+        fromStr = toDateStr(Y - 1, 0, 1);
+        toStr   = toDateStr(Y - 1, 11, 31);
       } else if (period === 'custom') {
-        const df = el('date-from').value;
-        const dt = el('date-to').value;
-        from = df ? new Date(df) : new Date(now.getFullYear(), now.getMonth(), 1);
-        to   = dt ? new Date(dt + 'T23:59:59') : now;
+        fromStr = el('date-from').value || toDateStr(Y, M, 1);
+        toStr   = el('date-to').value   || toDateStr(Y, M, D);
       } else {
-        from = new Date('2020-01-01');
+        fromStr = '2020-01-01';
+        toStr   = toDateStr(Y, M, D);
       }
 
-      return { from, to };
+      return {
+        from:    new Date(fromStr),
+        to:      new Date(toStr),
+        fromISO: dateToStartISO(fromStr),
+        toISO:   dateToEndISO(toStr)
+      };
     }
 
     function getPeriodLabel() {
@@ -349,22 +374,8 @@
           console.warn('Auth not available, no user filter');
         }
 
-        const { from, to } = getDateRange();
-        const fromISO = from.toISOString();
-        const toISO   = to.toISOString();
-        console.log('Date range:', fromISO, 'to', toISO);
-
-        // DEBUG: Test without any filter first
-        const { data: testTxns, error: testErr } = await sb
-          .from('transactions')
-          .select('id, transaction_type, charges, created_at, user_id')
-          .limit(10);
-        console.log('DEBUG - Raw transactions (no filter):', testTxns, 'Error:', testErr);
-        if (testTxns?.length > 0) {
-          console.log('Types found:', [...new Set(testTxns.map(t => t.transaction_type))]);
-          console.log('User IDs found:', [...new Set(testTxns.map(t => t.user_id))]);
-          console.log('Sample date:', testTxns[0].created_at);
-        }
+        const { from, to, fromISO, toISO } = getDateRange();
+        console.log('Date range (PKT):', fromISO, 'to', toISO);
 
         // Main transactions query
         let txQuery = sb
@@ -383,8 +394,8 @@
         let advQuery = sb
           .from('cash_advances')
           .select('id, amount, reason, advance_date, status, customers(name, sr_no)')
-          .gte('advance_date', from.toISOString().split('T')[0])
-          .lte('advance_date', to.toISOString().split('T')[0])
+          .gte('advance_date', fromISO.split('T')[0])
+          .lte('advance_date', toISO.split('T')[0])
           .order('advance_date', { ascending: false });
         if (userId) advQuery = advQuery.eq('user_id', userId);
 
@@ -395,13 +406,13 @@
         _allAdv  = advances || [];
 
         // Show warning if no data at all
-        if (_allTxns.length === 0 && (!testTxns || testTxns.length === 0)) {
+        if (_allTxns.length === 0) {
           el('metric-cards').innerHTML = `
             <div class="col-12">
               <div class="alert alert-warning mb-0">
                 <i class="bi bi-exclamation-circle me-2"></i>
                 <strong>Koi data nahi mila</strong><br>
-                <small>Possible reasons: RLS enabled (login required), table empty, ya date range mein transactions nahi. Console mein (F12) details dekhein.</small>
+                <small>Possible reasons: Is date range mein transactions nahi, ya RLS enabled hai (login required). Date range check karein: ${fromISO} to ${toISO}</small>
               </div>
             </div>`;
           renderCharts(_allTxns);
