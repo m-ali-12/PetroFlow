@@ -282,7 +282,7 @@
 //   function updateCards(txns){
 //     let cr=0,db=0,ex=0,adv=0,crc=0,dbc=0,exc=0;
 //     txns.forEach(t=>{
-//       const a=parseFloat(t.charges)||0;
+//       const a=parseFloat(t.amount)||0;
 //       if(t.transaction_type==='Credit'){cr+=a;crc++;}
 //       else if(t.transaction_type==='Debit'){db+=a;dbc++;}
 //       else if(t.transaction_type==='Expense'){ex+=a;exc++;}
@@ -407,7 +407,7 @@
 //         <td style="vertical-align:middle;">${fuelType}</td>
 //         <td style="vertical-align:middle;">${litersHtml}</td>
 //         <td style="vertical-align:middle;">${unitPriceHtml}</td>
-//         <td style="vertical-align:middle;"><strong>Rs. ${fmt(t.charges)}</strong></td>
+//         <td style="vertical-align:middle;"><strong>Rs. ${fmt(t.amount)}</strong></td>
 //         <td style="vertical-align:middle;max-width:200px;word-break:break-word;">${desc||'-'}</td>
 //         <td style="vertical-align:middle;">
 //           <div style="display:flex;gap:4px;">
@@ -499,7 +499,7 @@
 //     const printDate=new Date().toLocaleDateString('en-PK',{day:'2-digit',month:'long',year:'numeric'});
 //     let totCr=0,totDb=0,totEx=0,totAdv=0;
 //     txns.forEach(t=>{
-//       const a=parseFloat(t.charges)||0;
+//       const a=parseFloat(t.amount)||0;
 //       if(t.transaction_type==='Credit')totCr+=a;
 //       else if(t.transaction_type==='Debit')totDb+=a;
 //       else if(t.transaction_type==='Advance')totAdv+=a;
@@ -514,8 +514,8 @@
 //         const ltr=t.liters>0?fmt(t.liters)+' L':'-';
 //         const rate=t.unit_price>0?'Rs.'+fmt(t.unit_price):'-';
 //         const typeColor=t.transaction_type==='Credit'?'#198754':t.transaction_type==='Debit'?'#0d6efd':t.transaction_type==='Advance'?'#6f42c1':'#cc8800';
-//         const crAmt=t.transaction_type==='Credit'?'Rs.'+fmt(t.charges):'-';
-//         const dbAmt=(t.transaction_type==='Debit'||t.transaction_type==='Expense'||t.transaction_type==='Advance')?'Rs.'+fmt(t.charges):'-';
+//         const crAmt=t.transaction_type==='Credit'?'Rs.'+fmt(t.amount):'-';
+//         const dbAmt=(t.transaction_type==='Debit'||t.transaction_type==='Expense'||t.transaction_type==='Advance')?'Rs.'+fmt(t.amount):'-';
 //         return `<tr>
 //           <td>${d.toLocaleDateString('en-PK')}<br><small style="color:#888">${d.toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'})}</small></td>
 //           <td>${t.customers?.name||'N/A'} (${t.customers?.sr_no||'-'})</td>
@@ -523,7 +523,7 @@
 //           <td>${fuel}</td>
 //           <td style="text-align:center">${ltr}</td>
 //           <td style="text-align:right">${rate}</td>
-//           <td style="text-align:right;font-weight:700">Rs.${fmt(t.charges)}</td>
+//           <td style="text-align:right;font-weight:700">Rs.${fmt(t.amount)}</td>
 //           <td style="text-align:right;color:#198754;font-weight:600">${crAmt}</td>
 //           <td style="text-align:right;color:#0d6efd;font-weight:600">${dbAmt}</td>
 //           <td style="word-break:break-word;max-width:130px">${desc}</td>
@@ -554,7 +554,7 @@
 //         const lbl=d.toLocaleDateString('en-PK',{month:'long',year:'numeric'});
 //         if(!map[key])map[key]={lbl,list:[],cr:0,db:0,ex:0,adv:0};
 //         map[key].list.push(t);
-//         const a=parseFloat(t.charges)||0;
+//         const a=parseFloat(t.amount)||0;
 //         if(t.transaction_type==='Credit')map[key].cr+=a;
 //         else if(t.transaction_type==='Debit')map[key].db+=a;
 //         else if(t.transaction_type==='Advance')map[key].adv+=a;
@@ -1466,7 +1466,7 @@
 //   function updateCards(txns){
 //     let cr=0,db=0,ex=0,adv=0,crc=0,dbc=0,exc=0,advc=0;
 //     txns.forEach(t=>{
-//       const a=parseFloat(t.charges)||0;
+//       const a=parseFloat(t.amount)||0;
 //       if(t.transaction_type==='Credit'){cr+=a;crc++;}
 //       else if(t.transaction_type==='Debit'){db+=a;dbc++;}
 //       else if(t.transaction_type==='Expense'){ex+=a;exc++;}
@@ -1570,7 +1570,7 @@
 //         <td style="vertical-align:middle;">${fuelType}</td>
 //         <td style="vertical-align:middle;">${t.liters>0?fmt(t.liters)+' L':'-'}</td>
 //         <td style="vertical-align:middle;">${t.unit_price>0?'Rs.'+fmt(t.unit_price):'-'}</td>
-//         <td style="vertical-align:middle;"><strong>Rs.${fmt(t.charges)}</strong></td>
+//         <td style="vertical-align:middle;"><strong>Rs.${fmt(t.amount)}</strong></td>
 //         <td style="vertical-align:middle;max-width:200px;word-break:break-word;">${desc||'-'}</td>
 //         <td style="vertical-align:middle;">
 //           <div style="display:flex;gap:4px;">
@@ -1646,7 +1646,7 @@
 //     const company='Khalid & Sons Petroleum';
 //     const printDate=new Date().toLocaleDateString('en-PK',{day:'2-digit',month:'long',year:'numeric'});
 //     let totCr=0,totDb=0,totEx=0,totAdv=0;
-//     txns.forEach(t=>{const a=parseFloat(t.charges)||0;
+//     txns.forEach(t=>{const a=parseFloat(t.amount)||0;
 //       if(t.transaction_type==='Credit')totCr+=a;
 //       else if(t.transaction_type==='Debit')totDb+=a;
 //       else if(t.transaction_type==='Advance')totAdv+=a;
@@ -1660,9 +1660,9 @@
 //         return `<tr><td>${d.toLocaleDateString('en-PK')}</td><td>${t.customers?.name||'N/A'} (#${t.customers?.sr_no||'-'})</td>
 //           <td style="font-weight:700;color:${tc}">${t.transaction_type}</td><td>${fuel}</td>
 //           <td style="text-align:right">${t.liters>0?fmt(t.liters)+' L':'-'}</td>
-//           <td style="text-align:right;font-weight:700">Rs.${fmt(t.charges)}</td>
-//           <td style="text-align:right;color:#198754">${t.transaction_type==='Credit'?'Rs.'+fmt(t.charges):'-'}</td>
-//           <td style="text-align:right;color:#0d6efd">${t.transaction_type!=='Credit'?'Rs.'+fmt(t.charges):'-'}</td>
+//           <td style="text-align:right;font-weight:700">Rs.${fmt(t.amount)}</td>
+//           <td style="text-align:right;color:#198754">${t.transaction_type==='Credit'?'Rs.'+fmt(t.amount):'-'}</td>
+//           <td style="text-align:right;color:#0d6efd">${t.transaction_type!=='Credit'?'Rs.'+fmt(t.amount):'-'}</td>
 //           <td style="word-break:break-word;max-width:130px">${desc}</td></tr>`;
 //       }).join('');
 //     }
@@ -1682,7 +1682,7 @@
 //         const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
 //         const lbl=d.toLocaleDateString('en-PK',{month:'long',year:'numeric'});
 //         if(!map[key])map[key]={lbl,list:[],cr:0,db:0,ex:0,adv:0};
-//         map[key].list.push(t);const a=parseFloat(t.charges)||0;
+//         map[key].list.push(t);const a=parseFloat(t.amount)||0;
 //         if(t.transaction_type==='Credit')map[key].cr+=a;
 //         else if(t.transaction_type==='Debit')map[key].db+=a;
 //         else if(t.transaction_type==='Advance')map[key].adv+=a;
@@ -2319,7 +2319,7 @@
   function updateCards(txns){
     let cr=0,db=0,ex=0,adv=0,crc=0,dbc=0,exc=0,advc=0;
     txns.forEach(t=>{
-      const a=parseFloat(t.charges)||0;
+      const a=parseFloat(t.amount)||0;
       if(t.transaction_type==='Credit'){cr+=a;crc++;}
       else if(t.transaction_type==='Debit'){db+=a;dbc++;}
       else if(t.transaction_type==='Expense'){ex+=a;exc++;}
@@ -2427,7 +2427,7 @@
         <td style="vertical-align:middle;">${fuelType}</td>
         <td style="vertical-align:middle;">${t.liters>0?fmt(t.liters)+' L':'-'}</td>
         <td style="vertical-align:middle;">${t.unit_price>0?'Rs.'+fmt(t.unit_price):'-'}</td>
-        <td style="vertical-align:middle;"><strong>Rs.${fmt(t.charges)}</strong></td>
+        <td style="vertical-align:middle;"><strong>Rs.${fmt(t.amount)}</strong></td>
         <td style="vertical-align:middle;max-width:200px;word-break:break-word;font-size:12px;">${desc||'-'}</td>
         <td style="vertical-align:middle;white-space:nowrap;">
           <div style="display:flex;gap:3px;">
@@ -2516,7 +2516,7 @@
     const company='Khalid & Sons Petroleum';
     const pDate=new Date().toLocaleDateString('en-PK',{day:'2-digit',month:'long',year:'numeric'});
     let totCr=0,totDb=0,totEx=0,totAdv=0;
-    txns.forEach(t=>{ const a=parseFloat(t.charges)||0;
+    txns.forEach(t=>{ const a=parseFloat(t.amount)||0;
       if(t.transaction_type==='Credit')totCr+=a;
       else if(t.transaction_type==='Debit')totDb+=a;
       else if(t.transaction_type==='Advance')totAdv+=a;
@@ -2533,9 +2533,9 @@
           <td style="color:${tc[t.transaction_type]||'#555'};font-weight:700">${t.transaction_type}</td>
           <td>${fuel}</td>
           <td style="text-align:right">${t.liters>0?fmt(t.liters)+' L':'-'}</td>
-          <td style="text-align:right;font-weight:700">Rs.${fmt(t.charges)}</td>
-          <td style="text-align:right;color:#198754">${t.transaction_type==='Credit'?'Rs.'+fmt(t.charges):'-'}</td>
-          <td style="text-align:right;color:#0d6efd">${t.transaction_type!=='Credit'?'Rs.'+fmt(t.charges):'-'}</td>
+          <td style="text-align:right;font-weight:700">Rs.${fmt(t.amount)}</td>
+          <td style="text-align:right;color:#198754">${t.transaction_type==='Credit'?'Rs.'+fmt(t.amount):'-'}</td>
+          <td style="text-align:right;color:#0d6efd">${t.transaction_type!=='Credit'?'Rs.'+fmt(t.amount):'-'}</td>
           <td style="word-break:break-word;max-width:130px;font-size:10px">${desc}</td>
         </tr>`;
       }).join('');
@@ -2558,7 +2558,7 @@
         const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
         const lbl=d.toLocaleDateString('en-PK',{month:'long',year:'numeric'});
         if(!map[key])map[key]={lbl,list:[],cr:0,db:0,ex:0,adv:0};
-        map[key].list.push(t); const a=parseFloat(t.charges)||0;
+        map[key].list.push(t); const a=parseFloat(t.amount)||0;
         if(t.transaction_type==='Credit')map[key].cr+=a;
         else if(t.transaction_type==='Debit')map[key].db+=a;
         else if(t.transaction_type==='Advance')map[key].adv+=a;
@@ -2627,8 +2627,7 @@ ${bodyHtml}
       const txType=paymentType==='cash'?'Debit':'Credit';
       const{error}=await supabase.from('transactions').insert([{
         customer_id:parseInt(cust.id), transaction_type:txType,
-        charges:amount, liters:liters||null, unit_price:unitPrice||null,
-        fuel_type:fuelType,
+        amount, liters:liters||null, unit_price:unitPrice||null,
         description:`${fuelType} sale${description?' - '+description:''}`
       }]);
       if(error) throw error;
@@ -2657,7 +2656,7 @@ ${bodyHtml}
     if(desc) fullDesc+=` - ${desc}`;
     try{
       const{error}=await supabase.from('transactions').insert([{
-        customer_id:parseInt(cust.id), transaction_type:'Debit', charges:amount, description:fullDesc
+        customer_id:parseInt(cust.id), transaction_type:'Debit', amount, description:fullDesc
       }]);
       if(error) throw error;
       const newBal=Math.max(0,(parseFloat(cust.balance)||0)-amount);
@@ -2697,8 +2696,7 @@ ${bodyHtml}
         }
       }
       const{error}=await supabase.from('transactions').insert([{
-        customer_id:custId, transaction_type:'Expense', charges:amount,
-        expense_type:expType, expense_account:account,
+        customer_id:custId, transaction_type:'Expense', amount,
         description:`${expType}: ${description} (From: ${account})`
       }]);
       if(error) throw error;
@@ -2745,7 +2743,7 @@ ${bodyHtml}
       } else if(advData){ advId=advData.id; }
 
       // 3. Insert transaction
-      const txObj={customer_id:parseInt(cust.id),transaction_type:'Advance',charges:amount,
+      const txObj={customer_id:parseInt(cust.id),transaction_type:'Advance',amount,
         description:`Cash Advance: ${reason}${notes?' | '+notes:''}`};
       if(userId) txObj.user_id=userId;
       if(advId) txObj.cash_advance_id=advId;
