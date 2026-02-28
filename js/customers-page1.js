@@ -885,26 +885,13 @@ async function doDelete(id) {
   const sb = getSupabase();
   if (!sb) { alert('Database not ready'); return; }
   const c = allCustomers.find(x => x.id === id);
-  if (!c) return;
-
-  // Check linked records
-  const { data: txns } = await sb.from('transactions').select('id').eq('customer_id', id).limit(1);
-  const hasTxns = txns && txns.length > 0;
-  const { data: advs } = await sb.from('cash_advances').select('id').eq('customer_id', id).limit(1);
-  const hasAdvs = advs && advs.length > 0;
-
-  let msg = `"${c.name}" delete karein?`;
-  if (hasTxns || hasAdvs) {
-    msg += `\n\n WARNING: Is customer ki linked transactions/advances bhi delete ho jaengi!`;
-  }
-  if (!confirm(msg)) return;
-
+  if (!c || !confirm(`Delete "${c.name}"? This cannot be undone.`)) return;
   try {
-    if (hasTxns) await sb.from('transactions').delete().eq('customer_id', id);
-    if (hasAdvs) await sb.from('cash_advances').delete().eq('customer_id', id);
-    const { error } = await sb.from('customers').delete().eq('id', id);
+    let q = sb.from('customers').delete().eq('id', id);
+    if (currentUserId) q = q.eq('user_id', currentUserId);
+    const { error } = await q;
     if (error) throw error;
-    toast('Customer delete ho gaya!', 'success');
+    toast('Customer deleted', 'success');
     await loadCustomers();
   } catch(e) { alert('Error: ' + e.message); }
 }
@@ -914,8 +901,10 @@ window.delCust = doDelete;
 // LEDGER
 // ════════════════════════════════════════════
 function openLedger(id) {
-  // De-linked from customer-details page - transactions page pe jao filter ke saath
-  window.location.href = 'transactions.html?customer_id=' + id;
+  const c = allCustomers.find(x => x.id === id);
+  if (!c) return;
+  sessionStorage.setItem('selected_customer', JSON.stringify(c));
+  window.location.href = 'customer-details.html?id=' + id;
 }
 window.viewLedger = openLedger;
 

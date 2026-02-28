@@ -3047,18 +3047,3 @@ ${adv.notes?`<div class="row"><span class="lbl">Notes</span><span class="val">${
 
   window.loadInitialTransactions=loadTransactions;
 })();
-// Auto-filter by customer_id from URL (when coming from customers page)
-document.addEventListener('DOMContentLoaded', function() {
-  const params = new URLSearchParams(window.location.search);
-  const custId = params.get('customer_id');
-  if (custId) {
-    setTimeout(() => {
-      const sel = document.getElementById('filter-customer');
-      if (sel) {
-        sel.value = custId;
-        activeFilters.customerId = custId;
-        if (typeof applyFilters === 'function') applyFilters();
-      }
-    }, 1500);
-  }
-});
