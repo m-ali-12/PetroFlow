@@ -9,21 +9,74 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 <link rel="stylesheet" href="assets/styles.css">
 <style>
-  .stat-card { border-radius: 12px; transition: transform .2s; }
-  .stat-card:hover { transform: translateY(-3px); }
-  .stock-badge { font-size: 2rem; font-weight: 700; }
-  .section-title { border-left: 4px solid #0d6efd; padding-left: 12px; margin: 24px 0 16px; }
-  @media print {
-    #navbar-placeholder, #footer-placeholder, .no-print { display: none !important; }
-    body { font-size: 11px; }
-  }
+/* ─── Product Search Dropdown (same as mobil.html) ─── */
+.product-search-wrap { position: relative; }
+.product-dropdown {
+  display: none; position: absolute;
+  top: 100%; left: 0; right: 0; background: #fff;
+  border: 1px solid #dee2e6; border-top: none;
+  border-radius: 0 0 8px 8px; max-height: 280px;
+  overflow-y: auto; z-index: 9999;
+  box-shadow: 0 8px 24px rgba(0,0,0,.15);
+}
+.product-dropdown .pd-item {
+  padding: 9px 14px; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid #f5f5f5; font-size: 14px; transition: background .15s;
+}
+.product-dropdown .pd-item:hover { background: #f0f4ff; }
+.product-dropdown .pd-item .pd-price {
+  font-weight: 700; color: #198754; font-size: 13px;
+  white-space: nowrap; margin-left: 10px;
+}
+.product-dropdown .pd-cat {
+  font-size: 10px; color: #888; padding: 5px 14px 3px;
+  text-transform: uppercase; letter-spacing: .5px;
+  font-weight: 700; background: #fafafa; position: sticky; top: 0;
+}
+.product-dropdown .pd-add-new {
+  padding: 10px 14px; cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  border-top: 2px dashed #0d6efd30;
+  font-size: 13px; color: #0d6efd; font-weight: 600;
+  background: #f8f9ff;
+}
+.product-dropdown .pd-add-new:hover { background: #e8f0ff; }
+.selected-product-badge {
+  display: none; background: #f0f4ff;
+  border: 1px solid #0d6efd30; border-radius: 8px;
+  padding: 7px 12px; margin-top: 6px; font-size: 13px;
+  align-items: center; justify-content: space-between;
+}
+
+/* ─── Layout ─── */
+.stat-card { border-radius: 12px; transition: transform .2s; }
+.stat-card:hover { transform: translateY(-3px); }
+.stock-badge { font-size: 1.9rem; font-weight: 700; line-height: 1; }
+.section-title { border-left: 4px solid #0d6efd; padding-left: 12px; margin: 28px 0 14px; font-size: 1rem; }
+.section-title.green  { border-color: #198754; }
+.section-title.orange { border-color: #fd7e14; }
+
+/* ─── Product group header in table ─── */
+.prod-grp-hdr { background:#eef3ff; font-weight:700; font-size:12px; color:#0d6efd; }
+.prod-grp-hdr.green { background:#edfbf3; color:#198754; }
+
+/* ─── P/L ─── */
+.pl-card { border-radius: 10px; border: none; }
+
+@media print {
+  #navbar-placeholder, #footer-placeholder, .no-print { display: none !important; }
+  body { font-size: 11px; }
+  th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
 </style>
 </head>
 <body data-page="mobil-stock">
 <div id="navbar-placeholder"></div>
+
 <div class="container py-4">
 
-  <!-- Header -->
+  <!-- ── Header ── -->
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h3 class="mb-0"><i class="bi bi-box-seam me-2 text-primary"></i>Mobil Stock Management</h3>
     <div class="d-flex gap-2 no-print">
@@ -36,21 +89,21 @@
     </div>
   </div>
 
-  <!-- Stock Summary Cards -->
+  <!-- ── Summary Cards ── -->
   <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
       <div class="card stat-card shadow-sm border-0 bg-primary text-white">
         <div class="card-body text-center py-3">
-          <div class="mb-1"><i class="bi bi-droplet-fill fs-3"></i></div>
+          <i class="bi bi-droplet-fill fs-3 mb-1 d-block"></i>
           <div class="stock-badge" id="card-car-stock">0</div>
-          <div class="small mt-1">Car Mobil Stock (L)</div>
+          <div class="small mt-1">Car Mobil Stock (Units)</div>
         </div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="card stat-card shadow-sm border-0 bg-success text-white">
         <div class="card-body text-center py-3">
-          <div class="mb-1"><i class="bi bi-droplet-fill fs-3"></i></div>
+          <i class="bi bi-droplet-fill fs-3 mb-1 d-block"></i>
           <div class="stock-badge" id="card-open-stock">0</div>
           <div class="small mt-1">Open Mobil Stock (L)</div>
         </div>
@@ -59,34 +112,34 @@
     <div class="col-6 col-md-3">
       <div class="card stat-card shadow-sm border-0 bg-warning">
         <div class="card-body text-center py-3">
-          <div class="mb-1"><i class="bi bi-cash-stack fs-3"></i></div>
+          <i class="bi bi-cash-stack fs-3 mb-1 d-block"></i>
           <div class="stock-badge" id="card-month-revenue">0</div>
-          <div class="small mt-1">Is Mahine Revenue (Rs.)</div>
+          <div class="small mt-1">Is Mahine Revenue</div>
         </div>
       </div>
     </div>
     <div class="col-6 col-md-3">
-      <div class="card stat-card shadow-sm border-0 bg-info text-white">
+      <div class="card stat-card shadow-sm border-0" id="card-pl-box"
+           style="background:linear-gradient(135deg,#d4edda,#c3e6cb);">
         <div class="card-body text-center py-3">
-          <div class="mb-1"><i class="bi bi-graph-up-arrow fs-3"></i></div>
-          <div class="stock-badge" id="card-total-revenue">0</div>
-          <div class="small mt-1">Total Revenue (Rs.)</div>
+          <i class="bi bi-graph-up fs-3 mb-1 d-block text-success"></i>
+          <div class="stock-badge text-success" id="card-net-pl">Rs. 0</div>
+          <div class="small mt-1 text-muted" id="card-pl-label">Net Profit</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Month Filter -->
+  <!-- ── Month Filter ── -->
   <div class="card shadow-sm mb-4 no-print">
     <div class="card-body py-2">
       <div class="row g-2 align-items-center">
         <div class="col-auto"><label class="form-label mb-0 fw-bold">Filter by Month:</label></div>
         <div class="col-auto">
-          <input type="month" id="filter-month" class="form-control form-control-sm" 
-            value="" onchange="applyMonthFilter()">
+          <input type="month" id="filter-month" class="form-control form-control-sm" onchange="loadStockData()">
         </div>
         <div class="col-auto">
-          <button class="btn btn-sm btn-secondary" onclick="clearFilter()">
+          <button class="btn btn-sm btn-secondary" onclick="document.getElementById('filter-month').value=''; loadStockData();">
             <i class="bi bi-x-circle me-1"></i>Clear
           </button>
         </div>
@@ -95,33 +148,31 @@
     </div>
   </div>
 
-  <!-- Arrivals Section -->
-  <h5 class="section-title"><i class="bi bi-box-arrow-in-down me-2 text-primary"></i>Stock Arrivals (Orders Received)</h5>
-  <div class="card shadow-sm mb-4">
+  <!-- ══════════════════════════════════════════
+       CAR MOBIL — ARRIVALS
+  ══════════════════════════════════════════ -->
+  <h5 class="section-title">
+    <i class="bi bi-car-front me-2 text-primary"></i>Car Mobil — Stock Arrivals
+  </h5>
+  <div class="card shadow-sm mb-2">
     <div class="card-body p-0">
       <div class="table-responsive">
-        <table class="table table-hover mb-0">
+        <table class="table table-hover mb-0 table-sm">
           <thead class="table-primary">
             <tr>
-              <th>Date</th>
-              <th>Mobil Type</th>
-              <th>Supplier</th>
-              <th>Qty (L)</th>
-              <th>Rate/L</th>
-              <th>Total Cost</th>
-              <th>Invoice</th>
-              <th class="no-print">Action</th>
+              <th>Date</th><th>Product / Grade</th><th>Supplier</th>
+              <th>Qty</th><th>Rate/Unit</th><th>Total Cost</th>
+              <th>Invoice</th><th class="no-print">Action</th>
             </tr>
           </thead>
-          <tbody id="arrivals-table">
-            <tr><td colspan="8" class="text-center text-muted py-4">Loading...</td></tr>
+          <tbody id="car-arrivals-tbody">
+            <tr><td colspan="8" class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>
           </tbody>
           <tfoot class="table-light fw-bold">
             <tr>
-              <td colspan="3">Total</td>
-              <td id="arrival-total-qty">0 L</td>
-              <td>—</td>
-              <td id="arrival-total-cost">Rs. 0</td>
+              <td colspan="3">Car Mobil Total</td>
+              <td id="car-arr-total-qty">—</td><td>—</td>
+              <td id="car-arr-total-cost">Rs. 0</td>
               <td colspan="2"></td>
             </tr>
           </tfoot>
@@ -130,33 +181,31 @@
     </div>
   </div>
 
-  <!-- Sales Section -->
-  <h5 class="section-title"><i class="bi bi-cart-check me-2 text-success"></i>Mobil Sales</h5>
+  <!-- ══════════════════════════════════════════
+       OPEN MOBIL — ARRIVALS
+  ══════════════════════════════════════════ -->
+  <h5 class="section-title green">
+    <i class="bi bi-droplet me-2 text-success"></i>Open Mobil — Stock Arrivals
+  </h5>
   <div class="card shadow-sm mb-4">
     <div class="card-body p-0">
       <div class="table-responsive">
-        <table class="table table-hover mb-0">
+        <table class="table table-hover mb-0 table-sm">
           <thead class="table-success">
             <tr>
-              <th>Date</th>
-              <th>Mobil Type</th>
-              <th>Customer</th>
-              <th>Qty (L)</th>
-              <th>Rate/L</th>
-              <th>Amount</th>
-              <th>Payment</th>
-              <th class="no-print">Action</th>
+              <th>Date</th><th>Product / Grade</th><th>Supplier</th>
+              <th>Qty (L)</th><th>Rate/L</th><th>Total Cost</th>
+              <th>Invoice</th><th class="no-print">Action</th>
             </tr>
           </thead>
-          <tbody id="sales-table">
-            <tr><td colspan="8" class="text-center text-muted py-4">Loading...</td></tr>
+          <tbody id="open-arrivals-tbody">
+            <tr><td colspan="8" class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>
           </tbody>
           <tfoot class="table-light fw-bold">
             <tr>
-              <td colspan="3">Total</td>
-              <td id="sale-total-qty">0 L</td>
-              <td>—</td>
-              <td id="sale-total-revenue">Rs. 0</td>
+              <td colspan="3">Open Mobil Total</td>
+              <td id="open-arr-total-qty">—</td><td>—</td>
+              <td id="open-arr-total-cost">Rs. 0</td>
               <td colspan="2"></td>
             </tr>
           </tfoot>
@@ -165,93 +214,354 @@
     </div>
   </div>
 
-  <!-- Monthly Revenue Chart Section -->
-  <h5 class="section-title"><i class="bi bi-bar-chart me-2 text-warning"></i>Monthly Summary</h5>
+  <!-- ══════════════════════════════════════════
+       CAR MOBIL — SALES
+  ══════════════════════════════════════════ -->
+  <h5 class="section-title">
+    <i class="bi bi-cart-check me-2 text-primary"></i>Car Mobil — Sales
+  </h5>
+  <div class="card shadow-sm mb-2">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 table-sm">
+          <thead class="table-primary">
+            <tr>
+              <th>Date</th><th>Product / Grade</th><th>Customer</th>
+              <th>Qty</th><th>Rate</th><th>Amount</th>
+              <th>Payment</th><th class="no-print">Action</th>
+            </tr>
+          </thead>
+          <tbody id="car-sales-tbody">
+            <tr><td colspan="8" class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>
+          </tbody>
+          <tfoot class="table-light fw-bold">
+            <tr>
+              <td colspan="3">Car Mobil Total</td>
+              <td id="car-sale-total-qty">—</td><td>—</td>
+              <td id="car-sale-total-rev">Rs. 0</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       OPEN MOBIL — SALES
+  ══════════════════════════════════════════ -->
+  <h5 class="section-title green">
+    <i class="bi bi-cart-check me-2 text-success"></i>Open Mobil — Sales
+  </h5>
   <div class="card shadow-sm mb-4">
     <div class="card-body p-0">
       <div class="table-responsive">
-        <table class="table table-hover mb-0">
-          <thead class="table-warning">
+        <table class="table table-hover mb-0 table-sm">
+          <thead class="table-success">
             <tr>
-              <th>Month</th>
-              <th>Stock Arrived (L)</th>
-              <th>Stock Sold (L)</th>
-              <th>Purchase Cost</th>
-              <th>Sale Revenue</th>
-              <th>Profit</th>
+              <th>Date</th><th>Product / Grade</th><th>Customer</th>
+              <th>Qty (L)</th><th>Rate</th><th>Amount</th>
+              <th>Payment</th><th class="no-print">Action</th>
             </tr>
           </thead>
-          <tbody id="monthly-table">
-            <tr><td colspan="6" class="text-center text-muted py-4">Loading...</td></tr>
+          <tbody id="open-sales-tbody">
+            <tr><td colspan="8" class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>
+          </tbody>
+          <tfoot class="table-light fw-bold">
+            <tr>
+              <td colspan="3">Open Mobil Total</td>
+              <td id="open-sale-total-qty">—</td><td>—</td>
+              <td id="open-sale-total-rev">Rs. 0</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       PROFIT / LOSS SUMMARY
+  ══════════════════════════════════════════ -->
+  <h5 class="section-title orange">
+    <i class="bi bi-graph-up-arrow me-2 text-warning"></i>Profit / Loss Summary
+  </h5>
+
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+      <div class="card pl-card shadow-sm" style="background:linear-gradient(135deg,#e8f5e9,#c8e6c9);">
+        <div class="card-body text-center py-3">
+          <i class="bi bi-arrow-up-circle-fill text-success fs-4 mb-1 d-block"></i>
+          <div class="fw-bold fs-5 text-success" id="pl-total-rev">Rs. 0</div>
+          <div class="small text-muted">Total Sale Revenue</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card pl-card shadow-sm" style="background:linear-gradient(135deg,#fce4ec,#f8bbd0);">
+        <div class="card-body text-center py-3">
+          <i class="bi bi-arrow-down-circle-fill text-danger fs-4 mb-1 d-block"></i>
+          <div class="fw-bold fs-5 text-danger" id="pl-total-cost">Rs. 0</div>
+          <div class="small text-muted">Total Purchase Cost</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card pl-card shadow-sm" id="pl-net-card" style="background:linear-gradient(135deg,#e8f5e9,#c8e6c9);">
+        <div class="card-body text-center py-3">
+          <i class="bi bi-patch-check-fill text-success fs-4 mb-1 d-block" id="pl-net-icon"></i>
+          <div class="fw-bold fs-5 text-success" id="pl-net-val">Rs. 0</div>
+          <div class="small text-muted" id="pl-net-label">Net Profit</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card pl-card shadow-sm" style="background:linear-gradient(135deg,#e3f2fd,#bbdefb);">
+        <div class="card-body text-center py-3">
+          <i class="bi bi-percent text-primary fs-4 mb-1 d-block"></i>
+          <div class="fw-bold fs-5 text-primary" id="pl-margin">0%</div>
+          <div class="small text-muted">Profit Margin</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product-wise P&L table -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white fw-bold py-2">
+      <i class="bi bi-table me-2 text-warning"></i>Product-wise Profit / Loss
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm mb-0">
+          <thead class="table-warning">
+            <tr>
+              <th>Product</th><th>Category</th>
+              <th class="text-end">Qty In</th><th class="text-end">Qty Out</th>
+              <th class="text-end">Purchase Cost</th><th class="text-end">Sale Revenue</th>
+              <th class="text-end">Profit / Loss</th><th class="text-end">Margin %</th>
+            </tr>
+          </thead>
+          <tbody id="pl-product-tbody">
+            <tr><td colspan="8" class="text-center text-muted py-3">Loading...</td></tr>
+          </tbody>
+          <tfoot class="table-dark fw-bold">
+            <tr>
+              <td colspan="4">Grand Total</td>
+              <td class="text-end" id="pl-foot-cost">Rs. 0</td>
+              <td class="text-end" id="pl-foot-rev">Rs. 0</td>
+              <td class="text-end" id="pl-foot-profit">Rs. 0</td>
+              <td class="text-end" id="pl-foot-margin">0%</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monthly Summary -->
+  <h5 class="section-title">
+    <i class="bi bi-bar-chart me-2 text-primary"></i>Monthly Summary
+  </h5>
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm mb-0">
+          <thead class="table-secondary">
+            <tr>
+              <th>Month</th>
+              <th class="text-end">Arrived</th><th class="text-end">Sold</th>
+              <th class="text-end">Purchase Cost</th><th class="text-end">Sale Revenue</th>
+              <th class="text-end">Profit / Loss</th><th class="text-end">Margin</th>
+            </tr>
+          </thead>
+          <tbody id="monthly-tbody">
+            <tr><td colspan="7" class="text-center text-muted py-3">Loading...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
   </div>
 
-</div>
+</div><!-- /container -->
 
-<!-- ARRIVAL MODAL -->
+<!-- ═══════════════════════════════════════════════════
+     ARRIVAL MODAL
+═══════════════════════════════════════════════════ -->
 <div class="modal fade" id="arrivalModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form id="arrivalForm" onsubmit="event.preventDefault(); saveArrival();">
-        <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title"><i class="bi bi-box-arrow-in-down me-2"></i>New Stock Arrival</h5>
-          <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal"></button>
+<div class="modal-dialog">
+<div class="modal-content">
+<form id="arrivalForm" onsubmit="event.preventDefault(); saveArrival();">
+  <div class="modal-header bg-primary text-white">
+    <h5 class="modal-title"><i class="bi bi-box-arrow-in-down me-2"></i>New Stock Arrival</h5>
+    <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal"></button>
+  </div>
+  <div class="modal-body">
+
+    <!-- Product Search — same pattern as mobil.html -->
+    <div class="mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <label class="form-label fw-bold mb-0">Product Select Karein *</label>
+        <button type="button" class="btn btn-sm btn-outline-success"
+          onclick="openAddProductModal()" style="font-size:11px; padding:2px 10px;">
+          <i class="bi bi-plus-circle me-1"></i>Naya Product Add
+        </button>
+      </div>
+      <div class="product-search-wrap">
+        <input type="hidden" id="arr-product-id">
+        <input type="hidden" id="arr-category">
+        <input type="text" id="arr-product-search" class="form-control"
+          placeholder="🔍 Product naam likhein (GO Performa, 20W-50...)"
+          autocomplete="off"
+          oninput="searchArrProducts()" onfocus="searchArrProducts()">
+        <div id="arr-product-dropdown" class="product-dropdown"></div>
+      </div>
+      <div id="arr-product-badge" class="selected-product-badge d-flex">
+        <span id="arr-product-badge-text" class="fw-semibold text-primary"></span>
+        <button type="button" class="btn-close btn-sm ms-auto"
+          onclick="clearArrProduct()"></button>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Supplier Name</label>
+      <input id="arr-supplier" class="form-control" type="text" placeholder="e.g. GO Company, PSO, Shell">
+    </div>
+
+    <div class="row g-2 mb-2">
+      <div class="col-6">
+        <label class="form-label fw-bold">Quantity *</label>
+        <div class="input-group">
+          <input id="arr-qty" class="form-control" type="number" step="0.01" min="0.01"
+            required oninput="calcArrTotal()">
+          <span class="input-group-text" id="arr-qty-unit">Units</span>
         </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label fw-bold">Mobil Type *</label>
-            <select id="arr-type" class="form-select" required>
-              <option value="">Select Type</option>
-              <option value="Car Mobil">Car Mobil</option>
-              <option value="Open Mobil">Open Mobil</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Supplier Name</label>
-            <input id="arr-supplier" class="form-control" type="text" placeholder="e.g. PSO, Shell">
-          </div>
-          <div class="row g-2">
-            <div class="col-6">
-              <label class="form-label fw-bold">Quantity (Liters) *</label>
-              <input id="arr-qty" class="form-control" type="number" step="0.01" min="0.01" required>
-            </div>
-            <div class="col-6">
-              <label class="form-label fw-bold">Rate per Liter *</label>
-              <input id="arr-rate" class="form-control" type="number" step="0.01" min="0" required>
-            </div>
-          </div>
-          <div class="mb-3 mt-2">
-            <label class="form-label">Total Cost</label>
-            <div class="input-group">
-              <span class="input-group-text">Rs.</span>
-              <input id="arr-total" class="form-control bg-light" type="number" readonly>
-            </div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label fw-bold">Arrival Date *</label>
-            <input id="arr-date" class="form-control" type="date" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Invoice / Bill Number</label>
-            <input id="arr-invoice" class="form-control" type="text">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Notes</label>
-            <textarea id="arr-notes" class="form-control" rows="2"></textarea>
-          </div>
+      </div>
+      <div class="col-6">
+        <label class="form-label fw-bold">Rate / Unit *</label>
+        <div class="input-group">
+          <span class="input-group-text">Rs.</span>
+          <input id="arr-rate" class="form-control" type="number" step="0.01" min="0"
+            required oninput="calcArrTotal()">
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
-          <button class="btn btn-primary" type="submit">
-            <i class="bi bi-check-circle me-1"></i>Save Arrival
-          </button>
-        </div>
-      </form>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Total Cost</label>
+      <div class="input-group">
+        <span class="input-group-text">Rs.</span>
+        <input id="arr-total" class="form-control bg-light fw-bold" type="number" readonly>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-bold">Arrival Date *</label>
+      <input id="arr-date" class="form-control" type="date" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Invoice / Bill Number</label>
+      <input id="arr-invoice" class="form-control" type="text">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Notes</label>
+      <textarea id="arr-notes" class="form-control" rows="2"></textarea>
     </div>
   </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+    <button class="btn btn-primary" type="submit">
+      <i class="bi bi-check-circle me-1"></i>Save Arrival
+    </button>
+  </div>
+</form>
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     ADD NEW PRODUCT MODAL
+═══════════════════════════════════════════════════ -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<form id="addProductForm" onsubmit="event.preventDefault(); saveNewProduct();">
+  <div class="modal-header bg-success text-white">
+    <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Naya Product Add Karein</h5>
+    <button class="btn-close btn-close-white" type="button" onclick="backToArrival()"></button>
+  </div>
+  <div class="modal-body">
+    <div class="alert alert-info py-2" style="font-size:13px;">
+      <i class="bi bi-info-circle me-1"></i>
+      Yahan product add karo, phir automatically arrival form mein select ho jayega.
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-bold">Category *</label>
+      <select id="new-prod-cat" class="form-select" required>
+        <option value="Car Mobil">Car Mobil</option>
+        <option value="Open Mobil">Open Mobil</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-bold">Product Name *</label>
+      <input id="new-prod-name" class="form-control" type="text"
+        placeholder="e.g. GO Performa, GO Extra, GO Deluxe, GO Flash" required>
+    </div>
+
+    <div class="row g-2 mb-3">
+      <div class="col-6">
+        <label class="form-label">Grade / Type</label>
+        <input id="new-prod-grade" class="form-control" type="text"
+          placeholder="e.g. 20W-50, 5W-30, 10W-30">
+      </div>
+      <div class="col-6">
+        <label class="form-label">Volume / Pack Size</label>
+        <select id="new-prod-volume" class="form-select">
+          <option value="">Select (Optional)</option>
+          <option value="500">500ml</option>
+          <option value="700">700ml</option>
+          <option value="800">800ml</option>
+          <option value="1000">1 Liter</option>
+          <option value="2000">2 Liter</option>
+          <option value="3000">3 Liter</option>
+          <option value="4000">4 Liter</option>
+          <option value="5000">5 Liter</option>
+          <option value="7000">7 Liter</option>
+          <option value="10000">10 Liter</option>
+          <option value="20000">20 Liter (Drum)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-bold">Brand</label>
+      <input id="new-prod-brand" class="form-control" type="text" value="GO" placeholder="e.g. GO, Shell, PSO">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-bold">Starting Sale Price (Rs.) *</label>
+      <div class="input-group">
+        <span class="input-group-text">Rs.</span>
+        <input id="new-prod-price" class="form-control" type="number" step="0.01" min="0" required
+          placeholder="e.g. 574, 3270, 4360">
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-outline-secondary" type="button" onclick="backToArrival()">
+      <i class="bi bi-arrow-left me-1"></i>Back
+    </button>
+    <button class="btn btn-success" type="submit">
+      <i class="bi bi-check-circle me-1"></i>Product Save Karein
+    </button>
+  </div>
+</form>
+</div>
+</div>
 </div>
 
 <!-- Toast -->
@@ -271,6 +581,662 @@
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/app.js"></script>
-<script src="js/mobil-stock.js"></script>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   GLOBALS
+════════════════════════════════════════════════════════ */
+let allProducts   = [];   // from v_mobil_products_current
+let allArrivals   = [];   // from mobil_arrivals
+let allSales      = [];   // from mobil_sales
+const today = new Date().toISOString().split('T')[0];
+
+/* ════════════════════════════════════════════════════════
+   HELPERS
+════════════════════════════════════════════════════════ */
+const el = id => document.getElementById(id);
+function fmt(n){ return parseFloat(n||0).toLocaleString('en-PK',{minimumFractionDigits:0,maximumFractionDigits:0}); }
+
+function formatVolume(ml){
+  if(!ml) return '';
+  return ml >= 1000 ? (ml/1000)+'L' : ml+'ml';
+}
+
+function showToast(type, title, msg){
+  el('toast-title').textContent   = title;
+  el('toast-message').textContent = msg;
+  const t = el('liveToast');
+  t.className = `toast align-items-center text-white bg-${type==='success'?'success':type==='error'?'danger':'primary'} border-0`;
+  new bootstrap.Toast(t, {delay:3500}).show();
+}
+
+/* ════════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', async () => {
+  // Set today's date as default
+  const arrDate = el('arr-date');
+  if(arrDate) arrDate.value = today;
+
+  await loadProducts();
+  await loadStockData();
+});
+
+/* ════════════════════════════════════════════════════════
+   LOAD PRODUCTS — from v_mobil_products_current
+   (same table as mobil.html)
+════════════════════════════════════════════════════════ */
+async function loadProducts(){
+  const {data, error} = await supabase
+    .from('v_mobil_products_current')
+    .select('*')
+    .order('sort_order');
+  if(!error && data) allProducts = data;
+}
+
+/* ════════════════════════════════════════════════════════
+   LOAD ARRIVALS + SALES (with month filter)
+════════════════════════════════════════════════════════ */
+async function loadStockData(){
+  const month = el('filter-month')?.value; // "2024-02" format
+
+  // Build queries
+  let arrQ = supabase.from('mobil_arrivals')
+    .select('*').order('arrival_date', {ascending:false});
+  let saleQ = supabase.from('mobil_sales')
+    .select('*').order('sale_date', {ascending:false});
+
+  if(month){
+    const from = month+'-01';
+    const yr = parseInt(month.split('-')[0]);
+    const mo = parseInt(month.split('-')[1]);
+    const lastDay = new Date(yr, mo, 0).getDate();
+    const to   = month+'-'+String(lastDay).padStart(2,'0');
+    arrQ  = arrQ.gte('arrival_date', from).lte('arrival_date', to);
+    saleQ = saleQ.gte('sale_date',   from).lte('sale_date',   to);
+    el('filter-info').textContent = `Filter: ${month}`;
+  } else {
+    el('filter-info').textContent = '';
+  }
+
+  const [{data:arr, error:ae}, {data:sale, error:se}] = await Promise.all([arrQ, saleQ]);
+
+  if(ae) console.error('Arrivals error:', ae.message);
+  if(se) console.error('Sales error:',   se.message);
+
+  allArrivals = arr  || [];
+  allSales    = sale || [];
+
+  renderAll();
+}
+
+/* ════════════════════════════════════════════════════════
+   RENDER ALL
+════════════════════════════════════════════════════════ */
+function renderAll(){
+  const carArr  = allArrivals.filter(r => r.category === 'Car Mobil');
+  const openArr = allArrivals.filter(r => r.category === 'Open Mobil');
+  const carSale = allSales.filter(r => r.category   === 'Car Mobil');
+  const openSale= allSales.filter(r => r.category   === 'Open Mobil');
+
+  renderArrTable('car-arrivals-tbody',  carArr,  'car',  'car-arr-total-qty',  'car-arr-total-cost');
+  renderArrTable('open-arrivals-tbody', openArr, 'open', 'open-arr-total-qty', 'open-arr-total-cost');
+  renderSaleTable('car-sales-tbody',   carSale,  'car',  'car-sale-total-qty',  'car-sale-total-rev');
+  renderSaleTable('open-sales-tbody',  openSale, 'open', 'open-sale-total-qty', 'open-sale-total-rev');
+
+  renderPL();
+  renderMonthly();
+  updateSummaryCards();
+}
+
+/* ─── GROUP ARRIVALS BY PRODUCT ─── */
+function renderArrTable(tbodyId, rows, prefix, qtyId, costId){
+  const tbody = el(tbodyId);
+  if(!tbody) return;
+
+  if(!rows.length){
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-3">Koi record nahi</td></tr>`;
+    if(el(qtyId))  el(qtyId).textContent  = '0';
+    if(el(costId)) el(costId).textContent = 'Rs. 0';
+    return;
+  }
+
+  // Group by product_name
+  const groups = {};
+  rows.forEach(r => {
+    const key = r.product_name || '(Unknown)';
+    if(!groups[key]) groups[key] = [];
+    groups[key].push(r);
+  });
+
+  let html = '';
+  let grandQty = 0, grandCost = 0;
+  const isOpen = prefix === 'open';
+
+  Object.keys(groups).sort().forEach(prodName => {
+    const list = groups[prodName];
+    let grpQty = 0, grpCost = 0;
+    list.forEach(r => { grpQty += parseFloat(r.quantity||0); grpCost += parseFloat(r.total_cost||0); });
+    grandQty  += grpQty;
+    grandCost += grpCost;
+
+    // Group sub-header
+    html += `<tr class="prod-grp-hdr ${isOpen?'green':''}">
+      <td colspan="3" style="padding-left:10px;">
+        <i class="bi bi-tag-fill me-2"></i>${prodName}
+      </td>
+      <td class="fw-bold">${fmt(grpQty)}${isOpen?' L':''}</td>
+      <td>—</td>
+      <td class="fw-bold">Rs. ${fmt(grpCost)}</td>
+      <td colspan="2"></td>
+    </tr>`;
+
+    // Individual rows
+    list.forEach(r => {
+      html += `<tr>
+        <td style="padding-left:24px; font-size:12px; color:#666;">${r.arrival_date||'—'}</td>
+        <td style="font-size:13px;">${r.product_name||'—'}</td>
+        <td style="font-size:12px;">${r.supplier||'—'}</td>
+        <td class="fw-semibold">${fmt(r.quantity)}${isOpen?' L':''}</td>
+        <td>Rs. ${fmt(r.rate)}</td>
+        <td>Rs. ${fmt(r.total_cost)}</td>
+        <td style="font-size:11px;">${r.invoice_no||'—'}</td>
+        <td class="no-print">
+          <button class="btn btn-outline-danger" style="font-size:11px;padding:2px 7px;"
+            onclick="deleteArrival(${r.id})">
+            <i class="bi bi-trash3"></i>
+          </button>
+        </td>
+      </tr>`;
+    });
+  });
+
+  tbody.innerHTML = html;
+  if(el(qtyId))  el(qtyId).textContent  = fmt(grandQty) + (isOpen?' L':'');
+  if(el(costId)) el(costId).textContent = 'Rs. '+fmt(grandCost);
+}
+
+/* ─── GROUP SALES BY PRODUCT ─── */
+function renderSaleTable(tbodyId, rows, prefix, qtyId, revId){
+  const tbody = el(tbodyId);
+  if(!tbody) return;
+
+  if(!rows.length){
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-3">Koi record nahi</td></tr>`;
+    if(el(qtyId)) el(qtyId).textContent = '0';
+    if(el(revId)) el(revId).textContent = 'Rs. 0';
+    return;
+  }
+
+  const groups = {};
+  rows.forEach(r => {
+    const key = r.product_name || '(Unknown)';
+    if(!groups[key]) groups[key] = [];
+    groups[key].push(r);
+  });
+
+  let html = '';
+  let grandQty = 0, grandRev = 0;
+  const isOpen = prefix === 'open';
+
+  Object.keys(groups).sort().forEach(prodName => {
+    const list = groups[prodName];
+    let grpQty = 0, grpRev = 0;
+    list.forEach(r => { grpQty += parseFloat(r.quantity||0); grpRev += parseFloat(r.total_amount||0); });
+    grandQty += grpQty;
+    grandRev += grpRev;
+
+    html += `<tr class="prod-grp-hdr ${isOpen?'green':''}">
+      <td colspan="3" style="padding-left:10px;">
+        <i class="bi bi-tag-fill me-2"></i>${prodName}
+      </td>
+      <td class="fw-bold">${fmt(grpQty)}${isOpen?' L':''}</td>
+      <td>—</td>
+      <td class="fw-bold">Rs. ${fmt(grpRev)}</td>
+      <td colspan="2"></td>
+    </tr>`;
+
+    list.forEach(r => {
+      const pay = r.payment_type === 'credit'
+        ? '<span class="badge bg-warning text-dark" style="font-size:10px;">Udhaar</span>'
+        : '<span class="badge bg-success" style="font-size:10px;">Cash</span>';
+      html += `<tr>
+        <td style="padding-left:24px; font-size:12px; color:#666;">${r.sale_date||'—'}</td>
+        <td style="font-size:13px;">${r.product_name||'—'}</td>
+        <td style="font-size:12px;">${r.customer_name||'Walk-in'}</td>
+        <td class="fw-semibold">${fmt(r.quantity)}${isOpen?' L':''}</td>
+        <td>Rs. ${fmt(r.rate)}</td>
+        <td>Rs. ${fmt(r.total_amount)}</td>
+        <td>${pay}</td>
+        <td class="no-print">
+          <button class="btn btn-outline-danger" style="font-size:11px;padding:2px 7px;"
+            onclick="deleteSale(${r.id})">
+            <i class="bi bi-trash3"></i>
+          </button>
+        </td>
+      </tr>`;
+    });
+  });
+
+  tbody.innerHTML = html;
+  if(el(qtyId)) el(qtyId).textContent = fmt(grandQty) + (isOpen?' L':'');
+  if(el(revId)) el(revId).textContent = 'Rs. '+fmt(grandRev);
+}
+
+/* ─── PROFIT / LOSS ─── */
+function renderPL(){
+  const totalCost = allArrivals.reduce((s,r) => s + parseFloat(r.total_cost||0), 0);
+  const totalRev  = allSales.reduce((s,r)    => s + parseFloat(r.total_amount||0), 0);
+  const net       = totalRev - totalCost;
+  const margin    = totalRev > 0 ? ((net/totalRev)*100).toFixed(1) : 0;
+
+  el('pl-total-rev').textContent  = 'Rs. '+fmt(totalRev);
+  el('pl-total-cost').textContent = 'Rs. '+fmt(totalCost);
+  el('pl-margin').textContent     = margin+'%';
+
+  const netCard  = el('pl-net-card');
+  const netVal   = el('pl-net-val');
+  const netLabel = el('pl-net-label');
+  const netIcon  = el('pl-net-icon');
+
+  if(net >= 0){
+    netCard.style.background  = 'linear-gradient(135deg,#e8f5e9,#c8e6c9)';
+    netVal.className          = 'fw-bold fs-5 text-success';
+    netVal.textContent        = 'Rs. '+fmt(net);
+    netLabel.textContent      = 'Net Profit';
+    netIcon.className         = 'bi bi-patch-check-fill text-success fs-4 mb-1 d-block';
+  } else {
+    netCard.style.background  = 'linear-gradient(135deg,#fce4ec,#f8bbd0)';
+    netVal.className          = 'fw-bold fs-5 text-danger';
+    netVal.textContent        = '- Rs. '+fmt(Math.abs(net));
+    netLabel.textContent      = 'Net Loss';
+    netIcon.className         = 'bi bi-exclamation-triangle-fill text-danger fs-4 mb-1 d-block';
+  }
+
+  // Product-wise P&L
+  const pMap = {};
+  allArrivals.forEach(r => {
+    const k = r.product_name || '(Unknown)';
+    if(!pMap[k]) pMap[k] = {name:k, cat:r.category||'—', qtyIn:0, qtyOut:0, cost:0, rev:0};
+    pMap[k].qtyIn += parseFloat(r.quantity||0);
+    pMap[k].cost  += parseFloat(r.total_cost||0);
+  });
+  allSales.forEach(r => {
+    const k = r.product_name || '(Unknown)';
+    if(!pMap[k]) pMap[k] = {name:k, cat:r.category||'—', qtyIn:0, qtyOut:0, cost:0, rev:0};
+    pMap[k].qtyOut += parseFloat(r.quantity||0);
+    pMap[k].rev    += parseFloat(r.total_amount||0);
+  });
+
+  let rowsHtml = '';
+  let fCost=0, fRev=0, fProfit=0;
+
+  Object.values(pMap).sort((a,b) => b.rev - a.rev).forEach(p => {
+    const pl    = p.rev - p.cost;
+    const mg    = p.rev > 0 ? ((pl/p.rev)*100).toFixed(1) : 0;
+    const cls   = pl >= 0 ? 'text-success fw-bold' : 'text-danger fw-bold';
+    const icon  = pl >= 0 ? 'bi-arrow-up-short text-success' : 'bi-arrow-down-short text-danger';
+    const catCl = p.cat === 'Car Mobil' ? 'text-primary' : 'text-success';
+    fCost+=p.cost; fRev+=p.rev; fProfit+=pl;
+
+    rowsHtml += `<tr>
+      <td><strong>${p.name}</strong></td>
+      <td><span class="badge ${p.cat==='Car Mobil'?'bg-primary':'bg-success'}" style="font-size:10px;">${p.cat}</span></td>
+      <td class="text-end">${fmt(p.qtyIn)}</td>
+      <td class="text-end">${fmt(p.qtyOut)}</td>
+      <td class="text-end">Rs. ${fmt(p.cost)}</td>
+      <td class="text-end">Rs. ${fmt(p.rev)}</td>
+      <td class="text-end ${cls}"><i class="bi ${icon}"></i>Rs. ${fmt(Math.abs(pl))}</td>
+      <td class="text-end ${cls}">${mg}%</td>
+    </tr>`;
+  });
+
+  const plTbody = el('pl-product-tbody');
+  if(plTbody) plTbody.innerHTML = rowsHtml || `<tr><td colspan="8" class="text-center text-muted py-3">Data nahi</td></tr>`;
+
+  const footPl = fProfit >= 0 ? 'text-success' : 'text-danger';
+  const footMg = fRev > 0 ? ((fProfit/fRev)*100).toFixed(1) : 0;
+  const s = (id,v) => { const e=el(id); if(e) e.textContent=v; };
+  s('pl-foot-cost',   'Rs. '+fmt(fCost));
+  s('pl-foot-rev',    'Rs. '+fmt(fRev));
+  s('pl-foot-profit', 'Rs. '+fmt(Math.abs(fProfit)));
+  s('pl-foot-margin', footMg+'%');
+  const footProfEl = el('pl-foot-profit');
+  if(footProfEl) footProfEl.className = `text-end ${footPl}`;
+}
+
+/* ─── MONTHLY TABLE ─── */
+function renderMonthly(){
+  const months = {};
+  allArrivals.forEach(r => {
+    const m = (r.arrival_date||'').substring(0,7);
+    if(!m) return;
+    if(!months[m]) months[m] = {arrived:0, sold:0, cost:0, rev:0};
+    months[m].arrived += parseFloat(r.quantity||0);
+    months[m].cost    += parseFloat(r.total_cost||0);
+  });
+  allSales.forEach(r => {
+    const m = (r.sale_date||'').substring(0,7);
+    if(!m) return;
+    if(!months[m]) months[m] = {arrived:0, sold:0, cost:0, rev:0};
+    months[m].sold += parseFloat(r.quantity||0);
+    months[m].rev  += parseFloat(r.total_amount||0);
+  });
+
+  const tbody = el('monthly-tbody');
+  if(!tbody) return;
+  const sorted = Object.keys(months).sort().reverse();
+  if(!sorted.length){
+    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-3">Data nahi</td></tr>`;
+    return;
+  }
+
+  const mNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  tbody.innerHTML = sorted.map(m => {
+    const d   = months[m];
+    const pl  = d.rev - d.cost;
+    const mg  = d.rev > 0 ? ((pl/d.rev)*100).toFixed(1) : 0;
+    const cls = pl >= 0 ? 'text-success fw-bold' : 'text-danger fw-bold';
+    const [yr,mo] = m.split('-');
+    const label = `${mNames[parseInt(mo)-1]} ${yr}`;
+    return `<tr>
+      <td><strong>${label}</strong></td>
+      <td class="text-end">${fmt(d.arrived)}</td>
+      <td class="text-end">${fmt(d.sold)}</td>
+      <td class="text-end">Rs. ${fmt(d.cost)}</td>
+      <td class="text-end">Rs. ${fmt(d.rev)}</td>
+      <td class="text-end ${cls}">
+        Rs. ${fmt(Math.abs(pl))} <span style="font-size:11px;">${pl>=0?'(Profit)':'(Loss)'}</span>
+      </td>
+      <td class="text-end ${cls}">${mg}%</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ─── SUMMARY CARDS ─── */
+function updateSummaryCards(){
+  // Car stock = total arrived - total sold (Car Mobil)
+  const carIn   = allArrivals.filter(r=>r.category==='Car Mobil').reduce((s,r)=>s+parseFloat(r.quantity||0),0);
+  const carOut  = allSales.filter(r=>r.category==='Car Mobil').reduce((s,r)=>s+parseFloat(r.quantity||0),0);
+  const openIn  = allArrivals.filter(r=>r.category==='Open Mobil').reduce((s,r)=>s+parseFloat(r.quantity||0),0);
+  const openOut = allSales.filter(r=>r.category==='Open Mobil').reduce((s,r)=>s+parseFloat(r.quantity||0),0);
+
+  const thisMonth = new Date().toISOString().substring(0,7);
+  const monthRev  = allSales.filter(r=>(r.sale_date||'').startsWith(thisMonth))
+                             .reduce((s,r)=>s+parseFloat(r.total_amount||0),0);
+  const totalRev  = allSales.reduce((s,r)=>s+parseFloat(r.total_amount||0),0);
+  const totalCost = allArrivals.reduce((s,r)=>s+parseFloat(r.total_cost||0),0);
+  const netPL     = totalRev - totalCost;
+
+  const s = (id,v) => { const e=el(id); if(e) e.textContent=v; };
+  s('card-car-stock',   fmt(Math.max(0, carIn-carOut)));
+  s('card-open-stock',  fmt(Math.max(0, openIn-openOut)));
+  s('card-month-revenue', fmt(monthRev));
+  s('card-net-pl',      (netPL>=0?'':'- ')+'Rs. '+fmt(Math.abs(netPL)));
+
+  const plBox   = el('card-pl-box');
+  const plLabel = el('card-pl-label');
+  if(netPL >= 0){
+    if(plBox)   plBox.style.background   = 'linear-gradient(135deg,#d4edda,#c3e6cb)';
+    if(plLabel) plLabel.textContent      = 'Net Profit';
+    el('card-net-pl').className          = 'stock-badge text-success';
+  } else {
+    if(plBox)   plBox.style.background   = 'linear-gradient(135deg,#f8d7da,#f5c2c7)';
+    if(plLabel) plLabel.textContent      = 'Net Loss';
+    el('card-net-pl').className          = 'stock-badge text-danger';
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   ARRIVAL PRODUCT SEARCH DROPDOWN
+   (exact same logic as mobil.html searchProducts())
+════════════════════════════════════════════════════════ */
+function searchArrProducts(){
+  const q  = (el('arr-product-search')?.value||'').toLowerCase().trim();
+  const dd = el('arr-product-dropdown');
+  if(!dd) return;
+
+  const filtered = q
+    ? allProducts.filter(p =>
+        (p.name||'').toLowerCase().includes(q) ||
+        (p.grade||'').toLowerCase().includes(q) ||
+        (p.category||'').toLowerCase().includes(q) ||
+        (p.brand||'').toLowerCase().includes(q))
+    : allProducts;
+
+  // Group by category
+  const groups = {};
+  filtered.forEach(p => {
+    const cat = p.category || 'Other';
+    if(!groups[cat]) groups[cat] = [];
+    groups[cat].push(p);
+  });
+
+  let html = '';
+  Object.keys(groups).forEach(cat => {
+    html += `<div class="pd-cat">${cat}</div>`;
+    groups[cat].forEach(p => {
+      const vol   = p.volume_ml ? formatVolume(p.volume_ml) : '';
+      const grade = p.grade ? `(${p.grade})` : '';
+      const label = [p.name, vol, grade].filter(Boolean).join(' ');
+      const price = p.current_sale_price || 0;
+      html += `<div class="pd-item"
+        onmousedown="selectArrProduct(${p.id},'${label.replace(/'/g,"\\'")}','${cat}',${price})">
+        <span>${label}</span>
+        <span class="pd-price">Rs.${fmt(price)}</span>
+      </div>`;
+    });
+  });
+
+  // "Naya product add" option
+  html += `<div class="pd-add-new" onmousedown="openAddProductModal()">
+    <i class="bi bi-plus-circle-fill"></i>
+    Naya product add karein...
+  </div>`;
+
+  dd.innerHTML     = html;
+  dd.style.display = 'block';
+}
+
+function selectArrProduct(id, label, category, price){
+  el('arr-product-id').value     = id;
+  el('arr-category').value       = category;
+  el('arr-product-search').value = label;
+  el('arr-product-dropdown').style.display = 'none';
+
+  const badge = el('arr-product-badge');
+  const bt    = el('arr-product-badge-text');
+  if(badge && bt){
+    bt.textContent       = label + ' — ' + category;
+    badge.style.display  = 'flex';
+  }
+  // Unit label
+  const unitSpan = el('arr-qty-unit');
+  if(unitSpan) unitSpan.textContent = category === 'Open Mobil' ? 'L' : 'Units';
+
+  calcArrTotal();
+}
+
+function clearArrProduct(){
+  el('arr-product-id').value     = '';
+  el('arr-category').value       = '';
+  el('arr-product-search').value = '';
+  el('arr-product-dropdown').style.display = 'none';
+  const badge = el('arr-product-badge');
+  if(badge) badge.style.display = 'none';
+  calcArrTotal();
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', e => {
+  const wrap = document.querySelector('.product-search-wrap');
+  if(wrap && !wrap.contains(e.target)){
+    const dd = el('arr-product-dropdown');
+    if(dd) dd.style.display = 'none';
+  }
+});
+
+function calcArrTotal(){
+  const qty  = parseFloat(el('arr-qty')?.value)  || 0;
+  const rate = parseFloat(el('arr-rate')?.value) || 0;
+  const tot  = el('arr-total');
+  if(tot) tot.value = (qty * rate).toFixed(2);
+}
+
+/* ════════════════════════════════════════════════════════
+   SAVE ARRIVAL — inserts into mobil_arrivals
+   (same columns as mobil.html receiveMobilStock())
+════════════════════════════════════════════════════════ */
+async function saveArrival(){
+  const productId  = el('arr-product-id')?.value;
+  const category   = el('arr-category')?.value;
+  const prodName   = el('arr-product-search')?.value?.trim();
+  const supplier   = el('arr-supplier')?.value?.trim() || '';
+  const qty        = parseFloat(el('arr-qty')?.value)  || 0;
+  const rate       = parseFloat(el('arr-rate')?.value) || 0;
+  const total      = parseFloat(el('arr-total')?.value)|| 0;
+  const date       = el('arr-date')?.value;
+  const invoice    = el('arr-invoice')?.value?.trim()  || '';
+  const notes      = el('arr-notes')?.value?.trim()    || '';
+
+  if(!productId){ showToast('error','Error','Product select karein!'); return; }
+  if(!qty)       { showToast('error','Error','Quantity enter karein!'); return; }
+  if(!rate)      { showToast('error','Error','Rate enter karein!');     return; }
+  if(!date)      { showToast('error','Error','Date select karein!');    return; }
+
+  // Insert into mobil_arrivals (same columns as mobil.html)
+  const {error} = await supabase.from('mobil_arrivals').insert([{
+    product_id:   parseInt(productId),
+    product_name: prodName,
+    category:     category,
+    supplier:     supplier,
+    quantity:     qty,
+    rate:         rate,
+    total_cost:   total,
+    arrival_date: date,
+    invoice_no:   invoice,
+    notes:        notes
+  }]);
+
+  if(error){
+    showToast('error','DB Error', error.message);
+    return;
+  }
+
+  showToast('success','Kamyab!', `${prodName} — ${qty} ${category==='Open Mobil'?'L':'units'} received!`);
+  bootstrap.Modal.getInstance(el('arrivalModal'))?.hide();
+  el('arrivalForm').reset();
+  clearArrProduct();
+  el('arr-date').value = today;
+  await loadStockData();
+}
+
+/* ════════════════════════════════════════════════════════
+   ADD NEW PRODUCT
+════════════════════════════════════════════════════════ */
+function openAddProductModal(){
+  // Close arrival modal first
+  bootstrap.Modal.getInstance(el('arrivalModal'))?.hide();
+  setTimeout(() => {
+    new bootstrap.Modal(el('addProductModal')).show();
+  }, 400);
+}
+
+function backToArrival(){
+  bootstrap.Modal.getInstance(el('addProductModal'))?.hide();
+  setTimeout(() => {
+    new bootstrap.Modal(el('arrivalModal')).show();
+  }, 400);
+}
+
+async function saveNewProduct(){
+  const name     = el('new-prod-name')?.value?.trim();
+  const cat      = el('new-prod-cat')?.value   || 'Car Mobil';
+  const grade    = el('new-prod-grade')?.value?.trim()  || null;
+  const volVal   = el('new-prod-volume')?.value;
+  const volume   = volVal ? parseInt(volVal) : null;
+  const brand    = el('new-prod-brand')?.value?.trim()  || 'GO';
+  const price    = parseFloat(el('new-prod-price')?.value) || 0;
+
+  if(!name)  { showToast('error','Error','Product naam likhein!');    return; }
+  if(!price) { showToast('error','Error','Sale price enter karein!'); return; }
+
+  // Insert into mobil_products (same as mobil.html saveNewProduct)
+  const {data:prod, error:pe} = await supabase
+    .from('mobil_products')
+    .insert([{
+      name:       name,
+      brand:      brand,
+      grade:      grade,
+      volume_ml:  volume,
+      category:   cat,
+      sort_order: allProducts.length + 1
+    }])
+    .select()
+    .single();
+
+  if(pe){ showToast('error','DB Error', pe.message); return; }
+
+  // Insert starting price into mobil_product_prices
+  const {error:priceErr} = await supabase
+    .from('mobil_product_prices')
+    .insert([{
+      product_id:     prod.id,
+      sale_price:     price,
+      effective_date: today,
+      notes:          'Initial price'
+    }]);
+
+  if(priceErr){ showToast('error','Price Error', priceErr.message); return; }
+
+  showToast('success','Product Add!', `${name} successfully add ho gaya!`);
+  await loadProducts();
+
+  // Auto-select the new product back in arrival form
+  const vol   = volume ? formatVolume(volume) : '';
+  const gradeStr = grade ? `(${grade})` : '';
+  const label = [name, vol, gradeStr].filter(Boolean).join(' ');
+  bootstrap.Modal.getInstance(el('addProductModal'))?.hide();
+  setTimeout(async () => {
+    new bootstrap.Modal(el('arrivalModal')).show();
+    setTimeout(() => {
+      el('arr-product-search').value = label;
+      el('arr-product-id').value     = prod.id;
+      el('arr-category').value       = cat;
+      const badge = el('arr-product-badge');
+      const bt    = el('arr-product-badge-text');
+      if(badge && bt){
+        bt.textContent      = label + ' — ' + cat;
+        badge.style.display = 'flex';
+      }
+      const unitSpan = el('arr-qty-unit');
+      if(unitSpan) unitSpan.textContent = cat === 'Open Mobil' ? 'L' : 'Units';
+      // Clear new product form
+      el('addProductForm').reset();
+      el('new-prod-brand').value = 'GO';
+    }, 300);
+  }, 400);
+}
+
+/* ════════════════════════════════════════════════════════
+   DELETE
+════════════════════════════════════════════════════════ */
+async function deleteArrival(id){
+  if(!confirm('Is arrival ko delete karein?')) return;
+  const {error} = await supabase.from('mobil_arrivals').delete().eq('id', id);
+  if(error){ showToast('error','Error', error.message); return; }
+  showToast('success','Deleted','Arrival delete ho gaya!');
+  await loadStockData();
+}
+
+async function deleteSale(id){
+  if(!confirm('Is sale ko delete karein?')) return;
+  const {error} = await supabase.from('mobil_sales').delete().eq('id', id);
+  if(error){ showToast('error','Error', error.message); return; }
+  showToast('success','Deleted','Sale delete ho gaya!');
+  await loadStockData();
+}
+</script>
+
 </body>
 </html>
