@@ -634,9 +634,8 @@ async function loadCustomers() {
   const sb = getSupabase();
   if (!sb) return;
   try {
-    let q = sb.from('customers').select('*').order('sr_no');
-    if (currentUserId) q = q.eq('user_id', currentUserId);
-    const { data, error } = await q;
+    // No user_id filter - auth disabled, load all customers
+    const { data, error } = await sb.from('customers').select('*').order('sr_no');
     if (error) throw error;
     allCustomers = data || [];
     display(getCurrentFilteredList());
@@ -866,11 +865,9 @@ async function updateCustomer() {
   const bl = parseFloat($('edit-balance').value) || 0;
   if (!sr || !nm || !ct) { alert('Fill all required fields'); return; }
   try {
-    let q = sb.from('customers')
+    const { error } = await sb.from('customers')
       .update({ sr_no:sr, name:nm, phone:ph||null, category:ct, balance:bl })
       .eq('id', id);
-    if (currentUserId) q = q.eq('user_id', currentUserId);
-    const { error } = await q;
     if (error) throw error;
     toast('Customer updated!', 'success');
     closeModal('editCustomerModal');
@@ -900,8 +897,11 @@ async function doDelete(id) {
   if (!confirm(msg)) return;
 
   try {
-    if (hasTxns) await sb.from('transactions').delete().eq('customer_id', id);
-    if (hasAdvs) await sb.from('cash_advances').delete().eq('customer_id', id);
+    // Delete all linked records first (cascade)
+    await sb.from('transactions').delete().eq('customer_id', id);
+    await sb.from('cash_advances').delete().eq('customer_id', id);
+    await sb.from('mobil_sales').delete().eq('customer_id', id);
+    // Now delete customer
     const { error } = await sb.from('customers').delete().eq('id', id);
     if (error) throw error;
     toast('Customer delete ho gaya!', 'success');
