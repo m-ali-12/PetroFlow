@@ -439,17 +439,12 @@
       let sales = 0, vasooli = 0, expenses = 0, advAmt = 0;
       let sCnt = 0, vCnt = 0, eCnt = 0, aCnt = 0;
 
-      // Credit = customer udhaar sale (transactions page se)
-      // CashSale = machine reading se cash sale (daily-readings page se)
-      // Dono milake = Total Sales
-      let cashSaleAmt = 0, creditAmt = 0;
       txns.forEach(t => {
         const a = parseFloat(t.charges) || 0;
-        if (t.transaction_type === 'Credit')   { creditAmt   += a; sales += a; sCnt++; }
-        if (t.transaction_type === 'CashSale') { cashSaleAmt += a; sales += a; sCnt++; }
-        if (t.transaction_type === 'Debit')    { vasooli  += a; vCnt++; }
-        if (t.transaction_type === 'Expense')  { expenses += a; eCnt++; }
-        if (t.transaction_type === 'Advance')  { advAmt   += a; aCnt++; }
+        if (t.transaction_type === 'Credit')  { sales    += a; sCnt++; }
+        if (t.transaction_type === 'Debit')   { vasooli  += a; vCnt++; }
+        if (t.transaction_type === 'Expense') { expenses += a; eCnt++; }
+        if (t.transaction_type === 'Advance') { advAmt   += a; aCnt++; }
       });
 
       const pendingAdv = (advances || [])
@@ -464,7 +459,7 @@
           <div class="metric-card green">
             <h6><i class="bi bi-graph-up me-1"></i>Total Sales</h6>
             <div class="val text-success">Rs.${fmt(sales)}</div>
-            <div class="sub">${sCnt} transactions${cashSaleAmt > 0 ? `<br><span style="font-size:10px;">⛽ Cash: Rs.${fmt(cashSaleAmt)} | Udhaar: Rs.${fmt(creditAmt)}</span>` : ''}</div>
+            <div class="sub">${sCnt} transactions</div>
           </div>
         </div>
         <div class="col-6 col-md-4 col-xl-2">
@@ -513,7 +508,7 @@
         const lbl = d.toLocaleDateString('en-PK', { month: 'long', year: 'numeric' });
         if (!months[key]) months[key] = { lbl, sales: 0, vasooli: 0, expenses: 0, advances: 0 };
         const a = parseFloat(t.charges) || 0;
-        if (t.transaction_type === 'Credit' || t.transaction_type === 'CashSale') months[key].sales    += a;
+        if (t.transaction_type === 'Credit')  months[key].sales    += a;
         if (t.transaction_type === 'Debit')   months[key].vasooli  += a;
         if (t.transaction_type === 'Expense') months[key].expenses += a;
         if (t.transaction_type === 'Advance') months[key].advances += a;
@@ -571,7 +566,7 @@
         const lbl = d.toLocaleDateString('en-PK', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
         if (!days[key]) days[key] = { lbl, sales: 0, vasooli: 0, expenses: 0, advances: 0 };
         const a = parseFloat(t.charges) || 0;
-        if (t.transaction_type === 'Credit' || t.transaction_type === 'CashSale') days[key].sales    += a;
+        if (t.transaction_type === 'Credit')  days[key].sales    += a;
         if (t.transaction_type === 'Debit')   days[key].vasooli  += a;
         if (t.transaction_type === 'Expense') days[key].expenses += a;
         if (t.transaction_type === 'Advance') days[key].advances += a;
@@ -676,7 +671,7 @@
         const m   = months6.find(m => m.key === key);
         if (!m) return;
         const a = parseFloat(t.charges) || 0;
-        if (t.transaction_type === 'Credit' || t.transaction_type === 'CashSale') m.sales += a;
+        if (t.transaction_type === 'Credit') m.sales += a;
         if (t.transaction_type === 'Expense' || t.transaction_type === 'Advance') m.expenses += a;
       });
       months6.forEach(m => { m.net = m.sales - m.expenses; });
