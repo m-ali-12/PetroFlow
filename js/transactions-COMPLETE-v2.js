@@ -2627,7 +2627,7 @@ ${bodyHtml}
       const txType=paymentType==='cash'?'Debit':'Credit';
       const{error}=await supabase.from('transactions').insert([{
         customer_id:parseInt(cust.id), transaction_type:txType,
-        amount:amount, charges:amount, liters:liters||null, unit_price:unitPrice||null,
+        charges:amount, liters:liters||null, unit_price:unitPrice||null,
         fuel_type:fuelType,
         description:`${fuelType} sale${description?' - '+description:''}`
       }]);
@@ -2657,7 +2657,7 @@ ${bodyHtml}
     if(desc) fullDesc+=` - ${desc}`;
     try{
       const{error}=await supabase.from('transactions').insert([{
-        customer_id:parseInt(cust.id), transaction_type:'Debit', amount:amount, charges:amount, description:fullDesc
+        customer_id:parseInt(cust.id), transaction_type:'Debit', charges:amount, description:fullDesc
       }]);
       if(error) throw error;
       const newBal=Math.max(0,(parseFloat(cust.balance)||0)-amount);
@@ -2697,7 +2697,7 @@ ${bodyHtml}
         }
       }
       const{error}=await supabase.from('transactions').insert([{
-        customer_id:custId, transaction_type:'Expense', amount:amount, charges:amount,
+        customer_id:custId, transaction_type:'Expense', charges:amount,
         expense_type:expType, expense_account:account,
         description:`${expType}: ${description} (From: ${account})`
       }]);
@@ -2745,7 +2745,7 @@ ${bodyHtml}
       } else if(advData){ advId=advData.id; }
 
       // 3. Insert transaction
-      const txObj={customer_id:parseInt(cust.id),transaction_type:'Advance',amount:amount,charges:amount,
+      const txObj={customer_id:parseInt(cust.id),transaction_type:'Advance',charges:amount,
         description:`Cash Advance: ${reason}${notes?' | '+notes:''}`};
       if(userId) txObj.user_id=userId;
       if(advId) txObj.cash_advance_id=advId;
