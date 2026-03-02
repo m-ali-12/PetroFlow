@@ -289,6 +289,7 @@
         transaction_type: 'CashSale',
         fuel_type:        'Petrol',
         entry_method:     'machine_reading',
+        amount:           parseFloat(cash.toFixed(2)),
         charges:          parseFloat(cash.toFixed(2)),
         description:      JSON.stringify({
           machine: i,
@@ -327,6 +328,7 @@
         transaction_type: 'CashSale',
         fuel_type:        'Diesel',
         entry_method:     'machine_reading',
+        amount:           parseFloat(cash.toFixed(2)),
         charges:          parseFloat(cash.toFixed(2)),
         description:      JSON.stringify({
           machine: i,
@@ -597,6 +599,7 @@
 
     try {
       const { error } = await sb.from('transactions').update({
+        amount:      parseFloat(cash.toFixed(2)),
         charges:     parseFloat(cash.toFixed(2)),
         description: JSON.stringify(newMeta),
         created_at:  date + 'T00:00:01+05:00'
