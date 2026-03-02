@@ -1,256 +1,227 @@
 <style>
-/* Navbar Custom Styles */
-.navbar {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    padding: 0.8rem 0;
-    box-shadow: 0 2px 20px rgba(102, 126, 234, 0.3);
-}
-
-.navbar-brand {
-    color: white !important;
-    font-size: 1.1rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.navbar-brand img {
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-
-.navbar-toggler {
-    border-color: rgba(255,255,255,0.3);
-}
-
-.navbar-toggler-icon {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 1)' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-}
-
-/* Large screen spacing FIX */
-@media (min-width: 992px) {
-
-    .navbar-nav {
-        gap: 12px !important;   /* UL list gap */
+    /* Navbar Custom Styles */
+    .navbar {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        padding: 0.8rem 0;
+        box-shadow: 0 2px 20px rgba(102, 126, 234, 0.3);
     }
 
-    .navbar .nav-item {
-        margin-left: 6px;
-        margin-right: 6px;
+    .navbar-brand {
+        color: white !important;
+        font-size: 1.1rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
+
+    .navbar-brand img {
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .navbar-toggler {
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .navbar-toggler-icon {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 1)' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    }
+
+    /* Large screen spacing FIX */
+    @media (min-width: 992px) {
+
+        .navbar-nav {
+            gap: 12px !important;
+            /* UL list gap */
+        }
+
+        .navbar .nav-item {
+            margin-left: 6px;
+            margin-right: 6px;
+        }
+
+        .navbar .nav-link {
+
+            padding: 10px 18px !important;
+            border-radius: 10px;
+
+            font-size: 15px;
+        }
+
+    }
+
+    /* Default link style */
 
     .navbar .nav-link {
 
-        padding: 10px 18px !important;
-        border-radius: 10px;
+        color: rgba(255, 255, 255, 0.9) !important;
 
-        font-size: 15px;
+        font-weight: 500;
+
+        transition: all 0.3s ease;
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 6px;
+
     }
 
-}
+    /* Hover */
 
-/* Default link style */
+    .navbar .nav-link:hover {
 
-.navbar .nav-link {
+        background: rgba(255, 255, 255, 0.15);
 
-    color: rgba(255, 255, 255, 0.9) !important;
+        transform: translateY(-2px);
 
-    font-weight: 500;
+    }
 
-    transition: all 0.3s ease;
+    /* Active */
 
-    display: flex;
+    .navbar .nav-link.active {
 
-    align-items: center;
+        background: white !important;
 
-    gap: 6px;
+        color: #667eea !important;
 
-}
+        font-weight: 600;
 
-/* Hover */
-
-.navbar .nav-link:hover {
-
-    background: rgba(255,255,255,0.15);
-
-    transform: translateY(-2px);
-
-}
-
-/* Active */
-
-.navbar .nav-link.active {
-
-    background: white !important;
-
-    color: #667eea !important;
-
-    font-weight: 600;
-
-}
+    }
 </style>
 
 
 <nav class="navbar navbar-expand-lg sticky-top">
 
-<div class="container-fluid">
+    <div class="container-fluid">
 
 
-<!-- BRAND -->
+        <!-- BRAND -->
 
-<a class="navbar-brand" href="index.html">
+        <a class="navbar-brand" href="index.html">
 
-<img src="assets/logo.jfif" height="36">
+            <img src="assets/logo.jfif" height="36">
 
-<span>
+            <span>
 
-پٹرول پمپ منیجمنٹ
+                پٹرول پمپ منیجمنٹ
 
-<br>
+                <br>
 
-<small style="font-size:11px">
+                <small style="font-size:11px">
 
-Petrol Pump Management System
+                    Petrol Pump Management System
 
-</small>
+                </small>
 
-</span>
+            </span>
 
-</a>
+        </a>
 
 
-<!-- MOBILE TOGGLE -->
+        <!-- MOBILE TOGGLE -->
 
-<button class="navbar-toggler"
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
 
-type="button"
+            <span class="navbar-toggler-icon"></span>
 
-data-bs-toggle="collapse"
+        </button>
 
-data-bs-target="#navbarNav">
 
-<span class="navbar-toggler-icon"></span>
+        <!-- NAV ITEMS -->
 
-</button>
+        <div class="collapse navbar-collapse" id="navbarNav">
 
 
-<!-- NAV ITEMS -->
+            <ul class="navbar-nav ms-auto">
 
-<div class="collapse navbar-collapse" id="navbarNav">
 
+                <li class="nav-item">
 
-<ul class="navbar-nav ms-auto">
+                    <a class="nav-link" href="index.html" data-page="index">
 
+                        <i class="bi bi-speedometer2"></i>
 
-<li class="nav-item">
+                        Dashboard
 
-<a class="nav-link"
+                    </a>
 
-href="index.html"
+                </li>
 
-data-page="index">
 
-<i class="bi bi-speedometer2"></i>
+                <li class="nav-item">
 
-Dashboard
+                    <a class="nav-link" href="customers.html" data-page="customers">
 
-</a>
+                        <i class="bi bi-people"></i>
 
-</li>
+                        Customers
 
+                    </a>
 
-<li class="nav-item">
+                </li>
 
-<a class="nav-link"
 
-href="customers.html"
+                <li class="nav-item">
 
-data-page="customers">
+                    <a class="nav-link" href="transactions.html" data-page="transactions">
 
-<i class="bi bi-people"></i>
+                        <i class="bi bi-receipt"></i>
 
-Customers
+                        Transactions
 
-</a>
+                    </a>
 
-</li>
+                </li>
 
 
-<li class="nav-item">
+                <!-- NEW PAGE ADDED -->
 
-<a class="nav-link"
+                <li class="nav-item">
 
-href="transactions.html"
+                    <a class="nav-link" href="daily-readings.html" data-page="machine-cash-sales">
 
-data-page="transactions">
+                        <i class="bi bi-cash-coin"></i>
 
-<i class="bi bi-receipt"></i>
+                        Machine Cash Sales
 
-Transactions
+                    </a>
 
-</a>
+                </li>
 
-</li>
 
+                <li class="nav-item">
 
-<!-- NEW PAGE ADDED -->
+                    <a class="nav-link" href="reports.html" data-page="reports">
 
-<li class="nav-item">
+                        <i class="bi bi-file-earmark-bar-graph"></i>
 
-<a class="nav-link"
+                        Reports
 
-href="machine-cash-sales.html"
+                    </a>
 
-data-page="machine-cash-sales">
+                </li>
 
-<i class="bi bi-cash-coin"></i>
 
-Machine Cash Sales
+                <li class="nav-item">
 
-</a>
+                    <a class="nav-link" href="settings.html" data-page="settings">
 
-</li>
+                        <i class="bi bi-gear"></i>
 
+                        Settings
 
-<li class="nav-item">
+                    </a>
 
-<a class="nav-link"
+                </li>
 
-href="reports.html"
 
-data-page="reports">
+            </ul>
 
-<i class="bi bi-file-earmark-bar-graph"></i>
+        </div>
 
-Reports
-
-</a>
-
-</li>
-
-
-<li class="nav-item">
-
-<a class="nav-link"
-
-href="settings.html"
-
-data-page="settings">
-
-<i class="bi bi-gear"></i>
-
-Settings
-
-</a>
-
-</li>
-
-
-</ul>
-
-</div>
-
-</div>
+    </div>
 
 </nav>
