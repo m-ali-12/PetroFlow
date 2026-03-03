@@ -1374,86 +1374,13 @@
   // WINDOW FUNCTIONS
   // ══════════════════════════════════════════════════════════
 
-  window.receiveMobilStock = async function() {
-    var mobilType = $('receive-mobil-type') ? $('receive-mobil-type').value : '';
-    var supplier  = $('receive-supplier')   ? $('receive-supplier').value   : '';
-    var qty       = parseFloat($('receive-quantity') ? $('receive-quantity').value : 0);
-    var rate      = parseFloat($('receive-rate')     ? $('receive-rate').value     : 0);
-    var total     = parseFloat($('receive-amount')   ? $('receive-amount').value   : 0) || (qty*rate);
-    var date      = $('receive-date')    ? $('receive-date').value    : '';
-    var invoice   = $('receive-invoice') ? $('receive-invoice').value : '';
-    var notes     = $('receive-notes')   ? $('receive-notes').value   : '';
+  // ⚠️ window.receiveMobilStock is defined in mobil.html (new product-search version).
+  // DO NOT redefine it here — mobil-management.js loads AFTER mobil.html inline scripts
+  // and would override the correct new function with the old receive-mobil-type version.
 
-    if (!mobilType || !qty || !rate || !date) {
-      showToast('Mobil Type, Quantity, Rate aur Date zaroor bharein', 'error'); return;
-    }
-    try {
-      var s = await getSettings();
-      if (!s) throw new Error('Settings row nahi mili');
-      var arrivals = Array.isArray(s.mobil_arrivals) ? s.mobil_arrivals : [];
-      arrivals.push({ id:Date.now().toString(), date:date, type:mobilType, supplier:supplier,
-        qty:qty, rate:rate, total:total, invoice:invoice, notes:notes, created_at:new Date().toISOString() });
-      await patchSettings(s.id, { mobil_arrivals: arrivals });
-      showToast(qty+' L '+mobilType+' stock add ho gaya!', 'success');
-      var m = bootstrap.Modal.getInstance($('receiveMobilModal')); if(m) m.hide();
-      if ($('receiveMobilForm')) $('receiveMobilForm').reset();
-      var today = new Date().toISOString().split('T')[0];
-      if ($('receive-date')) $('receive-date').value = today;
-      loadMobilStock(); loadMobilTransactions();
-    } catch(e) { console.error(e); showToast('Error: '+e.message,'error'); }
-  };
-
-  window.saleMobilOil = async function() {
-    var custSel    = $('sale-customer');
-    var customerId = custSel ? custSel.value : '';
-    var custName   = (custSel && custSel.selectedIndex>=0)
-      ? custSel.options[custSel.selectedIndex].text.replace(/^\d+\s*-\s*/,'') : '';
-    var mobilType   = $('sale-mobil-type')   ? $('sale-mobil-type').value   : '';
-    var qty         = parseFloat($('sale-quantity')    ? $('sale-quantity').value    : 0);
-    var rate        = parseFloat($('sale-rate')        ? $('sale-rate').value        : 0);
-    var amount      = parseFloat($('sale-amount')      ? $('sale-amount').value      : 0) || (qty*rate);
-    var date        = $('sale-date')         ? $('sale-date').value         : '';
-    var paymentType = $('sale-payment-type') ? $('sale-payment-type').value : 'cash';
-    var notes       = $('sale-notes')        ? $('sale-notes').value        : '';
-
-    if (!mobilType || !qty || !rate || !date) {
-      showToast('Mobil Type, Quantity, Rate aur Date zaroor bharein','error'); return;
-    }
-    try {
-      var s = await getSettings();
-      if (!s) throw new Error('Settings row nahi mili');
-      var arrivals = Array.isArray(s.mobil_arrivals) ? s.mobil_arrivals : [];
-      var sales    = Array.isArray(s.mobil_sales)    ? s.mobil_sales    : [];
-      var arrived  = arrivals.filter(function(r){ return r.type===mobilType; })
-                             .reduce(function(t,r){ return t+(parseFloat(r.qty)||0); },0);
-      var sold     = sales.filter(function(r){ return r.type===mobilType; })
-                          .reduce(function(t,r){ return t+(parseFloat(r.qty)||0); },0);
-      var avail    = Math.max(0, arrived-sold);
-      if (avail < qty) {
-        showToast(mobilType+' ka stock sirf '+fmt(avail)+' L hai!','error'); return;
-      }
-      sales.push({ id:Date.now().toString(), date:date, type:mobilType,
-        customer:custName, customer_id:customerId, qty:qty, rate:rate,
-        amount:amount, payment:paymentType, notes:notes, created_at:new Date().toISOString() });
-      await patchSettings(s.id, { mobil_sales: sales });
-      if (paymentType==='credit' && customerId) {
-        var cr = await supabase.from('customers').select('balance').eq('id',customerId).maybeSingle();
-        if (!cr.error && cr.data) {
-          var nb = (parseFloat(cr.data.balance)||0)+amount;
-          await supabase.from('customers').update({balance:nb}).eq('id',customerId);
-        }
-        showToast('Sale! Rs.'+fmt(amount)+' Udhaar add ho gaya','success');
-      } else {
-        showToast('Sale! Rs.'+fmt(amount)+' Cash','success');
-      }
-      var m = bootstrap.Modal.getInstance($('saleMobilModal')); if(m) m.hide();
-      if ($('saleMobilForm')) $('saleMobilForm').reset();
-      var today = new Date().toISOString().split('T')[0];
-      if ($('sale-date')) $('sale-date').value = today;
-      await setupPriceAutoFill();
-      loadMobilStock(); loadMobilTransactions();
-    } catch(e) { console.error(e); showToast('Error: '+e.message,'error'); }
-  };
+  // ⚠️ window.saleMobilOil is defined in mobil.html (new product-search version).
+  // DO NOT redefine it here — mobil-management.js loads AFTER mobil.html inline scripts
+  // and would override the correct new function with the old sale-mobil-type version.
 
   window.addMobilExpense = async function() {
     var expType = $('expense-type')              ? $('expense-type').value              : '';
