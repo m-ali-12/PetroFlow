@@ -188,33 +188,6 @@
         </div>
       </div>
 
-      <!-- Mobil Oil Sales Detail -->
-      <div class="section-card" id="mobil-sales-section" style="display:none;">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <div class="sc-title mb-0"><i class="bi bi-droplet-fill"></i> Mobil Oil Sales</div>
-          <small class="text-muted" id="mobil-sales-count"></small>
-        </div>
-        <div class="table-responsive">
-          <table class="table pl-table table-sm mb-0">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Product</th>
-                <th>Customer</th>
-                <th class="text-end">Qty</th>
-                <th class="text-end">Rate</th>
-                <th class="text-end">Amount</th>
-                <th>Payment</th>
-              </tr>
-            </thead>
-            <tbody id="mobil-sales-tbody">
-              <tr><td colspan="7" class="text-center py-3 text-muted">Loading...</td></tr>
-            </tbody>
-            <tfoot id="mobil-sales-tfoot"></tfoot>
-          </table>
-        </div>
-      </div>
-
       <!-- Expense Detail -->
       <div class="section-card">
         <div class="sc-title"><i class="bi bi-list-ul"></i> Expense Category Detail</div>
@@ -283,9 +256,8 @@
 
     let monthlyChart = null;
     let expenseChart = null;
-    let _allTxns      = [];
-    let _allAdv       = [];
-    let _allMobilSales = [];
+    let _allTxns = [];
+    let _allAdv  = [];
 
     // ── Date Range ────────────────────────────────────────────────
     // Helper: "YYYY-MM-DD" se timezone-safe ISO strings banao
@@ -405,7 +377,7 @@
         const { from, to, fromISO, toISO } = getDateRange();
         console.log('Date range (PKT):', fromISO, 'to', toISO);
 
-        // Main transactions query (Petrol/Diesel sales, expenses, etc.)
+        // Main transactions query
         let txQuery = sb
           .from('transactions')
           .select('id, transaction_type, charges, description, created_at, expense_type, customers(name, sr_no)')
@@ -417,19 +389,6 @@
         const { data: txns, error: txErr } = await txQuery;
         console.log('Filtered transactions:', txns?.length, 'Error:', txErr);
         if (txErr) throw txErr;
-
-        // ── Mobil Sales query (separate table — this was missing!) ──
-        let mobilQuery = sb
-          .from('mobil_sales')
-          .select('id, product_name, category, quantity, rate, total_amount, payment_type, sale_date, customer_name, created_at')
-          .gte('sale_date', fromISO.split('T')[0])
-          .lte('sale_date', toISO.split('T')[0])
-          .order('sale_date', { ascending: true });
-        if (userId) mobilQuery = mobilQuery.eq('user_id', userId);
-
-        const { data: mobilSales, error: mobilErr } = await mobilQuery;
-        console.log('Mobil sales:', mobilSales?.length, 'Error:', mobilErr);
-        // Non-fatal — mobil might just be empty
 
         // Cash advances query
         let advQuery = sb
@@ -443,9 +402,8 @@
         const { data: advances, error: advErr } = await advQuery;
         console.log('Advances:', advances?.length, 'Error:', advErr);
 
-        _allTxns     = txns       || [];
-        _allAdv      = advances   || [];
-        _allMobilSales = mobilSales || [];
+        _allTxns = txns   || [];
+        _allAdv  = advances || [];
 
         // Show warning if no data at all
         if (_allTxns.length === 0) {
@@ -457,17 +415,16 @@
                 <small>Possible reasons: Is date range mein transactions nahi, ya RLS enabled hai (login required). Date range check karein: ${fromISO} to ${toISO}</small>
               </div>
             </div>`;
-          renderCharts(_allTxns, _allMobilSales);
+          renderCharts(_allTxns);
           return;
         }
 
-        renderMetricCards(_allTxns, _allAdv, _allMobilSales);
-        renderMonthlyTable(_allTxns, _allMobilSales);
-        renderDailyTable(_allTxns, _allMobilSales);
-        renderMobilSalesTable(_allMobilSales);
+        renderMetricCards(_allTxns, _allAdv);
+        renderMonthlyTable(_allTxns);
+        renderDailyTable(_allTxns);
         renderExpenseDetail(_allTxns);
         renderAdvanceTable(_allAdv);
-        renderCharts(_allTxns, _allMobilSales);
+        renderCharts(_allTxns);
 
       } catch (e) {
         console.error('P&L Error:', e);
@@ -478,7 +435,7 @@
     }
 
     // ── Metric Cards ──────────────────────────────────────────────
-    function renderMetricCards(txns, advances, mobilSales) {
+    function renderMetricCards(txns, advances) {
       let sales = 0, vasooli = 0, expenses = 0, advAmt = 0;
       let sCnt = 0, vCnt = 0, eCnt = 0, aCnt = 0;
 
@@ -495,15 +452,6 @@
         if (t.transaction_type === 'Advance')  { advAmt   += a; aCnt++; }
       });
 
-      // ── Add Mobil Oil Sales ──────────────────────────────────────
-      let mobilAmt = 0;
-      (mobilSales || []).forEach(m => {
-        const a = parseFloat(m.total_amount) || 0;
-        mobilAmt += a;
-        sales    += a;
-        sCnt++;
-      });
-
       const pendingAdv = (advances || [])
         .filter(a => a.status === 'pending')
         .reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
@@ -516,7 +464,7 @@
           <div class="metric-card green">
             <h6><i class="bi bi-graph-up me-1"></i>Total Sales</h6>
             <div class="val text-success">Rs.${fmt(sales)}</div>
-            <div class="sub">${sCnt} transactions${cashSaleAmt > 0 || mobilAmt > 0 ? `<br><span style="font-size:10px;">⛽ Cash: Rs.${fmt(cashSaleAmt)} | Udhaar: Rs.${fmt(creditAmt)}${mobilAmt > 0 ? ` | 🛢️ Mobil: Rs.${fmt(mobilAmt)}` : ''}</span>` : ''}</div>
+            <div class="sub">${sCnt} transactions${cashSaleAmt > 0 ? `<br><span style="font-size:10px;">⛽ Cash: Rs.${fmt(cashSaleAmt)} | Udhaar: Rs.${fmt(creditAmt)}</span>` : ''}</div>
           </div>
         </div>
         <div class="col-6 col-md-4 col-xl-2">
@@ -557,7 +505,7 @@
     }
 
     // ── Monthly Table ─────────────────────────────────────────────
-    function renderMonthlyTable(txns, mobilSales) {
+    function renderMonthlyTable(txns) {
       const months = {};
       txns.forEach(t => {
         const d   = new Date(t.created_at);
@@ -569,15 +517,6 @@
         if (t.transaction_type === 'Debit')   months[key].vasooli  += a;
         if (t.transaction_type === 'Expense') months[key].expenses += a;
         if (t.transaction_type === 'Advance') months[key].advances += a;
-      });
-
-      // ── Add Mobil Oil Sales per month ────────────────────────────
-      (mobilSales || []).forEach(m => {
-        const d   = new Date(m.sale_date);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        const lbl = d.toLocaleDateString('en-PK', { month: 'long', year: 'numeric' });
-        if (!months[key]) months[key] = { lbl, sales: 0, vasooli: 0, expenses: 0, advances: 0 };
-        months[key].sales += parseFloat(m.total_amount) || 0;
       });
 
       const keys = Object.keys(months).sort((a, b) => b.localeCompare(a));
@@ -624,7 +563,7 @@
     }
 
     // ── Daily Table ───────────────────────────────────────────────
-    function renderDailyTable(txns, mobilSales) {
+    function renderDailyTable(txns) {
       const days = {};
       txns.forEach(t => {
         const d   = new Date(t.created_at);
@@ -636,15 +575,6 @@
         if (t.transaction_type === 'Debit')   days[key].vasooli  += a;
         if (t.transaction_type === 'Expense') days[key].expenses += a;
         if (t.transaction_type === 'Advance') days[key].advances += a;
-      });
-
-      // ── Add Mobil Oil Sales per day ──────────────────────────────
-      (mobilSales || []).forEach(m => {
-        const key = m.sale_date; // already "YYYY-MM-DD"
-        const d   = new Date(key);
-        const lbl = d.toLocaleDateString('en-PK', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
-        if (!days[key]) days[key] = { lbl, sales: 0, vasooli: 0, expenses: 0, advances: 0 };
-        days[key].sales += parseFloat(m.total_amount) || 0;
       });
 
       const keys = Object.keys(days).sort((a, b) => b.localeCompare(a));
@@ -671,40 +601,6 @@
           <td class="text-center">${badge}</td>
         </tr>`;
       }).join('');
-    }
-
-    // ── Mobil Sales Table ─────────────────────────────────────────
-    function renderMobilSalesTable(mobilSales) {
-      const section = document.getElementById('mobil-sales-section');
-      if (!mobilSales || !mobilSales.length) {
-        section.style.display = 'none';
-        return;
-      }
-      section.style.display = '';
-      el('mobil-sales-count').textContent = mobilSales.length + ' records';
-
-      let total = 0;
-      el('mobil-sales-tbody').innerHTML = mobilSales
-        .slice().sort((a, b) => b.sale_date.localeCompare(a.sale_date))
-        .map(m => {
-          const amt = parseFloat(m.total_amount) || 0;
-          total += amt;
-          return `<tr>
-            <td>${fmtDate(m.sale_date)}</td>
-            <td>${m.product_name || '-'} <small class="text-muted">${m.category || ''}</small></td>
-            <td>${m.customer_name || '<span class="text-muted">Walk-in</span>'}</td>
-            <td class="text-end">${m.quantity}</td>
-            <td class="text-end">Rs.${fmt(m.rate)}</td>
-            <td class="text-end text-success fw-semibold">Rs.${fmt(amt)}</td>
-            <td><span class="badge" style="background:#e8f5e9;color:#1b5e20;font-size:10px;">${m.payment_type || 'Cash'}</span></td>
-          </tr>`;
-        }).join('');
-
-      el('mobil-sales-tfoot').innerHTML = `<tr class="total-row">
-        <td colspan="5"><strong>Mobil Total</strong></td>
-        <td class="text-end text-success fw-bold">Rs.${fmt(total)}</td>
-        <td></td>
-      </tr>`;
     }
 
     // ── Expense Detail ────────────────────────────────────────────
@@ -762,7 +658,7 @@
     }
 
     // ── Charts ────────────────────────────────────────────────────
-    function renderCharts(txns, mobilSales) {
+    function renderCharts(txns) {
       const now = new Date();
       const months6 = [];
       for (let i = 5; i >= 0; i--) {
@@ -783,16 +679,6 @@
         if (t.transaction_type === 'Credit' || t.transaction_type === 'CashSale') m.sales += a;
         if (t.transaction_type === 'Expense' || t.transaction_type === 'Advance') m.expenses += a;
       });
-
-      // ── Add Mobil Sales to chart ─────────────────────────────────
-      (mobilSales || []).forEach(ms => {
-        const d   = new Date(ms.sale_date);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        const m   = months6.find(m => m.key === key);
-        if (!m) return;
-        m.sales += parseFloat(ms.total_amount) || 0;
-      });
-
       months6.forEach(m => { m.net = m.sales - m.expenses; });
 
       if (monthlyChart) monthlyChart.destroy();
