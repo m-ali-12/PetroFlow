@@ -15,10 +15,10 @@
     window.PETRO_CONFIG_LOADED = true;
 
     // ✅ MUST MATCH PROJECT REF INSIDE YOUR API KEY
-    const SUPABASE_URL = 'https://qzrsanhsduhusjpunwvf.supabase.co';
+    const SUPABASE_URL = 'https://ljcfbctwpcznzyhabfiw.supabase.co';
 
     // ✅ COPY EXACT FROM SUPABASE DASHBOARD → SETTINGS → API → anon public
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6cnNhbmhzZHVodXNqcHVud3ZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NzM1NTgsImV4cCI6MjA4OTA0OTU1OH0.zGEt1kw0W0RHFlWJEAwXa36Dxy1Kn09SeZgAHSlUEII";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqY2ZiY3R3cGN6bnp5aGFiZml3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NzUwNjQsImV4cCI6MjA4OTA1MTA2NH0.zQ4Rw8zkFOd46Ef6AXy6lg5FM7Q4xsi4-c0s0Kl1SjY";
 
     function initSupabase() {
 
