@@ -533,6 +533,23 @@
     if (unitEl) unitEl.addEventListener("input", recalcSaleTotals);
     if (amountEl) amountEl.addEventListener("input", recalcSaleTotals);
 
+    // Bank ref field show/hide
+    const salePayType = $("sale-payment-type");
+    const saleBankDiv = $("sale-bank-ref-div");
+    if (salePayType && saleBankDiv) {
+      salePayType.addEventListener("change", function() {
+        saleBankDiv.style.display = ["bank_transfer","online","cheque"].includes(this.value) ? "block" : "none";
+      });
+    }
+    // Vasooli payment mode show/hide
+    const vasooliMode = $("vasooli-payment-mode");
+    const vasooliBankDiv = $("vasooli-bank-ref-div");
+    if (vasooliMode && vasooliBankDiv) {
+      vasooliMode.addEventListener("change", function() {
+        vasooliBankDiv.style.display = ["bank_transfer","online","cheque"].includes(this.value) ? "block" : "none";
+      });
+    }
+
     const byLitersBtn = document.querySelector('[data-sale-entry="liters"]');
     const byAmountBtn = document.querySelector('[data-sale-entry="amount"]');
     const modeHidden = $("sale-entry-mode");
@@ -597,6 +614,8 @@
           amount,
           liters,
           unit_price: unitPrice,
+          payment_mode: paymentType,
+          reference_no: $("sale-bank-ref")?.value?.trim() || null,
           description: description || null,
         },
       ]);

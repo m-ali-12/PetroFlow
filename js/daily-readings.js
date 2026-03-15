@@ -214,6 +214,24 @@
                 step="0.001" placeholder="0.000" oninput="DR.calcMachine('${fuel}',${num})">
             </div>
           </div>
+          <div class="row g-3 mt-1">
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">🏦 Bank Transfer Amount (Rs)</label>
+              <input type="number" id="${prefix}-bank-${num}" class="form-control"
+                step="0.01" placeholder="0.00" oninput="DR.calcMachine('${fuel}',${num})">
+              <small class="text-muted">Agar koi customer ne bank se payment ki ho</small>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">📱 Online / JazzCash (Rs)</label>
+              <input type="number" id="${prefix}-online-${num}" class="form-control"
+                step="0.01" placeholder="0.00" oninput="DR.calcMachine('${fuel}',${num})">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Bank/Online Ref No.</label>
+              <input type="text" id="${prefix}-ref-${num}" class="form-control"
+                placeholder="Transaction ID (optional)">
+            </div>
+          </div>
           <div class="live-calc" id="calc-${cls}-${num}">
             <span class="text-muted">Reading enter karein — result yahan dikhega</span>
           </div>
@@ -294,27 +312,39 @@
   };
 
   DR.updateGrandTotal = function() {
-    let totL = 0, totG = 0, totC = 0;
+    let totL = 0, totG = 0, totC = 0, totUD = 0, totBank = 0;
 
     for (let i = 1; i <= _petrolCount; i++) {
       if (!el(`p-op-${i}`)) continue;
-      const op = parseFloat(el(`p-op-${i}`)?.value) || 0;
-      const cl = parseFloat(el(`p-cl-${i}`)?.value) || 0;
-      const ud = parseFloat(el(`p-ud-${i}`)?.value) || 0;
-      const te = parseFloat(el(`p-te-${i}`)?.value) || 0;
-      const pr = parseFloat(el('add-petrol-price')?.value) || 0;
-      const li = Math.max(0, cl - op - te);
-      totL += li; totG += li * pr; totC += (li * pr) - ud;
+      const op   = parseFloat(el(`p-op-${i}`)?.value) || 0;
+      const cl   = parseFloat(el(`p-cl-${i}`)?.value) || 0;
+      const ud   = parseFloat(el(`p-ud-${i}`)?.value) || 0;
+      const te   = parseFloat(el(`p-te-${i}`)?.value) || 0;
+      const bank = parseFloat(el(`p-bank-${i}`)?.value) || 0;
+      const onl  = parseFloat(el(`p-online-${i}`)?.value) || 0;
+      const pr   = parseFloat(el('add-petrol-price')?.value) || 0;
+      const li   = Math.max(0, cl - op - te);
+      totL    += li;
+      totG    += li * pr;
+      totUD   += ud;
+      totBank += bank + onl;
+      totC    += (li * pr) - ud - bank - onl;
     }
     for (let i = 1; i <= _dieselCount; i++) {
       if (!el(`d-op-${i}`)) continue;
-      const op = parseFloat(el(`d-op-${i}`)?.value) || 0;
-      const cl = parseFloat(el(`d-cl-${i}`)?.value) || 0;
-      const ud = parseFloat(el(`d-ud-${i}`)?.value) || 0;
-      const te = parseFloat(el(`d-te-${i}`)?.value) || 0;
-      const pr = parseFloat(el('add-diesel-price')?.value) || 0;
-      const li = Math.max(0, cl - op - te);
-      totL += li; totG += li * pr; totC += (li * pr) - ud;
+      const op   = parseFloat(el(`d-op-${i}`)?.value) || 0;
+      const cl   = parseFloat(el(`d-cl-${i}`)?.value) || 0;
+      const ud   = parseFloat(el(`d-ud-${i}`)?.value) || 0;
+      const te   = parseFloat(el(`d-te-${i}`)?.value) || 0;
+      const bank = parseFloat(el(`d-bank-${i}`)?.value) || 0;
+      const onl  = parseFloat(el(`d-online-${i}`)?.value) || 0;
+      const pr   = parseFloat(el('add-diesel-price')?.value) || 0;
+      const li   = Math.max(0, cl - op - te);
+      totL    += li;
+      totG    += li * pr;
+      totUD   += ud;
+      totBank += bank + onl;
+      totC    += (li * pr) - ud - bank - onl;
     }
 
     const gtBox = el('grand-total-box');
@@ -322,6 +352,8 @@
       gtBox.style.display = '';
       el('gt-liters').textContent = fmtL(totL) + ' L';
       el('gt-gross').textContent  = 'Rs. ' + fmt(totG);
+      if (el('gt-udhaar')) el('gt-udhaar').textContent = 'Rs. ' + fmt(totUD);
+      if (el('gt-bank'))   el('gt-bank').textContent   = 'Rs. ' + fmt(totBank);
       el('gt-cash').textContent   = 'Rs. ' + fmt(totC);
     }
   };
@@ -368,35 +400,50 @@
         showToast('warning', 'Reading Error', `Petrol Machine ${i}: Closing reading opening se kam nahi ho sakti`);
         return;
       }
-      const te    = parseFloat(el(`p-te-${i}`)?.value) || 0;
-      const ud    = parseFloat(el(`p-ud-${i}`)?.value) || 0;
+      const te     = parseFloat(el(`p-te-${i}`)?.value) || 0;
+      const ud     = parseFloat(el(`p-ud-${i}`)?.value) || 0;
+      const bank   = parseFloat(el(`p-bank-${i}`)?.value) || 0;
+      const online = parseFloat(el(`p-online-${i}`)?.value) || 0;
+      const ref    = el(`p-ref-${i}`)?.value?.trim() || '';
       const liters = parseFloat(Math.max(0, cl - op - te).toFixed(3));
       const gross  = parseFloat((liters * petrolRate).toFixed(2));
-      const cash   = parseFloat((gross - ud).toFixed(2));
+      const cash   = parseFloat((gross - ud - bank - online).toFixed(2));
 
       inserts.push({
         transaction_type: 'CashSale',
         fuel_type:        'Petrol',
         entry_method:     'machine_reading',
-        // Both charges AND amount — transactions table requires both NOT NULL
         charges:          cash,
         amount:           cash,
         liters:           liters,
         unit_price:       petrolRate,
+        payment_method:   'Cash',
+        reference_no:     ref || null,
         description:      JSON.stringify({
-          machine: i,
-          opening: op,
-          closing: cl,
-          liters,
-          rate:    petrolRate,
-          gross,
-          udhaar:  ud,
-          testing: te,
-          notes
+          machine: i, opening: op, closing: cl, liters,
+          rate: petrolRate, gross, udhaar: ud, testing: te,
+          bank_transfer: bank, online_payment: online, ref, notes
         }),
-        payment_method: 'Cash',
-        created_at:     createdAt,
+        created_at: createdAt,
         ...(userId ? { user_id: userId } : {})
+      });
+      // Separate bank transfer record
+      if (bank > 0) inserts.push({
+        transaction_type: 'BankTransfer', fuel_type: 'Petrol',
+        entry_method: 'machine_reading', amount: bank, charges: bank,
+        liters: 0, unit_price: petrolRate, payment_method: 'Bank Transfer',
+        payment_mode: 'bank_transfer', reference_no: ref || null,
+        description: JSON.stringify({ machine: i, bank_transfer: bank, ref, notes }),
+        created_at: createdAt, ...(userId ? { user_id: userId } : {})
+      });
+      // Separate online payment record
+      if (online > 0) inserts.push({
+        transaction_type: 'OnlinePayment', fuel_type: 'Petrol',
+        entry_method: 'machine_reading', amount: online, charges: online,
+        liters: 0, unit_price: petrolRate, payment_method: 'Online',
+        payment_mode: 'online', reference_no: ref || null,
+        description: JSON.stringify({ machine: i, online_payment: online, ref, notes }),
+        created_at: createdAt, ...(userId ? { user_id: userId } : {})
       });
     }
 
@@ -411,11 +458,14 @@
         showToast('warning', 'Reading Error', `Diesel Machine ${i}: Closing reading opening se kam nahi ho sakti`);
         return;
       }
-      const te    = parseFloat(el(`d-te-${i}`)?.value) || 0;
-      const ud    = parseFloat(el(`d-ud-${i}`)?.value) || 0;
+      const te     = parseFloat(el(`d-te-${i}`)?.value) || 0;
+      const ud     = parseFloat(el(`d-ud-${i}`)?.value) || 0;
+      const bank   = parseFloat(el(`d-bank-${i}`)?.value) || 0;
+      const online = parseFloat(el(`d-online-${i}`)?.value) || 0;
+      const ref    = el(`d-ref-${i}`)?.value?.trim() || '';
       const liters = parseFloat(Math.max(0, cl - op - te).toFixed(3));
       const gross  = parseFloat((liters * dieselRate).toFixed(2));
-      const cash   = parseFloat((gross - ud).toFixed(2));
+      const cash   = parseFloat((gross - ud - bank - online).toFixed(2));
 
       inserts.push({
         transaction_type: 'CashSale',
@@ -425,20 +475,31 @@
         amount:           cash,
         liters:           liters,
         unit_price:       dieselRate,
+        payment_method:   'Cash',
+        reference_no:     ref || null,
         description:      JSON.stringify({
-          machine: i,
-          opening: op,
-          closing: cl,
-          liters,
-          rate:    dieselRate,
-          gross,
-          udhaar:  ud,
-          testing: te,
-          notes
+          machine: i, opening: op, closing: cl, liters,
+          rate: dieselRate, gross, udhaar: ud, testing: te,
+          bank_transfer: bank, online_payment: online, ref, notes
         }),
-        payment_method: 'Cash',
-        created_at:     createdAt,
+        created_at: createdAt,
         ...(userId ? { user_id: userId } : {})
+      });
+      if (bank > 0) inserts.push({
+        transaction_type: 'BankTransfer', fuel_type: 'Diesel',
+        entry_method: 'machine_reading', amount: bank, charges: bank,
+        liters: 0, unit_price: dieselRate, payment_method: 'Bank Transfer',
+        payment_mode: 'bank_transfer', reference_no: ref || null,
+        description: JSON.stringify({ machine: i, bank_transfer: bank, ref, notes }),
+        created_at: createdAt, ...(userId ? { user_id: userId } : {})
+      });
+      if (online > 0) inserts.push({
+        transaction_type: 'OnlinePayment', fuel_type: 'Diesel',
+        entry_method: 'machine_reading', amount: online, charges: online,
+        liters: 0, unit_price: dieselRate, payment_method: 'Online',
+        payment_mode: 'online', reference_no: ref || null,
+        description: JSON.stringify({ machine: i, online_payment: online, ref, notes }),
+        created_at: createdAt, ...(userId ? { user_id: userId } : {})
       });
     }
 

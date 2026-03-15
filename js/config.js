@@ -15,7 +15,7 @@
     // 👇 YAHAN APNA URL AUR KEY DALO
     // ════════════════════════════════════════════
     const SUPABASE_URL     = 'https://ejvnglvplhizdkvujszj.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqdm5nbHZwbGhpemRrdnVqc3pqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NDkzMjQsImV4cCI6MjA4OTEyNTMyNH0.xBUbPqpMIOY9mHe0aQzLP9J2APoh9OGAm_c8UFFMfZE';
+    const SUPABASE_ANON_KEY = 'APNI_ANON_KEY_YAHAN_DALO';
     // ════════════════════════════════════════════
 
     function initSupabase() {
