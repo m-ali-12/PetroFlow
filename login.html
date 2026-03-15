@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | Khalid & Sons Petroleum</title>
+  <link rel="icon" type="image/jfif" href="assets/logo.jfif">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #1a5276 0%, #2980b9 50%, #1abc9c 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .auth-card {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      padding: 40px;
+      width: 100%;
+      max-width: 450px;
+    }
+    .logo-section {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .fuel-icon {
+      font-size: 4rem;
+      color: #1a5276;
+    }
+    .form-control { border-radius: 10px; padding: 12px 15px; }
+    .form-control:focus { border-color: #1a5276; box-shadow: 0 0 0 0.2rem rgba(26,82,118,0.25); }
+    .btn-login {
+      background: linear-gradient(135deg, #1a5276, #2980b9);
+      border: none; border-radius: 10px; padding: 12px;
+      font-weight: 600; font-size: 1rem; color: white; width: 100%;
+    }
+    .btn-login:hover { opacity: 0.9; color: white; }
+    .divider { text-align: center; margin: 20px 0; color: #aaa; }
+    .divider::before, .divider::after {
+      content: ''; display: inline-block;
+      width: 40%; height: 1px; background: #ddd; vertical-align: middle; margin: 0 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-card">
+    <div class="logo-section">
+      <div class="fuel-icon"><i class="bi bi-fuel-pump-fill"></i></div>
+      <h3 class="fw-bold text-dark mt-2">Khalid & Sons</h3>
+      <p class="text-muted">Petroleum Management System</p>
+    </div>
+
+    <div id="login-error" class="alert" style="display:none;"></div>
+
+    <form id="loginForm">
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Email Address</label>
+        <div class="input-group">
+          <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+          <input type="email" class="form-control" id="loginEmail" 
+            placeholder="apka@email.com" required autocomplete="email">
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label fw-semibold">Password</label>
+        <div class="input-group">
+          <span class="input-group-text bg-light"><i class="bi bi-lock"></i></span>
+          <input type="password" class="form-control" id="loginPassword" 
+            placeholder="Password darj karein" required autocomplete="current-password">
+          <button class="btn btn-outline-secondary" type="button" id="togglePass">
+            <i class="bi bi-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-login">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Login
+      </button>
+    </form>
+
+    <div class="divider">ya</div>
+
+    <div class="text-center">
+      <a href="#" id="forgotPassword" class="text-muted small">Password bhool gaye?</a>
+      <span class="text-muted small mx-2">|</span>
+      <a href="signup.html" class="text-decoration-none small fw-semibold" style="color:#1a5276;">
+        <i class="bi bi-person-plus me-1"></i>Naya Account Banayein
+      </a>
+    </div>
+
+    <div class="text-center mt-4">
+      <small class="text-muted">
+        <i class="bi bi-shield-check me-1 text-success"></i>
+        Secure Login — Har user ka data alag aur protected
+      </small>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // Toggle password visibility
+    document.getElementById('togglePass').addEventListener('click', function() {
+      const input = document.getElementById('loginPassword');
+      const icon = this.querySelector('i');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'bi bi-eye-slash';
+      } else {
+        input.type = 'password';
+        icon.className = 'bi bi-eye';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up | Khalid & Sons Petroleum</title>
+  <link rel="icon" type="image/jfif" href="assets/logo.jfif">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #1a5276 0%, #2980b9 50%, #1abc9c 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 20px;
+    }
+    .auth-card {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      padding: 40px;
+      width: 100%;
+      max-width: 520px;
+    }
+    .form-control, .form-select { border-radius: 10px; }
+    .form-control:focus, .form-select:focus { border-color: #1a5276; box-shadow: 0 0 0 0.2rem rgba(26,82,118,0.25); }
+    .btn-signup {
+      background: linear-gradient(135deg, #1a5276, #2980b9);
+      border: none; border-radius: 10px; padding: 12px;
+      font-weight: 600; color: white; width: 100%;
+    }
+    .btn-signup:hover { opacity: 0.9; color: white; }
+    .section-badge {
+      background: #eaf4ff; color: #1a5276;
+      border-radius: 8px; padding: 8px 12px;
+      font-size: 13px; font-weight: 600;
+      margin-bottom: 15px; display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-card">
+    <div class="text-center mb-4">
+      <i class="bi bi-fuel-pump-fill text-primary" style="font-size:3rem;"></i>
+      <h3 class="fw-bold mt-2">Naya Account Banayein</h3>
+      <p class="text-muted">Petrol Pump Management System Setup</p>
+    </div>
+
+    <div id="signup-error" class="alert" style="display:none;"></div>
+
+    <form id="signupForm">
+      <span class="section-badge"><i class="bi bi-person me-1"></i>Account Details</span>
+      
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
+        <input type="email" class="form-control" id="signupEmail" 
+          placeholder="apka@email.com" required>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-6">
+          <label class="form-label fw-semibold">Password <span class="text-danger">*</span></label>
+          <input type="password" class="form-control" id="signupPassword" 
+            placeholder="Min 6 characters" minlength="6" required>
+        </div>
+        <div class="col-6">
+          <label class="form-label fw-semibold">Confirm Password <span class="text-danger">*</span></label>
+          <input type="password" class="form-control" id="confirmPassword" 
+            placeholder="Dobara likhein" required>
+        </div>
+      </div>
+
+      <span class="section-badge mt-3"><i class="bi bi-shop me-1"></i>Pump Details</span>
+      
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Pump ka Naam <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="pumpName" 
+          placeholder="e.g., Khalid & Sons Petroleum" required>
+      </div>
+
+      <button type="submit" class="btn-signup mb-3">
+        <i class="bi bi-check-circle me-2"></i>Account Banayein
+      </button>
+    </form>
+
+    <div class="text-center">
+      <a href="login.html" class="text-decoration-none" style="color:#1a5276;">
+        <i class="bi bi-arrow-left me-1"></i>Pehle se account hai? Login karein
+      </a>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

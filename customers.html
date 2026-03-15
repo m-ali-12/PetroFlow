@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Customers — Khalid & Sons Petroleum</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet"/>
+  <link href="assets/styles.css" rel="stylesheet"/>
+</head>
+<body>
+<div id="navbar-placeholder"></div>
+<div class="container-fluid main-wrapper">
+<div class="container">
+
+  <div class="welcome-card">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h4 class="mb-1"><i class="bi bi-people-fill me-2"></i>Customers</h4>
+        <p class="mb-0 opacity-75">Manage customer accounts and balances</p>
+      </div>
+      <button class="btn btn-light fw-bold" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+        <i class="bi bi-person-plus me-1"></i>Add Customer
+      </button>
+    </div>
+  </div>
+
+  <!-- Search & Stats -->
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" id="searchInput" class="form-control" placeholder="Search by name or phone..."
+               oninput="filterCustomers()"/>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <select id="categoryFilter" class="form-select" onchange="filterCustomers()">
+        <option value="">All Categories</option>
+        <option value="Regular">Regular</option>
+        <option value="VIP">VIP</option>
+        <option value="Dealer">Dealer</option>
+        <option value="Staff">Staff</option>
+      </select>
+    </div>
+    <div class="col-md-3 text-end">
+      <span class="badge bg-primary fs-6" id="total-count">0 customers</span>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="s-card">
+        <div class="s-label">Total Customers</div>
+        <div class="s-value text-primary" id="stat-total">0</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="s-card">
+        <div class="s-label">Total Receivable (Udhaar)</div>
+        <div class="s-value text-danger" id="stat-receivable">Rs. 0</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="s-card">
+        <div class="s-label">Positive Balance</div>
+        <div class="s-value text-success" id="stat-pos">0</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="s-card">
+        <div class="s-label">Zero Balance</div>
+        <div class="s-value text-muted" id="stat-zero">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customers Table -->
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>#</th><th>Name</th><th>Phone</th><th>Category</th>
+              <th>Balance</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="customers-tbody">
+            <tr><td colspan="6" class="text-center py-4">
+              <div class="spinner-border spinner-border-sm me-2"></div>Loading...
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card-footer d-flex justify-content-between align-items-center">
+      <small class="text-muted" id="page-info">Page 1</small>
+      <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-outline-secondary" id="prevBtn" onclick="changePage(-1)" disabled>
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" id="nextBtn" onclick="changePage(1)">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+<div id="footer-placeholder"></div>
+
+<!-- Add Customer Modal -->
+<div class="modal fade" id="addCustomerModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold"><i class="bi bi-person-plus me-2"></i>Add Customer</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label fw-bold">Full Name *</label>
+            <input type="text" id="add-name" class="form-control" placeholder="Customer name"/>
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-bold">Phone</label>
+            <input type="text" id="add-phone" class="form-control" placeholder="03xx-xxxxxxx"/>
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-bold">Category</label>
+            <select id="add-category" class="form-select">
+              <option value="Regular">Regular</option>
+              <option value="VIP">VIP</option>
+              <option value="Dealer">Dealer</option>
+              <option value="Staff">Staff</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-bold">Opening Balance</label>
+            <input type="number" id="add-balance" class="form-control" placeholder="0" value="0"/>
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-bold">Serial No.</label>
+            <input type="number" id="add-srno" class="form-control" placeholder="Auto"/>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="addCustomer()">
+          <i class="bi bi-check-circle me-1"></i>Add Customer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Customer Modal -->
+<div class="modal fade" id="editCustomerModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i>Edit Customer</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-cust-id"/>
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label fw-bold">Full Name *</label>
+            <input type="text" id="edit-cust-name" class="form-control"/>
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-bold">Phone</label>
+            <input type="text" id="edit-cust-phone" class="form-control"/>
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-bold">Category</label>
+            <select id="edit-cust-category" class="form-select">
+              <option value="Regular">Regular</option>
+              <option value="VIP">VIP</option>
+              <option value="Dealer">Dealer</option>
+              <option value="Staff">Staff</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-bold">Balance</label>
+            <input type="number" id="edit-cust-balance" class="form-control"/>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="updateCustomer()">
+          <i class="bi bi-check-circle me-1"></i>Update
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/customers-page.js"></script>
+<script>
+  async function init() {
+    await requireAuth();
+    loadCustomers();
+  }
+  init();
+</script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profit & Loss — Khalid & Sons Petroleum</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet"/>
+  <link href="assets/styles.css" rel="stylesheet"/>
+  <style>
+    .pl-section-header { background:#f8f9fa; font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:.5px; }
+    .pl-total-row { font-weight:800; font-size:1.05rem; }
+    .pl-grand { background: linear-gradient(135deg,#1a5276,#2980b9); color:#fff; border-radius:12px; padding:20px 24px; }
+    .pl-positive { color:#1e8449; }
+    .pl-negative { color:#c0392b; }
+  </style>
+</head>
+<body>
+<div id="navbar-placeholder"></div>
+<div class="container-fluid main-wrapper">
+<div class="container">
+
+  <div class="welcome-card">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h4 class="mb-1"><i class="bi bi-graph-up-arrow me-2"></i>Profit & Loss</h4>
+        <p class="mb-0 opacity-75">Auto-calculated from all transactions</p>
+      </div>
+      <div class="d-flex gap-2">
+        <input type="month" id="pl-month" class="form-control form-control-sm" style="width:150px;"/>
+        <button class="btn btn-light btn-sm" onclick="loadPL()">
+          <i class="bi bi-arrow-clockwise me-1"></i>Load
+        </button>
+        <button class="btn btn-outline-light btn-sm" onclick="window.print()">
+          <i class="bi bi-printer me-1"></i>Print
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grand Total Card -->
+  <div class="pl-grand mb-4">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <div class="row g-3">
+          <div class="col-6 col-md-3">
+            <div class="small opacity-75">Gross Revenue</div>
+            <div class="fw-bold fs-5" id="pl-gross">Rs. 0</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="small opacity-75">Udhaar (Credit)</div>
+            <div class="fw-bold fs-5" id="pl-udhaar">Rs. 0</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="small opacity-75">Online/Acct</div>
+            <div class="fw-bold fs-5" id="pl-online">Rs. 0</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="small opacity-75">Expenses</div>
+            <div class="fw-bold fs-5" id="pl-exp">Rs. 0</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <div class="small opacity-75 mb-1">NET PROFIT / LOSS</div>
+        <div class="fw-bold" style="font-size:2rem;" id="pl-net">Rs. 0</div>
+        <div id="pl-indicator" class="small mt-1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed Breakdown -->
+  <div class="card mb-4">
+    <div class="card-header fw-bold"><i class="bi bi-table me-2"></i>Detailed Breakdown</div>
+    <div class="card-body p-0">
+      <table class="table mb-0">
+        <thead class="table-light">
+          <tr><th>Category</th><th class="text-end">Amount (Rs.)</th></tr>
+        </thead>
+        <tbody id="pl-detail-tbody">
+          <tr><td colspan="2" class="text-center py-4 text-muted">
+            <div class="spinner-border spinner-border-sm me-2"></div>Loading...
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Daily Breakdown -->
+  <div class="card">
+    <div class="card-header fw-bold"><i class="bi bi-calendar me-2"></i>Daily Summary</div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr><th>Date</th><th>Cash Sales</th><th>Udhaar</th><th>Vasooli</th><th>Expenses</th><th>Net</th></tr>
+          </thead>
+          <tbody id="pl-daily-tbody">
+            <tr><td colspan="6" class="text-center py-3 text-muted">Select month and click Load</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+<div id="footer-placeholder"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/profit-loss.js"></script>
+<script>
+  async function init() {
+    await requireAuth();
+    const ym = new Date().toISOString().slice(0,7);
+    document.getElementById('pl-month').value = ym;
+    loadPL();
+  }
+  init();
+</script>
+</body>
+</html>

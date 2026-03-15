@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Daily Readings — Khalid & Sons Petroleum</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet"/>
+  <link href="assets/styles.css" rel="stylesheet"/>
+  <style>
+    .machine-card { border: 2px solid #e3e8ef; border-radius: 12px; background: #fff; padding: 18px; transition: border-color .2s; }
+    .machine-card:hover { border-color: #2980b9; }
+    .machine-title { font-weight: 800; font-size: 1rem; color: #1a5276; margin-bottom: 12px; }
+    .live-calc { background: #f0f7ff; border: 1px solid #cce0ff; border-radius: 8px; padding: 10px 14px; margin-top: 10px; font-size: 13px; }
+    .live-calc .lc-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .live-calc .lc-total { font-weight: 800; font-size: 14px; border-top: 1px solid #aac; padding-top: 5px; margin-top: 5px; }
+    .online-badge { background: #e8f8f0; color: #1a7a45; border: 1px solid #a8dcc0; border-radius: 5px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
+    .grand-total-bar { background: linear-gradient(135deg,#1a5276,#2980b9); color: #fff; border-radius: 12px; padding: 18px 22px; }
+    .readings-table th { font-size: 11px; text-transform: uppercase; }
+    .pay-badge { padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; }
+    .pay-cash   { background:#d4edda; color:#155724; }
+    .pay-online { background:#cce5ff; color:#004085; }
+    .pay-bank   { background:#e2d9f3; color:#4a2c6e; }
+    .pay-mixed  { background:#fff3cd; color:#856404; }
+    #readings-section { display: none; }
+  </style>
+</head>
+<body>
+<div id="navbar-placeholder"></div>
+<div class="container-fluid main-wrapper">
+<div class="container">
+
+  <!-- Header -->
+  <div class="welcome-card">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h4 class="mb-1"><i class="bi bi-speedometer2 me-2"></i>Daily Machine Readings</h4>
+        <p class="mb-0 opacity-75">Enter meter readings and online payments</p>
+      </div>
+      <div class="d-flex gap-2 align-items-center">
+        <input type="date" id="readingDate" class="form-control form-control-sm" style="width:160px;"/>
+        <button class="btn btn-light btn-sm" onclick="loadReadings()">
+          <i class="bi bi-arrow-clockwise me-1"></i>Load
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Machine Settings (number of machines) -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="row align-items-end g-3">
+        <div class="col-auto">
+          <label class="form-label fw-bold mb-1">Number of Pumps</label>
+          <select id="numMachines" class="form-select form-select-sm" style="width:120px;" onchange="renderMachines()">
+            <option value="1">1</option>
+            <option value="2" selected>2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </div>
+        <div class="col-auto">
+          <label class="form-label fw-bold mb-1">Petrol Price (Rs.)</label>
+          <input type="number" id="petrolPrice" class="form-control form-control-sm" style="width:110px;"
+                 placeholder="0" oninput="recalcAll()"/>
+        </div>
+        <div class="col-auto">
+          <label class="form-label fw-bold mb-1">Diesel Price (Rs.)</label>
+          <input type="number" id="dieselPrice" class="form-control form-control-sm" style="width:110px;"
+                 placeholder="0" oninput="recalcAll()"/>
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-primary btn-sm" onclick="showReadingForm()">
+            <i class="bi bi-plus-circle me-1"></i>New Entry
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reading Form -->
+  <div id="readings-section">
+  <div class="card mb-4">
+    <div class="card-header bg-primary text-white fw-bold">
+      <i class="bi bi-input-cursor-text me-2"></i>Enter Machine Readings
+    </div>
+    <div class="card-body">
+      <div class="row g-3" id="machines-container"></div>
+
+      <!-- Grand Total Bar -->
+      <div class="grand-total-bar mt-4">
+        <div class="row align-items-center g-3">
+          <div class="col-md-8">
+            <div class="row g-2">
+              <div class="col-6 col-md-3">
+                <div class="small opacity-75">Total Liters</div>
+                <div class="fw-bold fs-5" id="gt-liters">0</div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="small opacity-75">Gross Amount</div>
+                <div class="fw-bold fs-5" id="gt-gross">Rs. 0</div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="small opacity-75">Online / Acct</div>
+                <div class="fw-bold fs-5" id="gt-online">Rs. 0</div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="small opacity-75">Net Cash</div>
+                <div class="fw-bold fs-5" id="gt-net">Rs. 0</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 text-md-end">
+            <div class="mb-2">
+              <label class="small opacity-75">Udhaar / Credit (Rs.)</label>
+              <input type="number" id="globalUdhaar" class="form-control form-control-sm mt-1"
+                     placeholder="0" oninput="recalcAll()" min="0"/>
+            </div>
+            <button class="btn btn-light fw-bold" onclick="saveReadings()">
+              <i class="bi bi-cloud-upload me-2"></i>Save to Database
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- Saved Readings Table -->
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span class="fw-bold"><i class="bi bi-table me-2"></i>Saved Readings</span>
+      <button class="btn btn-sm btn-outline-secondary" onclick="loadReadings()">
+        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+      </button>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover readings-table mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th><th>Machine</th><th>Fuel</th>
+              <th>Opening</th><th>Closing</th><th>Liters</th>
+              <th>Gross</th><th>Online/Acct</th><th>Udhaar</th>
+              <th>Net Cash</th><th>Pay</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="readings-tbody">
+            <tr><td colspan="12" class="text-center py-3 text-muted">
+              <div class="spinner-border spinner-border-sm me-2"></div>Loading...
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+<div id="footer-placeholder"></div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i>Edit Reading</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-id"/>
+        <div class="row g-3">
+          <div class="col-6">
+            <label class="form-label fw-bold">Opening Meter</label>
+            <input type="number" id="edit-opening" class="form-control"/>
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-bold">Closing Meter</label>
+            <input type="number" id="edit-closing" class="form-control"/>
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-bold">Online/Acct Payment</label>
+            <input type="number" id="edit-online" class="form-control" placeholder="0"/>
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-bold">Udhaar</label>
+            <input type="number" id="edit-udhaar" class="form-control" placeholder="0"/>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-bold">Payment Method</label>
+            <select id="edit-paymethod" class="form-select">
+              <option value="Cash">Cash</option>
+              <option value="Online">Online/Account</option>
+              <option value="Bank">Bank Transfer</option>
+              <option value="Mixed">Mixed</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-bold">Notes</label>
+            <input type="text" id="edit-notes" class="form-control" placeholder="Optional notes"/>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="updateReading()">
+          <i class="bi bi-check-circle me-1"></i>Update
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/daily-readings.js"></script>
+<script>
+  // Set today's date by default
+  document.getElementById('readingDate').value = new Date().toISOString().split('T')[0];
+  async function init() {
+    await requireAuth();
+    await loadFuelPrices();
+    renderMachines();
+    loadReadings();
+  }
+  init();
+</script>
+</body>
+</html>

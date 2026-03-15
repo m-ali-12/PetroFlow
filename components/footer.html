@@ -1,0 +1,51 @@
+<style>
+.footer-section {
+  background: linear-gradient(135deg, #1a5276, #2c3e50);
+  color: rgba(255,255,255,0.8);
+  padding: 2rem 0 1rem;
+  margin-top: 3rem;
+  font-size: 13px;
+}
+.footer-section a { color: rgba(255,255,255,0.7); text-decoration: none; }
+.footer-section a:hover { color: #fff; }
+.footer-bottom {
+  border-top: 1px solid rgba(255,255,255,0.15);
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+}
+</style>
+<footer class="footer-section">
+  <div class="container">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <h6 class="text-white fw-bold"><i class="bi bi-fuel-pump-fill me-2"></i>Khalid & Sons Petroleum</h6>
+        <p class="mb-0">Professional Petrol Pump Management System</p>
+        <small>Multi-user, secure, real-time tracking</small>
+      </div>
+      <div class="col-md-4">
+        <h6 class="text-white fw-bold">Quick Links</h6>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="index.html">Dashboard</a>
+          <a href="customers.html">Customers</a>
+          <a href="transactions.html">Transactions</a>
+          <a href="daily-readings.html">Daily Readings</a>
+          <a href="reports.html">Reports</a>
+          <a href="settings.html">Settings</a>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <h6 class="text-white fw-bold">System Info</h6>
+        <p class="mb-1"><i class="bi bi-database me-1"></i>Supabase (PostgreSQL)</p>
+        <p class="mb-1"><i class="bi bi-shield-check me-1 text-success"></i>Per-user data isolation</p>
+        <p class="mb-0"><i class="bi bi-code-slash me-1"></i>Version 2.0</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      &copy; <span id="footer-year">2026</span> Khalid & Sons Petroleum — All Rights Reserved
+      <script>document.getElementById('footer-year').textContent = new Date().getFullYear();</script>
+    </div>
+  </div>
+</footer>

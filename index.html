@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — Khalid & Sons Petroleum</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet"/>
+  <link href="assets/styles.css" rel="stylesheet"/>
+</head>
+<body>
+<div id="navbar-placeholder"></div>
+<div class="container-fluid main-wrapper">
+  <div class="container">
+
+    <!-- Welcome -->
+    <div class="welcome-card mb-4">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+          <h4 class="mb-1"><i class="bi bi-fuel-pump-fill me-2"></i>Khalid & Sons Petroleum</h4>
+          <p class="mb-0 opacity-75">Dashboard — Today's Overview</p>
+        </div>
+        <div class="text-end">
+          <div id="todayDate" class="fw-bold fs-5"></div>
+          <small class="opacity-75">Real-time data</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stat Cards Row 1 -->
+    <div class="row g-3 mb-4" id="stat-cards">
+      <div class="col-6 col-md-3">
+        <div class="card stat-card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-2">
+              <div class="rounded-circle d-flex align-items-center justify-content-center me-3"
+                   style="width:42px;height:42px;background:#e8f4fd;">
+                <i class="bi bi-cash-coin text-primary fs-5"></i>
+              </div>
+              <small class="text-muted fw-bold text-uppercase" style="font-size:11px;">Today Cash Sales</small>
+            </div>
+            <div class="fw-bold fs-5" id="d-cash-sales">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card stat-card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-2">
+              <div class="rounded-circle d-flex align-items-center justify-content-center me-3"
+                   style="width:42px;height:42px;background:#e8f8f1;">
+                <i class="bi bi-arrow-down-circle text-success fs-5"></i>
+              </div>
+              <small class="text-muted fw-bold text-uppercase" style="font-size:11px;">Today Vasooli</small>
+            </div>
+            <div class="fw-bold fs-5" id="d-vasooli">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card stat-card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-2">
+              <div class="rounded-circle d-flex align-items-center justify-content-center me-3"
+                   style="width:42px;height:42px;background:#fef9e7;">
+                <i class="bi bi-receipt text-warning fs-5"></i>
+              </div>
+              <small class="text-muted fw-bold text-uppercase" style="font-size:11px;">Today Expenses</small>
+            </div>
+            <div class="fw-bold fs-5" id="d-expenses">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card stat-card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-2">
+              <div class="rounded-circle d-flex align-items-center justify-content-center me-3"
+                   style="width:42px;height:42px;background:#f4ecff;">
+                <i class="bi bi-wallet2 text-purple fs-5" style="color:#6f42c1;"></i>
+              </div>
+              <small class="text-muted fw-bold text-uppercase" style="font-size:11px;">Net Cash Today</small>
+            </div>
+            <div class="fw-bold fs-5" id="d-net">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2 — Fuel Prices + Monthly Summary -->
+    <div class="row g-3 mb-4">
+      <!-- Fuel Prices -->
+      <div class="col-md-4">
+        <div class="card h-100">
+          <div class="card-header bg-primary text-white fw-bold">
+            <i class="bi bi-droplet-fill me-2"></i>Current Fuel Prices
+          </div>
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3 p-3 rounded"
+                 style="background:#e8f4fd;">
+              <div>
+                <div class="fw-bold text-primary">Petrol</div>
+                <small class="text-muted">Per Liter</small>
+              </div>
+              <div class="fw-bold fs-4 text-primary" id="petrol-price">—</div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center p-3 rounded"
+                 style="background:#fff8e1;">
+              <div>
+                <div class="fw-bold text-warning">Diesel</div>
+                <small class="text-muted">Per Liter</small>
+              </div>
+              <div class="fw-bold fs-4 text-warning" id="diesel-price">—</div>
+            </div>
+            <div class="mt-3 text-end">
+              <a href="settings.html" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-pencil me-1"></i>Update Prices
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly Summary -->
+      <div class="col-md-8">
+        <div class="card h-100">
+          <div class="card-header bg-success text-white fw-bold">
+            <i class="bi bi-calendar-month me-2"></i>This Month Summary
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-6">
+                <div class="s-card">
+                  <div class="s-label">Total Sales (Cash)</div>
+                  <div class="s-value text-success" id="m-cash">—</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="s-card">
+                  <div class="s-label">Total Udhaar Given</div>
+                  <div class="s-value text-danger" id="m-udhaar">—</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="s-card">
+                  <div class="s-label">Total Vasooli</div>
+                  <div class="s-value text-success" id="m-vasooli">—</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="s-card">
+                  <div class="s-label">Total Expenses</div>
+                  <div class="s-value text-warning" id="m-expenses">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold"><i class="bi bi-clock-history me-2"></i>Recent Transactions</span>
+        <a href="transactions.html" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Date</th><th>Customer</th><th>Type</th>
+                <th>Amount</th><th>Description</th>
+              </tr>
+            </thead>
+            <tbody id="recent-tx-body">
+              <tr><td colspan="5" class="text-center py-4 text-muted">
+                <div class="spinner-border spinner-border-sm me-2"></div>Loading...
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card">
+      <div class="card-header fw-bold"><i class="bi bi-lightning-fill me-2 text-warning"></i>Quick Actions</div>
+      <div class="card-body">
+        <div class="row g-2">
+          <div class="col-6 col-md-2">
+            <a href="daily-readings.html" class="btn btn-outline-primary w-100 py-3">
+              <i class="bi bi-speedometer2 d-block fs-4 mb-1"></i>Daily Readings
+            </a>
+          </div>
+          <div class="col-6 col-md-2">
+            <a href="transactions.html" class="btn btn-outline-success w-100 py-3">
+              <i class="bi bi-plus-circle d-block fs-4 mb-1"></i>Add Transaction
+            </a>
+          </div>
+          <div class="col-6 col-md-2">
+            <a href="customers.html" class="btn btn-outline-info w-100 py-3">
+              <i class="bi bi-people d-block fs-4 mb-1"></i>Customers
+            </a>
+          </div>
+          <div class="col-6 col-md-2">
+            <a href="reports.html" class="btn btn-outline-warning w-100 py-3">
+              <i class="bi bi-bar-chart d-block fs-4 mb-1"></i>Reports
+            </a>
+          </div>
+          <div class="col-6 col-md-2">
+            <a href="stock.html" class="btn btn-outline-secondary w-100 py-3">
+              <i class="bi bi-boxes d-block fs-4 mb-1"></i>Stock
+            </a>
+          </div>
+          <div class="col-6 col-md-2">
+            <a href="profit-loss.html" class="btn btn-outline-danger w-100 py-3">
+              <i class="bi bi-graph-up-arrow d-block fs-4 mb-1"></i>Profit/Loss
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div id="footer-placeholder"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-PK', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+async function loadDashboard() {
+  await requireAuth();
+  const uid = window._currentUserId;
+  const today = new Date().toISOString().split('T')[0];
+  const monthStart = today.slice(0,8) + '01';
+
+  // Fuel prices
+  try {
+    const { data: sdata } = await supabase.from('settings').select('petrol_price,diesel_price').eq('user_id', uid).maybeSingle();
+    if (sdata) {
+      document.getElementById('petrol-price').textContent = 'Rs. ' + (sdata.petrol_price || 0);
+      document.getElementById('diesel-price').textContent = 'Rs. ' + (sdata.diesel_price || 0);
+    }
+  } catch(e){}
+
+  // Today stats
+  try {
+    const { data: txToday } = await supabase.from('transactions')
+      .select('transaction_type,charges,amount')
+      .eq('user_id', uid)
+      .gte('created_at', today + 'T00:00:00')
+      .lte('created_at', today + 'T23:59:59');
+
+    let cash=0, vasooli=0, expenses=0;
+    (txToday||[]).forEach(t => {
+      if (t.transaction_type === 'CashSale') cash += Number(t.charges)||0;
+      if (t.transaction_type === 'Debit') vasooli += Number(t.amount)||0;
+      if (t.transaction_type === 'Expense') expenses += Number(t.charges)||0;
+    });
+    document.getElementById('d-cash-sales').textContent = 'Rs. ' + formatNumber(cash);
+    document.getElementById('d-vasooli').textContent = 'Rs. ' + formatNumber(vasooli);
+    document.getElementById('d-expenses').textContent = 'Rs. ' + formatNumber(expenses);
+    const net = cash + vasooli - expenses;
+    const netEl = document.getElementById('d-net');
+    netEl.textContent = 'Rs. ' + formatNumber(net);
+    netEl.className = 'fw-bold fs-5 ' + (net >= 0 ? 'profit-pos' : 'profit-neg');
+  } catch(e){}
+
+  // Monthly stats
+  try {
+    const { data: txMonth } = await supabase.from('transactions')
+      .select('transaction_type,charges,amount')
+      .eq('user_id', uid)
+      .gte('created_at', monthStart + 'T00:00:00');
+
+    let mCash=0, mUdhaar=0, mVasooli=0, mExp=0;
+    (txMonth||[]).forEach(t => {
+      if (t.transaction_type === 'CashSale') mCash += Number(t.charges)||0;
+      if (t.transaction_type === 'Credit')   mUdhaar += Number(t.charges)||0;
+      if (t.transaction_type === 'Debit')    mVasooli += Number(t.amount)||0;
+      if (t.transaction_type === 'Expense')  mExp += Number(t.charges)||0;
+    });
+    document.getElementById('m-cash').textContent    = 'Rs. ' + formatNumber(mCash);
+    document.getElementById('m-udhaar').textContent  = 'Rs. ' + formatNumber(mUdhaar);
+    document.getElementById('m-vasooli').textContent = 'Rs. ' + formatNumber(mVasooli);
+    document.getElementById('m-expenses').textContent= 'Rs. ' + formatNumber(mExp);
+  } catch(e){}
+
+  // Recent transactions
+  try {
+    const { data: recent } = await supabase.from('transactions')
+      .select('created_at,customer_id,transaction_type,charges,amount,description')
+      .eq('user_id', uid)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    // Get customer names
+    const custIds = [...new Set((recent||[]).map(r=>r.customer_id).filter(Boolean))];
+    let custMap = {};
+    if (custIds.length) {
+      const { data: custs } = await supabase.from('customers').select('id,name').in('id', custIds);
+      (custs||[]).forEach(c => custMap[c.id] = c.name);
+    }
+
+    const tbody = document.getElementById('recent-tx-body');
+    if (!recent || recent.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">No transactions yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = recent.map(t => {
+      const date = new Date(t.created_at).toLocaleDateString('en-PK');
+      const cname = custMap[t.customer_id] || '<span class="text-muted">—</span>';
+      const typeMap = { Credit:'tx-badge-credit', Debit:'tx-badge-debit', Expense:'tx-badge-expense', Advance:'tx-badge-advance', CashSale:'tx-badge-cashsale' };
+      const badge = `<span class="${typeMap[t.transaction_type]||'tx-badge-cashsale'}">${t.transaction_type}</span>`;
+      const amt = t.transaction_type === 'Debit' ? t.amount : t.charges;
+      let desc = '';
+      try { const d = JSON.parse(t.description||'{}'); desc = d.note || d.machine || ''; } catch(e){}
+      return `<tr>
+        <td>${date}</td>
+        <td>${cname}</td>
+        <td>${badge}</td>
+        <td class="fw-bold">Rs. ${formatNumber(amt||0)}</td>
+        <td class="text-muted small">${desc}</td>
+      </tr>`;
+    }).join('');
+  } catch(e){ console.error(e); }
+}
+
+loadDashboard();
+</script>
+</body>
+</html>

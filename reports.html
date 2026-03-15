@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reports — Khalid & Sons Petroleum</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet"/>
+  <link href="assets/styles.css" rel="stylesheet"/>
+</head>
+<body>
+<div id="navbar-placeholder"></div>
+<div class="container-fluid main-wrapper">
+<div class="container">
+
+  <div class="welcome-card">
+    <h4 class="mb-1"><i class="bi bi-bar-chart-line me-2"></i>Reports</h4>
+    <p class="mb-0 opacity-75">Daily, monthly and custom date range reports</p>
+  </div>
+
+  <!-- Report Controls -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Report Type</label>
+          <select id="report-type" class="form-select" onchange="onReportTypeChange()">
+            <option value="daily">Daily Report</option>
+            <option value="monthly">Monthly Report</option>
+            <option value="custom">Custom Range</option>
+            <option value="customer">Customer Ledger</option>
+          </select>
+        </div>
+        <div class="col-md-2" id="rpt-date-wrap">
+          <label class="form-label fw-bold">Date</label>
+          <input type="date" id="rpt-date" class="form-control"/>
+        </div>
+        <div class="col-md-2" id="rpt-month-wrap" style="display:none;">
+          <label class="form-label fw-bold">Month</label>
+          <input type="month" id="rpt-month" class="form-control"/>
+        </div>
+        <div class="col-md-2" id="rpt-from-wrap" style="display:none;">
+          <label class="form-label fw-bold">From</label>
+          <input type="date" id="rpt-from" class="form-control"/>
+        </div>
+        <div class="col-md-2" id="rpt-to-wrap" style="display:none;">
+          <label class="form-label fw-bold">To</label>
+          <input type="date" id="rpt-to" class="form-control"/>
+        </div>
+        <div class="col-md-3 position-relative" id="rpt-cust-wrap" style="display:none;">
+          <label class="form-label fw-bold">Customer</label>
+          <input type="text" id="rpt-cust-input" class="form-control" placeholder="Search customer..."
+                 oninput="searchRptCustomer()" autocomplete="off"/>
+          <input type="hidden" id="rpt-cust-id"/>
+          <div id="rpt-cust-dropdown" class="cust-dropdown" style="display:none;position:absolute;"></div>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-primary w-100" onclick="generateReport()">
+            <i class="bi bi-search me-1"></i>Generate
+          </button>
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-outline-secondary" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i>Print
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Output -->
+  <div id="report-output" style="display:none;">
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4" id="rpt-summary"></div>
+    <!-- Table -->
+    <div class="card" id="rpt-table-card">
+      <div class="card-header fw-bold" id="rpt-table-header">Report</div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light" id="rpt-thead"></thead>
+            <tbody id="rpt-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="report-empty" class="text-center py-5 text-muted" style="display:none;">
+    <i class="bi bi-inbox fs-1 d-block mb-2"></i>No data found for selected range
+  </div>
+
+</div>
+</div>
+<div id="footer-placeholder"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/reports.js"></script>
+<script>
+  async function init() {
+    await requireAuth();
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('rpt-date').value = today;
+    const ym = today.slice(0,7);
+    document.getElementById('rpt-month').value = ym;
+  }
+  init();
+  function onReportTypeChange() {
+    const v = document.getElementById('report-type').value;
+    document.getElementById('rpt-date-wrap').style.display   = v==='daily'   ? '' : 'none';
+    document.getElementById('rpt-month-wrap').style.display  = v==='monthly' ? '' : 'none';
+    document.getElementById('rpt-from-wrap').style.display   = v==='custom'  ? '' : 'none';
+    document.getElementById('rpt-to-wrap').style.display     = v==='custom'  ? '' : 'none';
+    document.getElementById('rpt-cust-wrap').style.display   = v==='customer'? '' : 'none';
+  }
+
+  // Customer search for report
+  let rptCustList = [];
+  async function searchRptCustomer() {
+    const q = document.getElementById('rpt-cust-input').value.trim().toLowerCase();
+    if (!rptCustList.length) {
+      const { data } = await supabase.from('customers').select('id,name').eq('user_id', window._currentUserId);
+      rptCustList = data || [];
+    }
+    const dd = document.getElementById('rpt-cust-dropdown');
+    const filtered = rptCustList.filter(c => c.name.toLowerCase().includes(q));
+    if (!filtered.length || !q) { dd.style.display='none'; return; }
+    dd.innerHTML = filtered.map(c => `<div class="cust-item" onclick="selectRptCust('${c.id}','${c.name}')">${c.name}</div>`).join('');
+    dd.style.display = 'block';
+  }
+  function selectRptCust(id, name) {
+    document.getElementById('rpt-cust-id').value = id;
+    document.getElementById('rpt-cust-input').value = name;
+    document.getElementById('rpt-cust-dropdown').style.display = 'none';
+  }
+</script>
+</body>
+</html>

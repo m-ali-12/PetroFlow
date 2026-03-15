@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Transactions — Khalid & Sons Petroleum</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet"/>
+  <link href="assets/styles.css" rel="stylesheet"/>
+  <style>
+    .type-tabs .nav-link { font-weight: 600; border-radius: 8px; }
+    .type-tabs .nav-link.active { background: #1a5276; color: #fff; }
+    .cust-dropdown { position: absolute; background: #fff; border: 1px solid #ddd; border-radius: 8px;
+                     max-height: 200px; overflow-y: auto; z-index: 999; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+    .cust-dropdown .cust-item { padding: 8px 12px; cursor: pointer; font-size: 13px; }
+    .cust-dropdown .cust-item:hover { background: #f0f7ff; }
+    .form-panel { display: none; }
+    .form-panel.active { display: block; }
+  </style>
+</head>
+<body>
+<div id="navbar-placeholder"></div>
+<div class="container-fluid main-wrapper">
+<div class="container">
+
+  <div class="welcome-card">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h4 class="mb-1"><i class="bi bi-receipt-cutoff me-2"></i>Transactions</h4>
+        <p class="mb-0 opacity-75">Udhaar, Vasooli, Expenses and Cash Advances</p>
+      </div>
+      <button class="btn btn-light fw-bold" data-bs-toggle="modal" data-bs-target="#addTxModal">
+        <i class="bi bi-plus-circle me-1"></i>Add Transaction
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label fw-bold mb-1">Search Customer</label>
+          <input type="text" id="tx-search" class="form-control form-control-sm" placeholder="Customer name..."/>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-bold mb-1">Type</label>
+          <select id="tx-type-filter" class="form-select form-select-sm">
+            <option value="">All Types</option>
+            <option value="Credit">Credit (Udhaar)</option>
+            <option value="Debit">Debit (Vasooli)</option>
+            <option value="Expense">Expense</option>
+            <option value="Advance">Cash Advance</option>
+            <option value="CashSale">Cash Sale</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-bold mb-1">From</label>
+          <input type="date" id="tx-from" class="form-control form-control-sm"/>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-bold mb-1">To</label>
+          <input type="date" id="tx-to" class="form-control form-control-sm"/>
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-primary btn-sm me-2" onclick="applyFilters()">
+            <i class="bi bi-funnel me-1"></i>Filter
+          </button>
+          <button class="btn btn-outline-secondary btn-sm me-2" onclick="clearFilters()">
+            <i class="bi bi-x-circle me-1"></i>Clear
+          </button>
+          <button class="btn btn-outline-success btn-sm" onclick="printReport()">
+            <i class="bi bi-printer me-1"></i>Print
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Row -->
+  <div class="row g-2 mb-3" id="tx-summary-row">
+    <div class="col-6 col-md-3">
+      <div class="s-card">
+        <div class="s-label">Total Credit (Udhaar)</div>
+        <div class="s-value text-danger" id="sum-credit">Rs. 0</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="s-card">
+        <div class="s-label">Total Debit (Vasooli)</div>
+        <div class="s-value text-success" id="sum-debit">Rs. 0</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="s-card">
+        <div class="s-label">Total Expenses</div>
+        <div class="s-value text-warning" id="sum-expense">Rs. 0</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="s-card">
+        <div class="s-label">Net Balance</div>
+        <div class="s-value" id="sum-net">Rs. 0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transactions Table -->
+  <div class="card" id="tx-print-area">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span class="fw-bold"><i class="bi bi-list-ul me-2"></i>All Transactions</span>
+      <small class="text-muted" id="tx-count">Loading...</small>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th><th>Customer</th><th>Type</th>
+              <th>Liters</th><th>Rate</th><th>Amount</th>
+              <th>Description</th><th class="no-print">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tx-tbody">
+            <tr><td colspan="8" class="text-center py-4">
+              <div class="spinner-border spinner-border-sm me-2"></div>Loading...
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card-footer d-flex justify-content-between align-items-center">
+      <small class="text-muted" id="tx-page-info">Page 1</small>
+      <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-outline-secondary" id="tx-prev" onclick="txChangePage(-1)" disabled>
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" id="tx-next" onclick="txChangePage(1)">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+<div id="footer-placeholder"></div>
+
+<!-- Add Transaction Modal -->
+<div class="modal fade" id="addTxModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i>Add Transaction</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Type Tabs -->
+        <ul class="nav type-tabs mb-4">
+          <li class="nav-item"><a class="nav-link active" href="#" onclick="switchPanel('credit',this)">Credit (Udhaar)</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" onclick="switchPanel('debit',this)">Debit (Vasooli)</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" onclick="switchPanel('expense',this)">Expense</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" onclick="switchPanel('advance',this)">Cash Advance</a></li>
+        </ul>
+
+        <!-- Credit Panel -->
+        <div class="form-panel active" id="panel-credit">
+          <div class="row g-3">
+            <div class="col-12 position-relative">
+              <label class="form-label fw-bold">Customer *</label>
+              <input type="text" id="cr-cust-input" class="form-control" placeholder="Search customer..."
+                     oninput="searchCustomers('cr')" autocomplete="off"/>
+              <input type="hidden" id="cr-cust-id"/>
+              <div id="cr-cust-dropdown" class="cust-dropdown" style="display:none;"></div>
+            </div>
+            <div class="col-4">
+              <label class="form-label fw-bold">Fuel Type</label>
+              <select id="cr-fuel" class="form-select">
+                <option value="Petrol">Petrol</option>
+                <option value="Diesel">Diesel</option>
+              </select>
+            </div>
+            <div class="col-4">
+              <label class="form-label fw-bold">Liters</label>
+              <input type="number" id="cr-liters" class="form-control" placeholder="0.00" oninput="calcCredit()"/>
+            </div>
+            <div class="col-4">
+              <label class="form-label fw-bold">Unit Price</label>
+              <input type="number" id="cr-rate" class="form-control" placeholder="0" oninput="calcCredit()"/>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-bold">Amount (Rs.)</label>
+              <input type="number" id="cr-amount" class="form-control" placeholder="Auto / Override"/>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-bold">Date</label>
+              <input type="date" id="cr-date" class="form-control"/>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold">Notes</label>
+              <input type="text" id="cr-notes" class="form-control" placeholder="Optional notes..."/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Debit Panel -->
+        <div class="form-panel" id="panel-debit">
+          <div class="row g-3">
+            <div class="col-12 position-relative">
+              <label class="form-label fw-bold">Customer *</label>
+              <input type="text" id="db-cust-input" class="form-control" placeholder="Search customer..."
+                     oninput="searchCustomers('db')" autocomplete="off"/>
+              <input type="hidden" id="db-cust-id"/>
+              <div id="db-cust-dropdown" class="cust-dropdown" style="display:none;"></div>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-bold">Amount Received (Rs.) *</label>
+              <input type="number" id="db-amount" class="form-control" placeholder="0"/>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-bold">Date</label>
+              <input type="date" id="db-date" class="form-control"/>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold">Notes</label>
+              <input type="text" id="db-notes" class="form-control" placeholder="Payment received notes..."/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Expense Panel -->
+        <div class="form-panel" id="panel-expense">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-bold">Expense Category</label>
+              <select id="ex-category" class="form-select">
+                <option>Salary</option><option>Maintenance</option><option>Electricity</option>
+                <option>Fuel Purchase</option><option>Rent</option><option>Miscellaneous</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-bold">Amount (Rs.) *</label>
+              <input type="number" id="ex-amount" class="form-control" placeholder="0"/>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-bold">Date</label>
+              <input type="date" id="ex-date" class="form-control"/>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold">Description</label>
+              <input type="text" id="ex-notes" class="form-control" placeholder="Expense details..."/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Advance Panel -->
+        <div class="form-panel" id="panel-advance">
+          <div class="row g-3">
+            <div class="col-12 position-relative">
+              <label class="form-label fw-bold">Customer / Employee *</label>
+              <input type="text" id="ad-cust-input" class="form-control" placeholder="Search customer..."
+                     oninput="searchCustomers('ad')" autocomplete="off"/>
+              <input type="hidden" id="ad-cust-id"/>
+              <div id="ad-cust-dropdown" class="cust-dropdown" style="display:none;"></div>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-bold">Amount (Rs.) *</label>
+              <input type="number" id="ad-amount" class="form-control" placeholder="0"/>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-bold">Date</label>
+              <input type="date" id="ad-date" class="form-control"/>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold">Reason</label>
+              <input type="text" id="ad-reason" class="form-control" placeholder="Reason for advance..."/>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="saveTransaction()">
+          <i class="bi bi-cloud-upload me-1"></i>Save Transaction
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/transactions-v5.js"></script>
+<script>
+  async function init() {
+    await requireAuth();
+    // Set default dates
+    const today = new Date().toISOString().split('T')[0];
+    ['cr-date','db-date','ex-date','ad-date'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = today;
+    });
+    loadTransactions();
+  }
+  init();
+</script>
+</body>
+</html>

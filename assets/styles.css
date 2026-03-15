@@ -1,0 +1,79 @@
+/* =============================================
+   Khalid & Sons Petroleum - Global Styles
+   ============================================= */
+
+:root {
+  --primary: #1a5276;
+  --primary-light: #2980b9;
+  --success: #1e8449;
+  --danger: #c0392b;
+  --warning: #d4ac0d;
+  --muted: #7f8c8d;
+  --border: #dee2e6;
+}
+
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; }
+
+/* Main wrapper */
+.main-wrapper { padding-top: 10px; padding-bottom: 40px; }
+
+/* Cards */
+.card { border: none; box-shadow: 0 2px 8px rgba(0,0,0,.08); border-radius: 10px; }
+.card-header { border-radius: 10px 10px 0 0 !important; }
+
+/* Stat cards */
+.stat-card { border-radius: 12px; transition: transform 0.3s; }
+.stat-card:hover { transform: translateY(-3px); }
+
+/* Welcome/page header */
+.welcome-card {
+  background: linear-gradient(135deg, #1a5276, #2980b9);
+  padding: 1.5rem 2rem; border-radius: 12px; color: white;
+  box-shadow: 0 4px 15px rgba(26,82,118,0.3); margin-bottom: 1.5rem;
+}
+.welcome-card h3, .welcome-card h4 { margin-bottom: 0.3rem; }
+
+/* Tables */
+.table-hover tbody tr:hover td { background: #f0f7ff; }
+.table th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+
+/* Badges custom */
+.tx-badge-credit { background:#198754; color:#fff; padding:3px 10px; border-radius:4px; font-size:12px; font-weight:700; }
+.tx-badge-debit  { background:#0d6efd; color:#fff; padding:3px 10px; border-radius:4px; font-size:12px; font-weight:700; }
+.tx-badge-expense{ background:#ffc107; color:#212529; padding:3px 10px; border-radius:4px; font-size:12px; font-weight:700; }
+.tx-badge-advance{ background:#6f42c1; color:#fff; padding:3px 10px; border-radius:4px; font-size:12px; font-weight:700; }
+.tx-badge-cashsale{ background:#0dcaf0; color:#212529; padding:3px 10px; border-radius:4px; font-size:12px; font-weight:700; }
+
+/* Profit/Loss colors */
+.profit-pos { color: #1e8449 !important; }
+.profit-neg { color: #c0392b !important; }
+
+/* Machine card */
+.machine-card { border: 1px solid #dee2e6; border-radius: 10px; padding: 15px; margin-bottom: 15px; background: #fff; }
+
+/* Live calc */
+.live-calc { background: #f8f9fa; border-radius: 8px; padding: 10px; margin-top: 8px; font-size: 13px; }
+
+/* Pagination */
+.pagination .page-link { border-radius: 6px !important; margin: 0 2px; }
+
+/* Summary s-card */
+.s-card { background:#fff; border-radius:10px; padding:16px 18px; border:1px solid #eef; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+.s-card .s-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#888; margin-bottom:4px; }
+.s-card .s-value { font-size:1.2rem; font-weight:800; }
+.s-card .s-sub   { font-size:11px; color:#aaa; margin-top:3px; }
+
+/* Print */
+@media print {
+  .no-print, #navbar-placeholder, #footer-placeholder,
+  .btn, button { display: none !important; }
+  body { background: white; }
+  .card { box-shadow: none; border: 1px solid #ddd; }
+  @page { margin: 10mm; }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .welcome-card { padding: 1rem; }
+  .main-wrapper { padding-top: 5px; }
+}

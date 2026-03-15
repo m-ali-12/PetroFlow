@@ -1,0 +1,137 @@
+<style>
+.navbar {
+    background: linear-gradient(135deg, #1a5276 0%, #2980b9 100%) !important;
+    padding: 0.6rem 0;
+    box-shadow: 0 2px 15px rgba(26,82,118,0.4);
+}
+.navbar-brand {
+    color: white !important;
+    font-size: 1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.navbar-brand img { border-radius: 6px; }
+.navbar-toggler { border-color: rgba(255,255,255,0.4); }
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255,255,255,0.9)' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+.navbar .nav-link {
+    color: rgba(255,255,255,0.85) !important;
+    font-weight: 500;
+    font-size: 14px;
+    padding: 8px 14px !important;
+    border-radius: 8px;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.navbar .nav-link:hover { background: rgba(255,255,255,0.15); color: #fff !important; }
+.navbar .nav-link.active { background: rgba(255,255,255,0.25) !important; color: #fff !important; font-weight: 600; }
+.user-badge {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    padding: 4px 12px 4px 8px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+}
+.user-avatar {
+    width: 28px; height: 28px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+}
+.btn-logout {
+    background: rgba(231,76,60,0.8);
+    border: 1px solid rgba(231,76,60,0.5);
+    color: white;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.btn-logout:hover { background: #e74c3c; }
+@media (min-width: 992px) { .navbar-nav { gap: 4px; } }
+</style>
+
+<nav class="navbar navbar-expand-lg sticky-top">
+  <div class="container-fluid">
+    <!-- Brand -->
+    <a class="navbar-brand" href="index.html">
+      <img src="assets/logo.svg" height="34" alt="Logo">
+      <span>
+        پٹرول پمپ منیجمنٹ
+        <br><small style="font-size:10px;opacity:0.8;">Petrol Pump Management</small>
+      </span>
+    </a>
+
+    <!-- Mobile Toggle -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Nav Items -->
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto align-items-lg-center">
+        <li class="nav-item">
+          <a class="nav-link" href="index.html" data-page="index">
+            <i class="bi bi-speedometer2"></i> Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="customers.html" data-page="customers">
+            <i class="bi bi-people"></i> Customers
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="transactions.html" data-page="transactions">
+            <i class="bi bi-receipt"></i> Transactions
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="daily-readings.html" data-page="daily-readings">
+            <i class="bi bi-clipboard-data"></i> Daily Readings
+          </a>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+            <i class="bi bi-grid"></i> More
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="stock.html"><i class="bi bi-droplet me-2"></i>Stock</a></li>
+            <li><a class="dropdown-item" href="profit-loss.html"><i class="bi bi-graph-up me-2"></i>Profit & Loss</a></li>
+            <li><a class="dropdown-item" href="reports.html"><i class="bi bi-file-earmark-bar-graph me-2"></i>Reports</a></li>
+            <li><a class="dropdown-item" href="mobil.html"><i class="bi bi-oil me-2"></i>Mobil Oil</a></li>
+            <li><a class="dropdown-item" href="rent.html"><i class="bi bi-shop me-2"></i>Shop Rent</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="settings.html"><i class="bi bi-gear me-2"></i>Settings</a></li>
+          </ul>
+        </li>
+
+        <!-- User Info + Logout -->
+        <li class="nav-item ms-2">
+          <div class="user-badge">
+            <div class="user-avatar" id="user-avatar">U</div>
+            <span id="user-name" class="d-none d-lg-inline">User</span>
+          </div>
+        </li>
+        <li class="nav-item ms-1">
+          <button class="btn-logout" id="logout-btn" onclick="handleLogout()">
+            <i class="bi bi-box-arrow-right me-1"></i>Logout
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
