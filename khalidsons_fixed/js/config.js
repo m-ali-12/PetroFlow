@@ -25,7 +25,9 @@
         }
 
         if (SUPABASE_ANON_KEY === 'APNI_ANON_KEY_YAHAN_DALO') {
-            console.error('❌ config.js mein SUPABASE_ANON_KEY set nahi! setup-config.html kholein.');
+            console.error('❌ config.js mein SUPABASE_ANON_KEY set nahi! Supabase Dashboard → Settings → API → anon public key copy karein aur config.js line 19 mein paste karein.');
+            // Key nahi hai but phir bhi dummy client banao taake navbar/footer load ho sakein
+            window.supabaseClient = null;
             return;
         }
 

@@ -762,22 +762,25 @@
   document.addEventListener("DOMContentLoaded", async () => {
     console.log("🚀 App initializing...");
 
-    // Wait for supabaseClient to be ready
+    // ✅ Navbar/Footer PEHLE load karo — supabase ka wait nahi
+    await loadComponentWithFallback("navbar-placeholder", "components/navbar.html", "navbar.html");
+    await loadComponentWithFallback("footer-placeholder", "components/footer.html", "footer.html");
+    setActiveNav();
+    initClock();
+    initFooterYear();
+
+    // ✅ Ab supabaseClient ka wait karo data ke liye
     await new Promise((resolve) => {
+      let attempts = 0;
       function check() {
+        attempts++;
         if (window.supabaseClient) return resolve();
+        if (attempts > 50) { console.warn("supabaseClient timeout — config.js check karein"); return resolve(); }
         setTimeout(check, 100);
       }
       check();
     });
 
-    // Load navbar/footer
-    await loadComponentWithFallback("navbar-placeholder", "components/navbar.html", "navbar.html");
-    await loadComponentWithFallback("footer-placeholder", "components/footer.html", "footer.html");
-
-    setActiveNav();
-    initClock();
-    initFooterYear();
     loadFuelPrices();
     initSaleAutoCalc();
 
