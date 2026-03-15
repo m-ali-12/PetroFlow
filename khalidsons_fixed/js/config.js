@@ -1,27 +1,31 @@
 // =============================================
 // FILE: js/config.js
-// SINGLE SOURCE OF TRUTH FOR SUPABASE
+// =============================================
+// ⚠️  SETUP: Supabase Dashboard → Settings → API
+//     se apna URL aur anon key copy karke neeche dalo
 // =============================================
 
 (function () {
     'use strict';
 
-    if (window.PETRO_CONFIG_LOADED) {
-        console.log('Config already loaded');
-        return;
-    }
-
+    if (window.PETRO_CONFIG_LOADED) return;
     window.PETRO_CONFIG_LOADED = true;
 
-    // ⚠️  IMPORTANT: Apna Supabase URL aur ANON KEY yahan dalein
-    // Supabase Dashboard → Settings → API → Project URL & anon public key
-    const SUPABASE_URL = 'https://ycoxgzplqkqqhzqrclvt.supabase.co';
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljb3hnenBscWtxcWh6cXJjbHZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2NTE2MjEsImV4cCI6MjA4NjIyNzYyMX0.wYQN_c-LVl949E1Hp0AAeyHtvDEpo92Llpo4b21cHN8";
+    // ════════════════════════════════════════════
+    // 👇 YAHAN APNA URL AUR KEY DALO
+    // ════════════════════════════════════════════
+    const SUPABASE_URL     = 'https://ejvnglvplhizdkvujszj.supabase.co';
+    const SUPABASE_ANON_KEY = 'APNI_ANON_KEY_YAHAN_DALO';
+    // ════════════════════════════════════════════
 
     function initSupabase() {
         if (!window.supabase || typeof window.supabase.createClient !== 'function') {
-            console.error('Supabase library not loaded!');
             setTimeout(initSupabase, 100);
+            return;
+        }
+
+        if (SUPABASE_ANON_KEY === 'APNI_ANON_KEY_YAHAN_DALO') {
+            console.error('❌ config.js mein SUPABASE_ANON_KEY set nahi! setup-config.html kholein.');
             return;
         }
 
@@ -31,18 +35,12 @@
                 SUPABASE_ANON_KEY,
                 {
                     auth: {
-                        persistSession: true,        // ✅ Session localStorage mein save hogi
-                        autoRefreshToken: true,      // ✅ Token auto-refresh
-                        detectSessionInUrl: true     // ✅ OAuth redirects support
-                    },
-                    global: {
-                        headers: {
-                            apikey: SUPABASE_ANON_KEY
-                        }
+                        persistSession: true,
+                        autoRefreshToken: true,
+                        detectSessionInUrl: true
                     }
                 }
             );
-
             console.log('✅ Supabase initialized');
         }
     }
