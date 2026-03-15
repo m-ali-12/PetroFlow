@@ -173,127 +173,114 @@
   <script src="js/config.js"></script>
 
   <script>
-    // Initialize Supabase
-    const supabase = window.supabaseClient;
+    // ✅ FIX: window.supabaseClient use karo - 'const supabase' declare nahi karo
+    // Yeh fix "Identifier supabase has already been declared" error solve karta hai
+
+    function getClient() {
+      return window.supabaseClient;
+    }
+
+    // Already logged in check
+    document.addEventListener('DOMContentLoaded', async () => {
+      const client = getClient();
+      if (!client) return;
+      try {
+        const { data: { session } } = await client.auth.getSession();
+        if (session) {
+          window.location.replace('index.html');
+        }
+      } catch(e) {}
+    });
 
     document.getElementById('signupForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      
-      const password = document.getElementById('password').value;
+
+      const password        = document.getElementById('password').value;
       const confirmPassword = document.getElementById('confirmPassword').value;
 
       if (password !== confirmPassword) {
-        showAlert('Passwords do not match!', 'danger');
+        showAlert('Passwords match nahi karte!', 'danger');
         return;
       }
-
       if (password.length < 6) {
-        showAlert('Password must be at least 6 characters!', 'danger');
+        showAlert('Password kam az kam 6 characters ka hona chahiye!', 'danger');
         return;
       }
 
       const btn = document.getElementById('signupBtn');
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating account...';
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Account ban raha hai...';
+
+      const client = getClient();
+      if (!client) {
+        showAlert('Database connection fail. Config check karo.', 'danger');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Create Account';
+        return;
+      }
 
       try {
-        const email = document.getElementById('email').value;
-        const fullName = document.getElementById('fullName').value;
-        const phone = document.getElementById('phone').value;
-        const pumpName = document.getElementById('pumpName').value;
-        const city = document.getElementById('city').value;
+        const email    = document.getElementById('email').value.trim();
+        const fullName = document.getElementById('fullName').value.trim();
+        const phone    = document.getElementById('phone').value.trim();
+        const pumpName = document.getElementById('pumpName').value.trim();
+        const city     = document.getElementById('city').value.trim();
         const province = document.getElementById('province').value;
-        const address = document.getElementById('address').value;
+        const address  = document.getElementById('address').value.trim();
 
-        console.log('Starting signup for:', email);
-
-        // Create user account with metadata
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: email,
+        // ✅ Supabase Auth Signup
+        const { data: authData, error: authError } = await client.auth.signUp({
+          email:    email,
           password: password,
           options: {
             data: {
               full_name: fullName,
-              phone: phone,
+              phone:     phone,
               pump_name: pumpName,
-              city: city,
-              province: province,
-              address: address
+              city:      city,
+              province:  province,
+              address:   address
             },
-            emailRedirectTo: 'https://petro-flow.vercel.app/login.html'  // ← NEW (your actual domain)
-
-            // window.location.origin + '/login.html'
+            emailRedirectTo: window.location.origin + '/login.html'
           }
         });
 
-        if (authError) {
-          console.error('Auth error:', authError);
-          throw authError;
-        }
+        if (authError) throw authError;
 
-        console.log('Signup successful:', authData);
-
-        // Store pump details in localStorage as backup
+        // Pump details localStorage mein save karo
         localStorage.setItem('pump_details', JSON.stringify({
-          name: pumpName,
-          city: city,
-          province: province,
-          address: address,
-          owner: fullName,
-          phone: phone
+          name: pumpName, city, province, address,
+          owner: fullName, phone
         }));
 
-        showAlert('Account created successfully! Please check your email to verify.', 'success');
-        
-        // Redirect after 3 seconds
-        setTimeout(() => {
-          window.location.href = 'login.html';
-        }, 3000);
+        showAlert('✅ Account ban gaya! Email verify karein aur phir login karein.', 'success');
+        setTimeout(() => { window.location.replace('login.html'); }, 3000);
 
       } catch (error) {
-        console.error('Signup error details:', error);
-        
-        let errorMessage = error.message;
-        
-        // Handle specific errors
-        if (error.message?.includes('User already registered')) {
-          errorMessage = 'This email is already registered. Please login instead.';
-        } else if (error.message?.includes('Invalid email')) {
-          errorMessage = 'Please enter a valid email address.';
-        } else if (error.message?.includes('Password')) {
-          errorMessage = 'Password must be at least 6 characters long.';
-        } else if (error.status === 500) {
-          errorMessage = 'Server error. Please check your Supabase configuration.';
+        console.error('Signup error:', error);
+        let msg = error.message || 'Account banane mein error aaya.';
+        if (msg.includes('User already registered') || msg.includes('already been registered')) {
+          msg = 'Yeh email pehle se registered hai. Login karein.';
+        } else if (msg.includes('Invalid email')) {
+          msg = 'Email sahi nahi hai.';
+        } else if (msg.includes('Password')) {
+          msg = 'Password kam az kam 6 characters ka hona chahiye.';
         }
-        
-        showAlert(errorMessage, 'danger');
-        
+        showAlert(msg, 'danger');
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Create Account';
       }
     });
 
     function showAlert(message, type) {
-      const alertHtml = `
+      document.getElementById('alert-container').innerHTML = `
         <div class="alert alert-${type} alert-dismissible fade show" role="alert">
           <i class="bi bi-${type === 'danger' ? 'exclamation-triangle' : 'check-circle'} me-2"></i>
           ${message}
           <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-      `;
-      document.getElementById('alert-container').innerHTML = alertHtml;
-      
-      // Scroll to top to show alert
+        </div>`;
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-
-    // Check if already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        console.log('User already logged in, redirecting...');
-        window.location.href = 'index.html';
-      }
-    });
   </script>
 </body>
 </html>

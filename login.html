@@ -187,7 +187,13 @@
         setTimeout(() => window.location.replace('index.html'), 1000);
 
       } catch (error) {
-        showAlert(error.message || 'Login failed. Try again.', 'danger');
+        let msg = error.message || 'Login fail ho gaya. Dobara try karein.';
+        // Email confirmation check
+        if (msg.includes('Invalid login credentials') || msg.includes('Email not confirmed')) {
+          msg = 'Login fail: Ya to email/password galat hai, ya email verify nahi hua. ' +
+                'Inbox check karein aur verification link click karein.';
+        }
+        showAlert(msg, 'danger');
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-box-arrow-in-right me-2"></i>Sign In';
       }

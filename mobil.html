@@ -716,8 +716,7 @@
    MOBIL PAGE — Product search + Customer search (exact same as
    transactions-COMPLETE-v5.js) + Price management
 ================================================================ */
-var supabase = window.supabaseClient;
-
+    // supabase = window.supabaseClient (inline removed to avoid re-declaration)
 let allProducts      = [];
 let allCustomers     = [];
 let expenseCategories= [];
@@ -776,7 +775,7 @@ async function loadCustomers(){
 ================================================================ */
 async function loadExpenseCategories(){
   try{
-    const {data} = await supabase.from('expense_categories').select('*').order('name');
+    const {data} = await window.supabaseClient.from('expense_categories').select('*').order('name');
     expenseCategories = (data && data.length) ? data : [
       {name:'Bijli Bill',icon:'⚡'},{name:'Gas Bill',icon:'🔥'},
       {name:'Paani Bill',icon:'💧'},{name:'Kiraaya',icon:'🏠'},
@@ -931,11 +930,11 @@ async function handleMobilExpense(){
       custId = parseInt(cust.id);
     } else {
       // Owner account — transactions.js se same logic
-      const {data:owner} = await supabase.from('customers')
+      const {data:owner} = await window.supabaseClient.from('customers')
         .select('id').eq('category','Owner').maybeSingle();
       if(owner){ custId = owner.id; }
       else{
-        const {data:no, error:ce} = await supabase.from('customers')
+        const {data:no, error:ce} = await window.supabaseClient.from('customers')
           .insert([{sr_no:0, name:'Owner', category:'Owner', balance:0}])
           .select().single();
         if(ce) throw ce;
@@ -944,7 +943,7 @@ async function handleMobilExpense(){
     }
 
     // transactions table mein insert — same columns as transactions.js
-    const {error} = await supabase.from('transactions').insert([{
+    const {error} = await window.supabaseClient.from('transactions').insert([{
       customer_id:      custId,
       transaction_type: 'Expense',
       amount,
@@ -1087,7 +1086,7 @@ async function receiveMobilStock() {
   if(!qty)      { alert('Quantity enter karein'); return; }
   if(!rate)     { alert('Rate enter karein'); return; }
 
-  const {error} = await supabase.from('mobil_arrivals').insert([{
+  const {error} = await window.supabaseClient.from('mobil_arrivals').insert([{
     product_id:   parseInt(productId),
     product_name: prodName,
     category,
@@ -1127,7 +1126,7 @@ async function saleMobilOil() {
   if(!productId){ alert('Product select karein'); return; }
   if(!qty)      { alert('Quantity enter karein'); return; }
 
-  const {error} = await supabase.from('mobil_sales').insert([{
+  const {error} = await window.supabaseClient.from('mobil_sales').insert([{
     customer_id:   cust ? parseInt(cust.id) : null,
     customer_name: cust ? `#${cust.sr_no||'-'} — ${cust.name}` : 'Walk-in',
     product_id:    parseInt(productId),
@@ -1158,7 +1157,7 @@ async function saleMobilOil() {
 async function renderProductStockTable() {
   const tbody = el('product-stock-table');
   if(!tbody) return;
-  const {data,error} = await supabase.from('v_mobil_stock_balance').select('*');
+  const {data,error} = await window.supabaseClient.from('v_mobil_stock_balance').select('*');
   if(error||!data){ tbody.innerHTML='<tr><td colspan="7" class="text-center text-muted">Error loading</td></tr>'; return; }
 
   const priceMap = {};
@@ -1232,7 +1231,7 @@ async function savePriceUpdate(){
   if(!productId){ alert('Product select karein'); return; }
   if(!newPrice) { alert('Naya price enter karein'); return; }
 
-  const {error} = await supabase.from('mobil_product_prices').insert([{
+  const {error} = await window.supabaseClient.from('mobil_product_prices').insert([{
     product_id:parseInt(productId), sale_price:newPrice, effective_date:effDate, notes
   }]);
   if(error){ showToast('error','Error',error.message); return; }
@@ -1255,12 +1254,12 @@ async function saveNewProduct(){
   if(!name) { alert('Product naam likhein'); return; }
   if(!price){ alert('Starting price enter karein'); return; }
 
-  const {data:prod, error:pe} = await supabase.from('mobil_products')
+  const {data:prod, error:pe} = await window.supabaseClient.from('mobil_products')
     .insert([{name, brand, grade, volume_ml:volume, category, sort_order:allProducts.length+1}])
     .select().single();
   if(pe){ showToast('error','Error',pe.message); return; }
 
-  await supabase.from('mobil_product_prices').insert([{
+  await window.supabaseClient.from('mobil_product_prices').insert([{
     product_id:prod.id, sale_price:price, effective_date:today, notes:'Initial price'
   }]);
 

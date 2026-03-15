@@ -302,7 +302,7 @@
 <script src="js/app.js"></script>
 <script>
 (function(){
-  const supabase = window.supabaseClient;
+    // supabase = window.supabaseClient (inline removed to avoid re-declaration)
   let allCustomers = [];
   let allTransactions = [];
   let selectedCust = null;
@@ -323,8 +323,8 @@
   async function loadAll(){
     try{
       const [{data:custs},{data:txns}] = await Promise.all([
-        supabase.from('customers').select('*').order('sr_no'),
-        supabase.from('transactions').select('*, customers(name,sr_no)').order('id',{ascending:false}).limit(2000)
+        window.supabaseClient.from('customers').select('*').order('sr_no'),
+        window.supabaseClient.from('transactions').select('*, customers(name,sr_no)').order('id',{ascending:false}).limit(2000)
       ]);
       allCustomers = (custs||[]).filter(c => c.category !== 'Owner');
       allTransactions = txns||[];
@@ -590,7 +590,7 @@
     if(val===null)return;
     const nb=parseFloat(val)||0;
     try{
-      const{error}=await supabase.from('customers').update({balance:nb}).eq('id',custId);
+      const{error}=await window.supabaseClient.from('customers').update({balance:nb}).eq('id',custId);
       if(error)throw error;
       c.balance=nb;
       showToast('success','Done!',`${c.name} ka balance Rs.${fmt(nb)} ho gaya!`);
@@ -704,10 +704,10 @@ ${c.phone?`<div class="info-box" style="background:#cce5ff;border:1px solid #006
     const currentBal=parseFloat(cust.balance)||0;
     const newBal=method==='set'?amount:(currentBal+amount);
     try{
-      const{error}=await supabase.from('customers').update({balance:newBal}).eq('id',custId);
+      const{error}=await window.supabaseClient.from('customers').update({balance:newBal}).eq('id',custId);
       if(error)throw error;
       // Also save as transaction for record
-      await supabase.from('transactions').insert([{
+      await window.supabaseClient.from('transactions').insert([{
         customer_id:parseInt(custId),
         transaction_type:'Credit',
         amount:amount,
@@ -751,7 +751,7 @@ ${c.phone?`<div class="info-box" style="background:#cce5ff;border:1px solid #006
     if(!confirm(updates.length+' customers ka balance update karein?'))return;
     try{
       for(const u of updates){
-        const{error}=await supabase.from('customers').update({balance:u.balance}).eq('id',u.id);
+        const{error}=await window.supabaseClient.from('customers').update({balance:u.balance}).eq('id',u.id);
         if(error)throw error;
         const lc=allCustomers.find(c=>c.id===u.id);
         if(lc)lc.balance=u.balance;
