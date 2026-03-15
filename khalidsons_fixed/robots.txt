@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://petro-flow.vercel.app/sitemap.xml
