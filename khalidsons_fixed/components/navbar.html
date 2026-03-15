@@ -505,7 +505,6 @@
   document.querySelectorAll('.navbar .nav-link[data-page], .navbar .dropdown-item[data-page]').forEach(link => {
     if(link.dataset.page === page){
       link.classList.add('active');
-      // Agar dropdown item hai, parent toggle ko bhi active karo
       const dropMenu = link.closest('.dropdown-menu');
       if(dropMenu){
         const toggle = dropMenu.closest('.dropdown')?.querySelector('.dropdown-toggle');
@@ -514,4 +513,34 @@
     }
   });
 })();
+
+/* ── Logout Handler ─────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function() {
+  // User email show karo
+  function showUserEmail() {
+    const sb = window.supabaseClient;
+    if (!sb) { setTimeout(showUserEmail, 200); return; }
+    sb.auth.getSession().then(({ data }) => {
+      const email = data?.session?.user?.email;
+      const el = document.getElementById('user-email-display');
+      if (el && email) el.textContent = email;
+    });
+  }
+  showUserEmail();
+
+  // Logout button
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async function(e) {
+      e.preventDefault();
+      try {
+        const sb = window.supabaseClient;
+        if (sb) await sb.auth.signOut();
+      } catch(err) {
+        console.error('Logout error:', err);
+      }
+      window.location.replace('login.html');
+    });
+  }
+});
 </script>

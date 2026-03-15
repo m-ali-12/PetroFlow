@@ -326,9 +326,16 @@
           <div class="mb-3">
             <label class="form-label">Payment Type *</label>
             <select class="form-select" id="sale-payment-type" required>
-              <option value="cash">Cash (Naqad)</option>
-              <option value="credit">Credit - Udhaar</option>
+              <option value="cash">💵 Cash (Naqad)</option>
+              <option value="credit">📒 Credit - Udhaar (Baad mein)</option>
+              <option value="bank_transfer">🏦 Bank Transfer</option>
+              <option value="online">📱 Online / JazzCash / Easypaisa</option>
+              <option value="cheque">🧾 Cheque</option>
             </select>
+            <!-- Bank Reference - sirf bank/online select karne pe show hoga -->
+            <div id="sale-bank-ref-div" style="display:none;" class="mt-2">
+              <input class="form-control" id="sale-bank-ref" type="text" placeholder="Reference No. / Transaction ID (optional)"/>
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Notes (Optional)</label>
@@ -399,6 +406,18 @@
             </select>
           </div>
           <div class="mb-3"><label class="form-label">Amount Received *</label><div class="input-group"><span class="input-group-text">Rs.</span><input class="form-control" id="vasooli-amount" required step="0.01" type="number"/></div></div>
+          <div class="mb-3">
+            <label class="form-label">Payment Mode *</label>
+            <select class="form-select" id="vasooli-payment-mode">
+              <option value="cash">💵 Cash (Naqad)</option>
+              <option value="bank_transfer">🏦 Bank Transfer</option>
+              <option value="online">📱 Online / JazzCash / Easypaisa</option>
+              <option value="cheque">🧾 Cheque</option>
+            </select>
+            <div id="vasooli-bank-ref-div" style="display:none;" class="mt-2">
+              <input class="form-control" id="vasooli-bank-ref" type="text" placeholder="Reference No. / Transaction ID"/>
+            </div>
+          </div>
           <div class="mb-3"><label class="form-label">Notes (Optional)</label><input class="form-control" id="vasooli-description" type="text"/></div>
         </div>
         <div class="modal-footer">
