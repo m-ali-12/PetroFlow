@@ -1,0 +1,855 @@
+-- ================================================================
+-- KHALID & SONS — COMPLETE DATABASE SETUP SCRIPT
+-- Supabase SQL Editor mein yeh poora paste karke run karo
+-- ================================================================
+-- INSTRUCTIONS:
+-- 1. Supabase Dashboard → SQL Editor mein jao
+-- 2. Yeh poora script copy karo aur paste karo
+-- 3. "Run" button click karo
+-- 4. Phir neeche "INITIAL DATA" section bhi run karo
+-- ================================================================
+
+
+-- ================================================================
+-- STEP 1: EXTENSIONS
+-- ================================================================
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+
+-- ================================================================
+-- STEP 2: DROP TABLES (agar pehle se hain to clean start)
+-- ================================================================
+DROP TABLE IF EXISTS public.mobil_sales           CASCADE;
+DROP TABLE IF EXISTS public.mobil_arrivals        CASCADE;
+DROP TABLE IF EXISTS public.mobil_product_prices  CASCADE;
+DROP TABLE IF EXISTS public.mobil_products        CASCADE;
+DROP TABLE IF EXISTS public.mobil_transactions    CASCADE;
+DROP TABLE IF EXISTS public.mobil_customers       CASCADE;
+DROP TABLE IF EXISTS public.mobil_stock           CASCADE;
+DROP TABLE IF EXISTS public.member_card_usage     CASCADE;
+DROP TABLE IF EXISTS public.company_repayments    CASCADE;
+DROP TABLE IF EXISTS public.stock_purchases       CASCADE;
+DROP TABLE IF EXISTS public.company_transactions  CASCADE;
+DROP TABLE IF EXISTS public.cash_advances         CASCADE;
+DROP TABLE IF EXISTS public.expense_categories    CASCADE;
+DROP TABLE IF EXISTS public.expense_types         CASCADE;
+DROP TABLE IF EXISTS public.rent_payments         CASCADE;
+DROP TABLE IF EXISTS public.shops                 CASCADE;
+DROP TABLE IF EXISTS public.price_history         CASCADE;
+DROP TABLE IF EXISTS public.stock_entries         CASCADE;
+DROP TABLE IF EXISTS public.daily_reports         CASCADE;
+DROP TABLE IF EXISTS public.transactions          CASCADE;
+DROP TABLE IF EXISTS public.customers             CASCADE;
+DROP TABLE IF EXISTS public.tanks                 CASCADE;
+DROP TABLE IF EXISTS public.settings              CASCADE;
+DROP VIEW  IF EXISTS public.v_company_account_summary CASCADE;
+
+
+-- ================================================================
+-- STEP 3: CORE TABLES
+-- ================================================================
+
+-- ── SETTINGS ──────────────────────────────────────────────────
+CREATE TABLE public.settings (
+    id              SERIAL PRIMARY KEY,
+    user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    petrol_price    NUMERIC(10,2)  DEFAULT 276.50,
+    diesel_price    NUMERIC(10,2)  DEFAULT 289.75,
+    petrol_capacity NUMERIC(12,2)  DEFAULT 25000,
+    diesel_capacity NUMERIC(12,2)  DEFAULT 25000,
+    price_history   JSONB          DEFAULT '[]'::jsonb,
+    mobil_history   JSONB          DEFAULT '[]'::jsonb,
+    mobil_arrivals  JSONB          DEFAULT '[]'::jsonb,
+    mobil_sales     JSONB          DEFAULT '[]'::jsonb,
+    created_at      TIMESTAMPTZ    DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+-- ── TANKS ─────────────────────────────────────────────────────
+CREATE TABLE public.tanks (
+    id              SERIAL PRIMARY KEY,
+    user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    fuel_type       TEXT           NOT NULL,        -- 'Petrol', 'Diesel', 'Car Mobil', 'Open Mobil'
+    name            TEXT,                           -- Optional display name
+    current_stock   NUMERIC(12,2)  DEFAULT 0,
+    capacity        NUMERIC(12,2)  DEFAULT 25000,
+    last_updated    TIMESTAMPTZ    DEFAULT NOW(),
+    UNIQUE (user_id, fuel_type)
+);
+
+-- ── CUSTOMERS ─────────────────────────────────────────────────
+CREATE TABLE public.customers (
+    id              SERIAL PRIMARY KEY,
+    user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    sr_no           INTEGER,
+    name            TEXT           NOT NULL,
+    phone           TEXT,
+    category        TEXT,                           -- 'Owner', 'LEG', 'Individual', etc.
+    account_type    TEXT           NOT NULL DEFAULT 'credit',
+    balance         NUMERIC(14,2)  DEFAULT 0,
+    credit_limit    NUMERIC(14,2),
+    initial_credit  NUMERIC(14,2)  DEFAULT 0,
+    is_expense_also BOOLEAN        DEFAULT FALSE,
+    notes           TEXT,
+    created_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+-- ── TRANSACTIONS ──────────────────────────────────────────────
+CREATE TABLE public.transactions (
+    id              SERIAL PRIMARY KEY,
+    user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    customer_id     INTEGER        REFERENCES public.customers(id) ON DELETE SET NULL,
+    tank_id         INTEGER        REFERENCES public.tanks(id)     ON DELETE SET NULL,
+    transaction_type TEXT          NOT NULL,         -- 'Credit', 'Debit', 'Expense'
+    amount          NUMERIC(14,2)  NOT NULL DEFAULT 0,
+    liters          NUMERIC(12,2),
+    unit_price      NUMERIC(10,2),
+    description     TEXT,
+    fuel_type       VARCHAR(50),
+    payment_method  TEXT,
+    payment_mode    TEXT,
+    payment_month   VARCHAR(10),
+    entry_month     TEXT,
+    entry_method    VARCHAR(20),
+    expense_type    VARCHAR(100),
+    expense_account VARCHAR(50),
+    charges         NUMERIC(14,2)  DEFAULT 0,
+    reference_no    TEXT,
+    cash_advance_id BIGINT,
+    company_txn_id  BIGINT,
+    created_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+-- ── STOCK ENTRIES ─────────────────────────────────────────────
+CREATE TABLE public.stock_entries (
+    id              SERIAL PRIMARY KEY,
+    user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    fuel_type       VARCHAR(20)    NOT NULL,
+    liters          NUMERIC(12,2)  NOT NULL,
+    price_per_liter NUMERIC(10,2)  NOT NULL,
+    total_amount    NUMERIC(14,2)  NOT NULL,
+    charges         NUMERIC(14,2)  DEFAULT 0,
+    net_payable     NUMERIC(14,2),
+    invoice_number  VARCHAR(50),
+    truck_number    VARCHAR(50),
+    supplier_name   VARCHAR(100),
+    purchase_date   DATE           DEFAULT CURRENT_DATE,
+    notes           TEXT,
+    created_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+-- ── PRICE HISTORY ─────────────────────────────────────────────
+CREATE TABLE public.price_history (
+    id              SERIAL PRIMARY KEY,
+    user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    fuel_type       VARCHAR(50),
+    price           NUMERIC(10,2),
+    effective_date  DATE           DEFAULT CURRENT_DATE,
+    updated_by      VARCHAR(100),
+    created_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+-- ── DAILY REPORTS ─────────────────────────────────────────────
+CREATE TABLE public.daily_reports (
+    id              SERIAL PRIMARY KEY,
+    user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    report_date     DATE           NOT NULL,
+    petrol_opening  NUMERIC(12,2)  DEFAULT 0,
+    petrol_closing  NUMERIC(12,2)  DEFAULT 0,
+    diesel_opening  NUMERIC(12,2)  DEFAULT 0,
+    diesel_closing  NUMERIC(12,2)  DEFAULT 0,
+    total_sales     NUMERIC(14,2)  DEFAULT 0,
+    total_cash      NUMERIC(14,2)  DEFAULT 0,
+    notes           TEXT,
+    created_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+-- ── CASH ADVANCES ─────────────────────────────────────────────
+CREATE TABLE public.cash_advances (
+    id              BIGSERIAL PRIMARY KEY,
+    user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    customer_id     INTEGER        NOT NULL REFERENCES public.customers(id) ON DELETE CASCADE,
+    amount          NUMERIC(14,2)  NOT NULL,
+    reason          TEXT           NOT NULL,
+    advance_date    DATE           NOT NULL DEFAULT CURRENT_DATE,
+    status          TEXT           NOT NULL DEFAULT 'open',   -- 'open', 'settled'
+    notes           TEXT,
+    created_at      TIMESTAMPTZ    DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+-- ── EXPENSE CATEGORIES ────────────────────────────────────────
+CREATE TABLE public.expense_categories (
+    id              BIGSERIAL PRIMARY KEY,
+    user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    name            TEXT           NOT NULL,
+    icon            TEXT,
+    is_default      BOOLEAN        DEFAULT FALSE,
+    created_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+-- ── EXPENSE TYPES ─────────────────────────────────────────────
+CREATE TABLE public.expense_types (
+    id              BIGSERIAL PRIMARY KEY,
+    name            TEXT           NOT NULL
+);
+
+
+-- ================================================================
+-- STEP 4: SHOPS & RENT
+-- ================================================================
+
+-- ── SHOPS ─────────────────────────────────────────────────────
+CREATE TABLE public.shops (
+    id              BIGSERIAL PRIMARY KEY,
+    user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    shop_name       TEXT           NOT NULL,
+    tenant_name     TEXT           NOT NULL,
+    phone           TEXT,
+    monthly_rent    NUMERIC(12,2)  NOT NULL,
+    due_day         INTEGER        NOT NULL DEFAULT 1,
+    start_date      DATE           NOT NULL,
+    status          TEXT           NOT NULL DEFAULT 'active',  -- 'active', 'inactive'
+    notes           TEXT,
+    created_at      TIMESTAMPTZ    DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+-- ── RENT PAYMENTS ─────────────────────────────────────────────
+CREATE TABLE public.rent_payments (
+    id              BIGSERIAL PRIMARY KEY,
+    user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    shop_id         BIGINT         NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
+    rent_month      INTEGER        NOT NULL,
+    rent_year       INTEGER        NOT NULL,
+    amount_due      NUMERIC(12,2)  NOT NULL,
+    amount_paid     NUMERIC(12,2)  DEFAULT 0,
+    due_date        DATE           NOT NULL,
+    paid_date       DATE,
+    payment_method  TEXT,
+    status          TEXT           NOT NULL DEFAULT 'pending',  -- 'pending', 'paid', 'partial'
+    notes           TEXT,
+    created_at      TIMESTAMPTZ    DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+
+-- ================================================================
+-- STEP 5: COMPANY / GO COMPANY TABLES
+-- ================================================================
+
+-- ── COMPANY TRANSACTIONS ──────────────────────────────────────
+CREATE TABLE public.company_transactions (
+    id              BIGSERIAL PRIMARY KEY,
+    user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    company_id      INTEGER        NOT NULL,
+    txn_type        TEXT           NOT NULL,   -- 'stock_purchase', 'card_usage', 'repayment', 'cash_payment'
+    amount          NUMERIC(14,2)  NOT NULL,
+    direction       TEXT           NOT NULL,   -- 'debit', 'credit'
+    charges         NUMERIC(14,2)  DEFAULT 0,
+    net_amount      NUMERIC(14,2),
+    fuel_type       TEXT,
+    liters          NUMERIC(12,2),
+    unit_price      NUMERIC(10,2),
+    payment_mode    TEXT,
+    reference_no    TEXT,
+    member_id       INTEGER,
+    txn_date        DATE           NOT NULL DEFAULT CURRENT_DATE,
+    description     TEXT,
+    notes           TEXT,
+    created_at      TIMESTAMPTZ    DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+-- ── STOCK PURCHASES (Company) ─────────────────────────────────
+CREATE TABLE public.stock_purchases (
+    id              BIGSERIAL PRIMARY KEY,
+    user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    company_id      INTEGER        NOT NULL,
+    company_txn_id  BIGINT         REFERENCES public.company_transactions(id) ON DELETE SET NULL,
+    fuel_type       TEXT           NOT NULL,
+    liters          NUMERIC(12,2)  NOT NULL,
+    unit_price      NUMERIC(10,2)  NOT NULL,
+    total_amount    NUMERIC(14,2),
+    charges         NUMERIC(14,2)  DEFAULT 0,
+    net_payable     NUMERIC(14,2),
+    invoice_no      TEXT,
+    truck_no        TEXT,
+    supplier_name   VARCHAR(100),
+    purchase_date   DATE           NOT NULL DEFAULT CURRENT_DATE,
+    notes           TEXT,
+    created_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+-- ── MEMBER CARD USAGE ─────────────────────────────────────────
+CREATE TABLE public.member_card_usage (
+    id              BIGSERIAL PRIMARY KEY,
+    user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    company_id      INTEGER        NOT NULL,
+    member_id       INTEGER        NOT NULL,
+    company_txn_id  BIGINT         REFERENCES public.company_transactions(id) ON DELETE SET NULL,
+    fuel_type       TEXT           NOT NULL,
+    liters          NUMERIC(12,2)  NOT NULL,
+    unit_price      NUMERIC(10,2)  NOT NULL,
+    total_amount    NUMERIC(14,2),
+    atm_charges     NUMERIC(14,2)  DEFAULT 0,
+    misc_charges    NUMERIC(14,2)  DEFAULT 0,
+    grand_total     NUMERIC(14,2),
+    usage_date      DATE           NOT NULL DEFAULT CURRENT_DATE,
+    description     TEXT,
+    notes           TEXT,
+    created_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+-- ── COMPANY REPAYMENTS ────────────────────────────────────────
+CREATE TABLE public.company_repayments (
+    id              BIGSERIAL PRIMARY KEY,
+    user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    company_id      INTEGER        NOT NULL,
+    company_txn_id  BIGINT         REFERENCES public.company_transactions(id) ON DELETE SET NULL,
+    amount          NUMERIC(14,2)  NOT NULL,
+    payment_mode    TEXT           NOT NULL,
+    reference_no    TEXT,
+    payment_date    DATE           NOT NULL DEFAULT CURRENT_DATE,
+    notes           TEXT,
+    verified        BOOLEAN        DEFAULT FALSE,
+    created_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+
+-- ================================================================
+-- STEP 6: MOBIL OIL TABLES
+-- ================================================================
+
+-- ── MOBIL PRODUCTS ────────────────────────────────────────────
+CREATE TABLE public.mobil_products (
+    id              BIGSERIAL PRIMARY KEY,
+    name            TEXT           NOT NULL,
+    brand           TEXT,
+    grade           TEXT,
+    volume_ml       INTEGER,
+    unit            TEXT           DEFAULT 'liter',
+    category        TEXT           NOT NULL DEFAULT 'Car Mobil',  -- 'Car Mobil', 'Open Mobil'
+    is_active       BOOLEAN        DEFAULT TRUE,
+    sort_order      INTEGER        DEFAULT 0,
+    notes           TEXT,
+    created_at      TIMESTAMPTZ    DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+-- ── MOBIL PRODUCT PRICES ──────────────────────────────────────
+CREATE TABLE public.mobil_product_prices (
+    id              BIGSERIAL PRIMARY KEY,
+    product_id      BIGINT         NOT NULL REFERENCES public.mobil_products(id) ON DELETE CASCADE,
+    sale_price      NUMERIC(12,2)  NOT NULL,
+    purchase_price  NUMERIC(12,2),
+    effective_date  DATE           NOT NULL DEFAULT CURRENT_DATE,
+    changed_by      TEXT,
+    notes           TEXT,
+    created_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+-- ── MOBIL STOCK ───────────────────────────────────────────────
+CREATE TABLE public.mobil_stock (
+    id              SERIAL PRIMARY KEY,
+    user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    oil_type        TEXT           NOT NULL,   -- 'Car Mobil', 'Open Mobil'
+    brand           TEXT,
+    grade           TEXT,
+    current_stock   NUMERIC(12,2)  DEFAULT 0,
+    unit            TEXT           DEFAULT 'liter',
+    last_updated    TIMESTAMPTZ    DEFAULT NOW()
+);
+
+-- ── MOBIL ARRIVALS ────────────────────────────────────────────
+CREATE TABLE public.mobil_arrivals (
+    id              BIGSERIAL PRIMARY KEY,
+    user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    product_id      BIGINT         REFERENCES public.mobil_products(id) ON DELETE SET NULL,
+    product_name    TEXT           NOT NULL,
+    category        TEXT           NOT NULL,   -- 'Car Mobil', 'Open Mobil'
+    supplier        TEXT,
+    quantity        NUMERIC(10,2)  NOT NULL,
+    rate            NUMERIC(10,2)  NOT NULL,
+    total_cost      NUMERIC(14,2),
+    arrival_date    DATE           NOT NULL DEFAULT CURRENT_DATE,
+    invoice_no      TEXT,
+    notes           TEXT,
+    created_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+-- ── MOBIL SALES ───────────────────────────────────────────────
+CREATE TABLE public.mobil_sales (
+    id              BIGSERIAL PRIMARY KEY,
+    user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    customer_id     INTEGER        REFERENCES public.customers(id) ON DELETE SET NULL,
+    customer_name   TEXT,
+    product_id      BIGINT         REFERENCES public.mobil_products(id) ON DELETE SET NULL,
+    product_name    TEXT           NOT NULL,
+    category        TEXT           NOT NULL,
+    quantity        NUMERIC(10,2)  NOT NULL,
+    rate            NUMERIC(10,2)  NOT NULL,
+    total_amount    NUMERIC(14,2),
+    payment_type    TEXT           DEFAULT 'cash',   -- 'cash', 'credit'
+    sale_date       DATE           NOT NULL DEFAULT CURRENT_DATE,
+    notes           TEXT,
+    created_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+-- ── MOBIL CUSTOMERS (legacy) ──────────────────────────────────
+CREATE TABLE public.mobil_customers (
+    id              SERIAL PRIMARY KEY,
+    customer_name   TEXT           NOT NULL,
+    phone           TEXT,
+    address         TEXT,
+    vehicle_type    TEXT,
+    created_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+-- ── MOBIL TRANSACTIONS (legacy) ───────────────────────────────
+CREATE TABLE public.mobil_transactions (
+    id              SERIAL PRIMARY KEY,
+    customer_id     INTEGER        REFERENCES public.mobil_customers(id) ON DELETE SET NULL,
+    stock_id        INTEGER,
+    transaction_type TEXT          NOT NULL,
+    payment_type    TEXT,
+    description     TEXT,
+    amount          NUMERIC(14,2)  DEFAULT 0,
+    created_at      TIMESTAMPTZ    DEFAULT NOW()
+);
+
+
+-- ================================================================
+-- STEP 7: INDEXES (Performance ke liye)
+-- ================================================================
+CREATE INDEX idx_transactions_user       ON public.transactions(user_id);
+CREATE INDEX idx_transactions_customer   ON public.transactions(customer_id);
+CREATE INDEX idx_transactions_created    ON public.transactions(created_at DESC);
+CREATE INDEX idx_transactions_type       ON public.transactions(transaction_type);
+CREATE INDEX idx_customers_user          ON public.customers(user_id);
+CREATE INDEX idx_customers_sr_no         ON public.customers(sr_no);
+CREATE INDEX idx_tanks_user              ON public.tanks(user_id);
+CREATE INDEX idx_stock_entries_user      ON public.stock_entries(user_id);
+CREATE INDEX idx_stock_entries_date      ON public.stock_entries(purchase_date DESC);
+CREATE INDEX idx_mobil_arrivals_user     ON public.mobil_arrivals(user_id);
+CREATE INDEX idx_mobil_sales_user        ON public.mobil_sales(user_id);
+CREATE INDEX idx_shops_user              ON public.shops(user_id);
+CREATE INDEX idx_rent_payments_shop      ON public.rent_payments(shop_id);
+CREATE INDEX idx_company_txns_user       ON public.company_transactions(user_id);
+CREATE INDEX idx_cash_advances_user      ON public.cash_advances(user_id);
+CREATE INDEX idx_settings_user           ON public.settings(user_id);
+CREATE INDEX idx_daily_reports_user      ON public.daily_reports(user_id);
+
+
+-- ================================================================
+-- STEP 8: ROW LEVEL SECURITY (RLS) — VERY IMPORTANT
+-- Har user sirf apna data dekhe
+-- ================================================================
+
+-- Enable RLS on all tables
+ALTER TABLE public.settings           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tanks               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customers           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transactions        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.stock_entries       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.price_history       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.daily_reports       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cash_advances       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.expense_categories  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.shops               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.rent_payments       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.company_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.stock_purchases     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.member_card_usage   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.company_repayments  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.mobil_arrivals      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.mobil_sales         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.mobil_stock         ENABLE ROW LEVEL SECURITY;
+
+-- RLS POLICIES — har table ke liye 4 policies (SELECT, INSERT, UPDATE, DELETE)
+
+-- Settings
+CREATE POLICY "settings_select" ON public.settings FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "settings_insert" ON public.settings FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "settings_update" ON public.settings FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "settings_delete" ON public.settings FOR DELETE USING (auth.uid() = user_id);
+
+-- Tanks
+CREATE POLICY "tanks_select" ON public.tanks FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "tanks_insert" ON public.tanks FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "tanks_update" ON public.tanks FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "tanks_delete" ON public.tanks FOR DELETE USING (auth.uid() = user_id);
+
+-- Customers
+CREATE POLICY "customers_select" ON public.customers FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "customers_insert" ON public.customers FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "customers_update" ON public.customers FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "customers_delete" ON public.customers FOR DELETE USING (auth.uid() = user_id);
+
+-- Transactions
+CREATE POLICY "transactions_select" ON public.transactions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "transactions_insert" ON public.transactions FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "transactions_update" ON public.transactions FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "transactions_delete" ON public.transactions FOR DELETE USING (auth.uid() = user_id);
+
+-- Stock Entries
+CREATE POLICY "stock_entries_select" ON public.stock_entries FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "stock_entries_insert" ON public.stock_entries FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "stock_entries_update" ON public.stock_entries FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "stock_entries_delete" ON public.stock_entries FOR DELETE USING (auth.uid() = user_id);
+
+-- Price History
+CREATE POLICY "price_history_select" ON public.price_history FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "price_history_insert" ON public.price_history FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "price_history_update" ON public.price_history FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "price_history_delete" ON public.price_history FOR DELETE USING (auth.uid() = user_id);
+
+-- Daily Reports
+CREATE POLICY "daily_reports_select" ON public.daily_reports FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "daily_reports_insert" ON public.daily_reports FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "daily_reports_update" ON public.daily_reports FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "daily_reports_delete" ON public.daily_reports FOR DELETE USING (auth.uid() = user_id);
+
+-- Cash Advances
+CREATE POLICY "cash_advances_select" ON public.cash_advances FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "cash_advances_insert" ON public.cash_advances FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "cash_advances_update" ON public.cash_advances FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "cash_advances_delete" ON public.cash_advances FOR DELETE USING (auth.uid() = user_id);
+
+-- Expense Categories
+CREATE POLICY "expense_cat_select" ON public.expense_categories FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "expense_cat_insert" ON public.expense_categories FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "expense_cat_update" ON public.expense_categories FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "expense_cat_delete" ON public.expense_categories FOR DELETE USING (auth.uid() = user_id);
+
+-- Shops
+CREATE POLICY "shops_select" ON public.shops FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "shops_insert" ON public.shops FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "shops_update" ON public.shops FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "shops_delete" ON public.shops FOR DELETE USING (auth.uid() = user_id);
+
+-- Rent Payments
+CREATE POLICY "rent_select" ON public.rent_payments FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "rent_insert" ON public.rent_payments FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "rent_update" ON public.rent_payments FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "rent_delete" ON public.rent_payments FOR DELETE USING (auth.uid() = user_id);
+
+-- Company Transactions
+CREATE POLICY "company_txn_select" ON public.company_transactions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "company_txn_insert" ON public.company_transactions FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "company_txn_update" ON public.company_transactions FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "company_txn_delete" ON public.company_transactions FOR DELETE USING (auth.uid() = user_id);
+
+-- Stock Purchases
+CREATE POLICY "stock_purchases_select" ON public.stock_purchases FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "stock_purchases_insert" ON public.stock_purchases FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "stock_purchases_update" ON public.stock_purchases FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "stock_purchases_delete" ON public.stock_purchases FOR DELETE USING (auth.uid() = user_id);
+
+-- Member Card Usage
+CREATE POLICY "member_card_select" ON public.member_card_usage FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "member_card_insert" ON public.member_card_usage FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "member_card_update" ON public.member_card_usage FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "member_card_delete" ON public.member_card_usage FOR DELETE USING (auth.uid() = user_id);
+
+-- Company Repayments
+CREATE POLICY "company_rep_select" ON public.company_repayments FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "company_rep_insert" ON public.company_repayments FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "company_rep_update" ON public.company_repayments FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "company_rep_delete" ON public.company_repayments FOR DELETE USING (auth.uid() = user_id);
+
+-- Mobil Arrivals
+CREATE POLICY "mobil_arr_select" ON public.mobil_arrivals FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "mobil_arr_insert" ON public.mobil_arrivals FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "mobil_arr_update" ON public.mobil_arrivals FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "mobil_arr_delete" ON public.mobil_arrivals FOR DELETE USING (auth.uid() = user_id);
+
+-- Mobil Sales
+CREATE POLICY "mobil_sales_select" ON public.mobil_sales FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "mobil_sales_insert" ON public.mobil_sales FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "mobil_sales_update" ON public.mobil_sales FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "mobil_sales_delete" ON public.mobil_sales FOR DELETE USING (auth.uid() = user_id);
+
+-- Mobil Stock
+CREATE POLICY "mobil_stock_select" ON public.mobil_stock FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "mobil_stock_insert" ON public.mobil_stock FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "mobil_stock_update" ON public.mobil_stock FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "mobil_stock_delete" ON public.mobil_stock FOR DELETE USING (auth.uid() = user_id);
+
+-- Shared/global tables (no RLS needed — read-only reference data)
+CREATE POLICY "expense_types_read"  ON public.expense_types        FOR SELECT USING (true);
+CREATE POLICY "mobil_products_read" ON public.mobil_products        FOR SELECT USING (true);
+CREATE POLICY "mobil_prices_read"   ON public.mobil_product_prices  FOR SELECT USING (true);
+ALTER TABLE public.expense_types       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.mobil_products      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.mobil_product_prices ENABLE ROW LEVEL SECURITY;
+
+
+-- ================================================================
+-- STEP 9: VIEW — Company Account Summary
+-- ================================================================
+CREATE OR REPLACE VIEW public.v_company_account_summary AS
+SELECT
+    ct.user_id,
+    ct.company_id,
+    'Go Company'                         AS company_name,
+    COALESCE(SUM(CASE WHEN ct.direction='debit'  THEN ct.net_amount ELSE 0 END), 0) AS total_debit,
+    COALESCE(SUM(CASE WHEN ct.direction='credit' THEN ct.net_amount ELSE 0 END), 0) AS total_credit,
+    COALESCE(SUM(CASE WHEN ct.direction='debit'  THEN ct.net_amount ELSE 0 END), 0)
+  - COALESCE(SUM(CASE WHEN ct.direction='credit' THEN ct.net_amount ELSE 0 END), 0) AS balance
+FROM public.company_transactions ct
+GROUP BY ct.user_id, ct.company_id;
+
+
+-- ================================================================
+-- STEP 10: AUTO-UPDATED TIMESTAMP FUNCTION
+-- ================================================================
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Triggers
+CREATE TRIGGER update_settings_updated_at   BEFORE UPDATE ON public.settings           FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_shops_updated_at      BEFORE UPDATE ON public.shops               FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_rent_updated_at       BEFORE UPDATE ON public.rent_payments       FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_company_txn_updated   BEFORE UPDATE ON public.company_transactions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_cash_adv_updated      BEFORE UPDATE ON public.cash_advances       FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_mobil_prod_updated    BEFORE UPDATE ON public.mobil_products      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+
+-- ================================================================
+-- STEP 11: DEFAULT / SEED DATA
+-- (Yeh run hoga jab aap pehli baar login karoge — auto-setup)
+-- ================================================================
+
+-- Default expense types
+INSERT INTO public.expense_types (name) VALUES
+    ('Petrol Pump Expenses'),
+    ('Staff Salary'),
+    ('Electricity Bill'),
+    ('Water Bill'),
+    ('Maintenance'),
+    ('Generator'),
+    ('Other');
+
+-- Default mobil products
+INSERT INTO public.mobil_products (name, brand, category, unit, is_active, sort_order) VALUES
+    ('Car Mobil',   'Generic', 'Car Mobil',   'liter', true, 1),
+    ('Open Mobil',  'Generic', 'Open Mobil',  'liter', true, 2);
+
+
+-- ================================================================
+-- STEP 12: FUNCTION — Auto-setup when new user signs up
+-- Jab bhi naya user register hoga, uske liye tanks + settings
+-- automatically ban jayengi
+-- ================================================================
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Create default tanks
+    INSERT INTO public.tanks (user_id, fuel_type, name, current_stock, capacity)
+    VALUES
+        (NEW.id, 'Petrol',     'Petrol Tank',      0, 25000),
+        (NEW.id, 'Diesel',     'Diesel Tank',      0, 25000),
+        (NEW.id, 'Car Mobil',  'Car Mobil Stock',  0, 1000),
+        (NEW.id, 'Open Mobil', 'Open Mobil Stock', 0, 1000);
+
+    -- Create default settings
+    INSERT INTO public.settings (user_id, petrol_price, diesel_price, petrol_capacity, diesel_capacity)
+    VALUES (NEW.id, 276.50, 289.75, 25000, 25000);
+
+    -- Create default expense categories
+    INSERT INTO public.expense_categories (user_id, name, icon, is_default)
+    VALUES
+        (NEW.id, 'Staff Salary',     'bi-people',         true),
+        (NEW.id, 'Electricity',      'bi-lightning',      true),
+        (NEW.id, 'Maintenance',      'bi-tools',          true),
+        (NEW.id, 'Fuel Purchase',    'bi-fuel-pump',      true),
+        (NEW.id, 'Generator',        'bi-battery',        true),
+        (NEW.id, 'Other',            'bi-three-dots',     true);
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger: new user signup pe auto-run
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+
+-- ================================================================
+-- ✅ DATABASE SETUP COMPLETE!
+-- ================================================================
+-- Ab yeh karo:
+-- 1. Apni website kholein aur signup.html pe jao
+-- 2. Naya account banao (email + password)
+-- 3. Login karo — tanks aur settings automatically ban jayengi
+-- 4. Apna data enter karna shuru karo!
+-- ================================================================
+DO $$ BEGIN
+  RAISE NOTICE '✅ Khalid & Sons DB ready! Ab signup karein.';
+END $$;
+-- =========================================================
+-- QUICK FIX: CURRENT SYSTEM KO AUTH KE BAGHAIR CHALANE KE LIYE
+-- Is patch se existing app without login/auth work karegi
+-- =========================================================
+
+-- 1) Customers
+DROP POLICY IF EXISTS "customers_public_all" ON public.customers;
+CREATE POLICY "customers_public_all"
+ON public.customers
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- 2) Transactions
+DROP POLICY IF EXISTS "transactions_public_all" ON public.transactions;
+CREATE POLICY "transactions_public_all"
+ON public.transactions
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- 3) Tanks
+DROP POLICY IF EXISTS "tanks_public_all" ON public.tanks;
+CREATE POLICY "tanks_public_all"
+ON public.tanks
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- 4) Settings
+DROP POLICY IF EXISTS "settings_public_all" ON public.settings;
+CREATE POLICY "settings_public_all"
+ON public.settings
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- 5) Stock Entries
+DROP POLICY IF EXISTS "stock_entries_public_all" ON public.stock_entries;
+CREATE POLICY "stock_entries_public_all"
+ON public.stock_entries
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- 6) Price History
+DROP POLICY IF EXISTS "price_history_public_all" ON public.price_history;
+CREATE POLICY "price_history_public_all"
+ON public.price_history
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- 7) Daily Reports
+DROP POLICY IF EXISTS "daily_reports_public_all" ON public.daily_reports;
+CREATE POLICY "daily_reports_public_all"
+ON public.daily_reports
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- 8) Cash Advances
+DROP POLICY IF EXISTS "cash_advances_public_all" ON public.cash_advances;
+CREATE POLICY "cash_advances_public_all"
+ON public.cash_advances
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- 9) Expense Categories
+DROP POLICY IF EXISTS "expense_categories_public_all" ON public.expense_categories;
+CREATE POLICY "expense_categories_public_all"
+ON public.expense_categories
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- 10) Shops
+DROP POLICY IF EXISTS "shops_public_all" ON public.shops;
+CREATE POLICY "shops_public_all"
+ON public.shops
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- 11) Rent Payments
+DROP POLICY IF EXISTS "rent_payments_public_all" ON public.rent_payments;
+CREATE POLICY "rent_payments_public_all"
+ON public.rent_payments
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- 12) Company Transactions
+DROP POLICY IF EXISTS "company_transactions_public_all" ON public.company_transactions;
+CREATE POLICY "company_transactions_public_all"
+ON public.company_transactions
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- 13) Stock Purchases
+DROP POLICY IF EXISTS "stock_purchases_public_all" ON public.stock_purchases;
+CREATE POLICY "stock_purchases_public_all"
+ON public.stock_purchases
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- 14) Member Card Usage
+DROP POLICY IF EXISTS "member_card_usage_public_all" ON public.member_card_usage;
+CREATE POLICY "member_card_usage_public_all"
+ON public.member_card_usage
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- 15) Company Repayments
+DROP POLICY IF EXISTS "company_repayments_public_all" ON public.company_repayments;
+CREATE POLICY "company_repayments_public_all"
+ON public.company_repayments
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- 16) Mobil Arrivals
+DROP POLICY IF EXISTS "mobil_arrivals_public_all" ON public.mobil_arrivals;
+CREATE POLICY "mobil_arrivals_public_all"
+ON public.mobil_arrivals
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- 17) Mobil Sales
+DROP POLICY IF EXISTS "mobil_sales_public_all" ON public.mobil_sales;
+CREATE POLICY "mobil_sales_public_all"
+ON public.mobil_sales
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- 18) Mobil Stock
+DROP POLICY IF EXISTS "mobil_stock_public_all" ON public.mobil_stock;
+CREATE POLICY "mobil_stock_public_all"
+ON public.mobil_stock
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- =========================================================
+-- OPTIONAL BUT RECOMMENDED:
+-- user_id ko optional hi rehne do, koi aur change zaroori nahi
+-- =========================================================
+
+DO $$
+BEGIN
+  RAISE NOTICE '✅ Public access policies applied. Current system should now work without auth.';
+END $$;
