@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profit & Loss | Khalid and Sons Petroleum</title>
+
+  <link rel="icon" type="image/jfif" href="assets/logo.jfif">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      --clr-petrol:  #1a73e8;
+      --clr-diesel:  #0d6e4f;
+      --clr-mobil:   #7b2ff7;
+      --clr-income:  #1e8449;
+      --clr-expense: #c0392b;
+      --clr-primary: #1a5276;
+      --clr-muted:   #7f8c8d;
+    }
+
+    .metric-card {
+      background: #fff; border-radius: 12px; padding: 18px 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.07); border-top: 4px solid transparent;
+      height: 100%; transition: transform .15s;
+    }
+    .metric-card:hover { transform: translateY(-2px); }
+    .metric-card.green   { border-color: var(--clr-income); }
+    .metric-card.red     { border-color: var(--clr-expense); }
+    .metric-card.blue    { border-color: #2980b9; }
+    .metric-card.purple  { border-color: var(--clr-mobil); }
+    .metric-card.gold    { border-color: #d4ac0d; }
+    .metric-card.petrol  { border-color: var(--clr-petrol); }
+    .metric-card h6      { font-size: 10px; color: var(--clr-muted); margin: 0 0 6px; text-transform: uppercase; letter-spacing: .7px; }
+    .metric-card .val    { font-size: 20px; font-weight: 800; line-height: 1.2; }
+    .metric-card .sub    { font-size: 11px; color: var(--clr-muted); margin-top: 5px; line-height: 1.6; }
+    .metric-card .icon-wrap { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+    .section-card { background: #fff; border-radius: 12px; padding: 22px; box-shadow: 0 2px 8px rgba(0,0,0,.06); margin-bottom: 20px; }
+    .sc-title { font-weight: 700; font-size: 14px; color: var(--clr-primary); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2px solid #eaf0fb; display: flex; align-items: center; gap: 8px; }
+
+    /* Sales breakdown bar */
+    .sales-breakdown-bar { display: flex; border-radius: 8px; overflow: hidden; height: 12px; margin: 8px 0 4px; background: #f0f2f5; }
+    .sbb-petrol  { background: var(--clr-petrol); transition: width .5s; }
+    .sbb-diesel  { background: var(--clr-diesel); transition: width .5s; }
+    .sbb-mobil   { background: var(--clr-mobil); transition: width .5s; }
+    .sbb-credit  { background: #f39c12; transition: width .5s; }
+
+    .breakdown-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; margin: 1px; }
+    .bp-petrol  { background: #e3f0fd; color: var(--clr-petrol); }
+    .bp-diesel  { background: #e0f4ee; color: var(--clr-diesel); }
+    .bp-mobil   { background: #f0e6ff; color: var(--clr-mobil); }
+    .bp-credit  { background: #fff3cd; color: #856404; }
+
+    .filter-bar { background: #fff; border-radius: 10px; padding: 14px 20px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,.05); }
+    .page-header-pl { background: linear-gradient(135deg,#1a5276,#2e86c1); color: #fff; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; }
+
+    .pl-table th { background: #eaf0fb; color: var(--clr-primary); font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 10px 12px; }
+    .pl-table td { padding: 10px 12px; font-size: 13px; vertical-align: middle; border-bottom: 1px solid #f0f2f5; }
+    .pl-table tbody tr:hover td { background: #f8fbff; }
+    .total-row td { font-weight: 700; background: #f0f4f8 !important; }
+
+    .profit-pos { color: var(--clr-income); font-weight: 700; }
+    .profit-neg { color: var(--clr-expense); font-weight: 700; }
+
+    .src-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+    .src-petrol { background: #e3f0fd; color: var(--clr-petrol); }
+    .src-diesel { background: #e0f4ee; color: var(--clr-diesel); }
+    .src-mobil  { background: #f0e6ff; color: var(--clr-mobil); }
+    .src-credit { background: #fff3cd; color: #856404; }
+    .src-cash   { background: #d4edda; color: #155724; }
+    .src-exp    { background: #fdecea; color: #c0392b; }
+
+    .pl-loading { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 48px; color: var(--clr-muted); font-size: 15px; }
+    .exp-prog { height: 7px; border-radius: 4px; background: linear-gradient(90deg,#e74c3c,#f39c12); margin-top: 4px; }
+
+    /* Income Statement rows */
+    .pls-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 4px; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+    .pls-row.indent { padding-left: 24px; color: #444; }
+    .pls-row.subtotal { font-weight: 700; background: #f8fbff; padding: 10px 12px; border-radius: 6px; margin: 6px 0; border-bottom: none; }
+    .pls-row.grand-profit { font-weight: 800; font-size: 15px; background: linear-gradient(135deg,#1e8449,#27ae60); color: #fff; padding: 14px 16px; border-radius: 10px; margin-top: 10px; border-bottom: none; }
+    .pls-row.grand-loss { font-weight: 800; font-size: 15px; background: linear-gradient(135deg,#c0392b,#e74c3c); color: #fff; padding: 14px 16px; border-radius: 10px; margin-top: 10px; border-bottom: none; }
+
+    @media print { .no-print { display: none !important; } }
+  </style>
+</head>
+<body data-page="profit-loss">
+
+  <div id="navbar-placeholder"></div>
+
+  <div class="container-fluid main-wrapper pt-4">
+    <div class="container-xl">
+
+      <!-- Page Header -->
+      <div class="page-header-pl d-flex justify-content-between align-items-center no-print mb-4">
+        <div>
+          <h4 class="mb-1 fw-bold"><i class="bi bi-graph-up-arrow me-2"></i>Profit &amp; Loss Report</h4>
+          <small style="opacity:.8;">Petrol + Diesel + Mobil Oil — tamam income aur kharche ek jagah</small>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-light btn-sm" onclick="window.print()"><i class="bi bi-printer me-1"></i>Print</button>
+          <button class="btn btn-outline-light btn-sm" onclick="exportCSV()"><i class="bi bi-download me-1"></i>Export CSV</button>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar d-flex flex-wrap gap-3 align-items-end no-print">
+        <div>
+          <label class="form-label small fw-semibold mb-1">Report Type</label>
+          <select id="report-period" class="form-select form-select-sm" style="min-width:150px;">
+            <option value="today">Aaj</option>
+            <option value="this_week">Is Hafte</option>
+            <option value="this_month" selected>Is Mahine</option>
+            <option value="last_month">Pichle Mahine</option>
+            <option value="this_year">Is Saal</option>
+            <option value="last_year">Pichle Saal</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+        <div id="custom-range" style="display:none;" class="d-flex gap-2">
+          <div>
+            <label class="form-label small mb-1">From</label>
+            <input type="date" id="date-from" class="form-control form-control-sm">
+          </div>
+          <div>
+            <label class="form-label small mb-1">To</label>
+            <input type="date" id="date-to" class="form-control form-control-sm">
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="runReport()"><i class="bi bi-search me-1"></i>Report Dekho</button>
+        <div class="ms-auto"><small class="text-muted" id="report-label">Is Mahine ki report</small></div>
+      </div>
+
+      <!-- ══ KPI Cards ══ -->
+      <div class="row g-3 mb-4" id="metric-cards">
+        <div class="col-12"><div class="pl-loading"><div class="spinner-border spinner-border-sm text-primary"></div> Data load ho raha hai...</div></div>
+      </div>
+
+      <!-- ══ Sales Classification ══ -->
+      <div id="sales-classification" class="section-card mb-4" style="display:none;">
+        <div class="sc-title"><i class="bi bi-layers"></i> Sales Classification — Kis Source Se Kitni Income</div>
+        <div class="row g-3 mb-3" id="classification-cards"></div>
+        <div class="mt-1">
+          <div class="d-flex justify-content-between mb-1" style="font-size:11px;color:#888;">
+            <span>Sales Source Distribution</span>
+            <span id="sales-total-lbl"></span>
+          </div>
+          <div class="sales-breakdown-bar" id="sales-bar"></div>
+          <div class="d-flex flex-wrap gap-1 mt-2" id="sales-bar-legend"></div>
+        </div>
+      </div>
+
+      <!-- ══ P&L Income Statement ══ -->
+      <div id="pl-statement-section" class="section-card mb-4" style="display:none;">
+        <div class="sc-title"><i class="bi bi-file-earmark-bar-graph"></i> Income Statement (P&amp;L Summary)</div>
+        <div id="pl-statement-body"></div>
+      </div>
+
+      <!-- ══ Charts ══ -->
+      <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+          <div class="section-card">
+            <div class="sc-title"><i class="bi bi-bar-chart"></i> Monthly Income vs Expense (Last 6 Months)</div>
+            <div id="monthly-chart-wrap"><canvas id="monthlyChart" height="110"></canvas></div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="section-card">
+            <div class="sc-title"><i class="bi bi-pie-chart"></i> Expense Breakdown</div>
+            <div id="expense-chart-wrap"><canvas id="expenseChart" height="200"></canvas></div>
+            <div id="expense-legend" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Monthly Breakdown ══ -->
+      <div class="section-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="sc-title mb-0"><i class="bi bi-calendar3"></i> Monthly Breakdown</div>
+          <small class="text-muted" id="table-count"></small>
+        </div>
+        <div class="table-responsive">
+          <table class="table pl-table mb-0">
+            <thead><tr>
+              <th>Mahina</th>
+              <th class="text-end">⛽ Petrol/Diesel</th>
+              <th class="text-end">🛢️ Mobil Oil</th>
+              <th class="text-end">Total Sales</th>
+              <th class="text-end">Vasooli</th>
+              <th class="text-end">Kharche</th>
+              <th class="text-end">Net Munafa</th>
+              <th class="text-center">Status</th>
+            </tr></thead>
+            <tbody id="monthly-tbody"><tr><td colspan="8" class="text-center py-4 text-muted">Loading...</td></tr></tbody>
+            <tfoot id="monthly-tfoot"></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══ Daily Breakdown ══ -->
+      <div class="section-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="sc-title mb-0"><i class="bi bi-calendar-day"></i> Daily Breakdown</div>
+          <small class="text-muted" id="daily-count"></small>
+        </div>
+        <div class="table-responsive">
+          <table class="table pl-table mb-0">
+            <thead><tr>
+              <th>Taareekh</th>
+              <th class="text-end">⛽ Petrol/Diesel</th>
+              <th class="text-end">🛢️ Mobil Oil</th>
+              <th class="text-end">Total Sales</th>
+              <th class="text-end">Vasooli</th>
+              <th class="text-end">Kharche</th>
+              <th class="text-end">Net</th>
+              <th class="text-center">Status</th>
+            </tr></thead>
+            <tbody id="daily-tbody"><tr><td colspan="8" class="text-center py-4 text-muted">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══ All Transactions Detail ══ -->
+      <div class="section-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="sc-title mb-0"><i class="bi bi-receipt"></i> All Transactions Detail</div>
+          <div class="d-flex gap-2 align-items-center">
+            <select id="txn-filter" class="form-select form-select-sm" style="width:170px;" onchange="renderTransactionDetail()">
+              <option value="all">All Sources</option>
+              <option value="petrol_diesel">⛽ Petrol/Diesel</option>
+              <option value="mobil">🛢️ Mobil Oil</option>
+              <option value="expense">💸 Expenses</option>
+              <option value="vasooli">💰 Vasooli</option>
+            </select>
+            <small class="text-muted" id="txn-detail-count"></small>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table pl-table table-sm mb-0">
+            <thead><tr>
+              <th>Date</th>
+              <th>Source</th>
+              <th>Description</th>
+              <th>Customer</th>
+              <th class="text-end">Amount</th>
+              <th class="text-center">Type</th>
+            </tr></thead>
+            <tbody id="txn-detail-tbody"><tr><td colspan="6" class="text-center py-3 text-muted">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══ Expense Categories ══ -->
+      <div class="section-card">
+        <div class="sc-title"><i class="bi bi-list-ul"></i> Expense Category Detail</div>
+        <div id="expense-detail-list"><div class="text-center text-muted py-3">Loading...</div></div>
+      </div>
+
+      <!-- ══ Cash Advances ══ -->
+      <div class="section-card">
+        <div class="sc-title"><i class="bi bi-cash-coin"></i> Pending Cash Advances</div>
+        <div class="table-responsive">
+          <table class="table pl-table table-sm mb-0">
+            <thead><tr>
+              <th>Customer</th><th>Taareekh</th><th class="text-end">Amount</th><th>Wajah</th><th class="text-center">Status</th>
+            </tr></thead>
+            <tbody id="advance-tbody"><tr><td colspan="5" class="text-center py-3 text-muted">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+    <div id="liveToast" class="toast" role="alert">
+      <div class="toast-header">
+        <strong id="toast-title" class="me-auto">Info</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body" id="toast-message"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+  (function () {
+    'use strict';
+
+    // ── Helpers ──────────────────────────────────────────────────
+    function fmt(n) {
+      return Number(n || 0).toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function el(id) { return document.getElementById(id); }
+    function fmtDate(d) {
+      if (!d) return '—';
+      try { return new Date(d).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' }); }
+      catch(e) { return String(d); }
+    }
+
+    let monthlyChart = null;
+    let expenseChart = null;
+
+    // All loaded data lives here
+    const STATE = { txns: [], mobilSales: [], advances: [] };
+
+    // ── Date Range ────────────────────────────────────────────────
+    function dateToStartISO(d) { return d + 'T00:00:00+05:00'; }
+    function dateToEndISO(d)   { return d + 'T23:59:59+05:00'; }
+    function toDateStr(Y, M, D) {
+      return Y + '-' + String(M + 1).padStart(2, '0') + '-' + String(D).padStart(2, '0');
+    }
+
+    function getDateRange() {
+      const period = el('report-period').value;
+      const now = new Date();
+      const Y = now.getFullYear(), M = now.getMonth(), D = now.getDate();
+      let fromStr, toStr;
+
+      if      (period === 'today')      { fromStr = toStr = toDateStr(Y,M,D); }
+      else if (period === 'this_week')  { const ws=new Date(Y,M,D-now.getDay()); fromStr=toDateStr(ws.getFullYear(),ws.getMonth(),ws.getDate()); toStr=toDateStr(Y,M,D); }
+      else if (period === 'this_month') { fromStr=toDateStr(Y,M,1); toStr=toDateStr(Y,M,D); }
+      else if (period === 'last_month') { const le=new Date(Y,M,0); fromStr=toDateStr(Y,M-1,1); toStr=toDateStr(le.getFullYear(),le.getMonth(),le.getDate()); }
+      else if (period === 'this_year')  { fromStr=toDateStr(Y,0,1); toStr=toDateStr(Y,M,D); }
+      else if (period === 'last_year')  { fromStr=toDateStr(Y-1,0,1); toStr=toDateStr(Y-1,11,31); }
+      else if (period === 'custom')     { fromStr=el('date-from').value||toDateStr(Y,M,1); toStr=el('date-to').value||toDateStr(Y,M,D); }
+      else                              { fromStr='2020-01-01'; toStr=toDateStr(Y,M,D); }
+
+      return { fromStr, toStr, fromISO: dateToStartISO(fromStr), toISO: dateToEndISO(toStr) };
+    }
+
+    function getPeriodLabel() {
+      const m = { today:'Aaj ki report', this_week:'Is hafte ki report', this_month:'Is mahine ki report',
+                  last_month:'Pichle mahine ki report', this_year:'Is saal ki report',
+                  last_year:'Pichle saal ki report', custom:'Custom range ki report' };
+      return m[el('report-period').value] || 'Report';
+    }
+
+    // ── Init ──────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+      const now = new Date();
+      el('date-from').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-01';
+      el('date-to').value   = now.toISOString().split('T')[0];
+
+      el('report-period').addEventListener('change', function () {
+        el('custom-range').style.display = this.value === 'custom' ? 'flex' : 'none';
+        if (this.value !== 'custom') tryLoad();
+      });
+      tryLoad();
+    });
+
+    function tryLoad() {
+      if (!window.supabaseClient) { setTimeout(tryLoad, 200); return; }
+      loadReport();
+    }
+
+    // ── Main Data Loader ──────────────────────────────────────────
+    async function loadReport() {
+      el('report-label').textContent = getPeriodLabel();
+      el('metric-cards').innerHTML = `<div class="col-12"><div class="pl-loading">
+        <div class="spinner-border spinner-border-sm text-primary"></div> Data load ho raha hai...
+      </div></div>`;
+      el('sales-classification').style.display = 'none';
+      el('pl-statement-section').style.display = 'none';
+
+      try {
+        const sb = window.supabaseClient;
+        if (!sb) throw new Error('Supabase client not initialized');
+
+        let userId = null;
+        try { const { data: a } = await sb.auth.getUser(); userId = a?.user?.id || null; } catch(e) {}
+        console.log('User ID:', userId);
+
+        const { fromStr, toStr, fromISO, toISO } = getDateRange();
+        console.log('Date range (PKT):', fromISO, 'to', toISO);
+
+        // ── Query 1: Petrol/Diesel Transactions ──────────────────
+        let txQ = sb
+          .from('transactions')
+          .select('id, transaction_type, charges, description, created_at, expense_type, fuel_type, customers(name, sr_no)')
+          .gte('created_at', fromISO)
+          .lte('created_at', toISO)
+          .order('created_at', { ascending: false });
+        if (userId) txQ = txQ.eq('user_id', userId);
+        const { data: txns, error: txErr } = await txQ;
+        console.log('Transactions:', txns?.length, 'Error:', txErr);
+        if (txErr) throw txErr;
+
+        // ── Query 2: Mobil Oil Sales ─────────────────────────────
+        let mobQ = sb
+          .from('mobil_sales')
+          .select('id, product_name, category, quantity, rate, total_amount, payment_type, sale_date, customer_name, created_at')
+          .gte('sale_date', fromStr)
+          .lte('sale_date', toStr)
+          .order('sale_date', { ascending: false });
+        if (userId) mobQ = mobQ.eq('user_id', userId);
+        const { data: mobilSales, error: mobErr } = await mobQ;
+        console.log('Mobil Sales:', mobilSales?.length, 'Error:', mobErr);
+
+        // ── Query 3: Cash Advances ───────────────────────────────
+        let advQ = sb
+          .from('cash_advances')
+          .select('id, amount, reason, advance_date, status, customers(name, sr_no)')
+          .gte('advance_date', fromStr)
+          .lte('advance_date', toStr)
+          .order('advance_date', { ascending: false });
+        if (userId) advQ = advQ.eq('user_id', userId);
+        const { data: advances, error: advErr } = await advQ;
+        console.log('Advances:', advances?.length, 'Error:', advErr);
+
+        STATE.txns       = txns       || [];
+        STATE.mobilSales = mobilSales || [];
+        STATE.advances   = advances   || [];
+
+        const totalRecs = STATE.txns.length + STATE.mobilSales.length;
+
+        if (totalRecs === 0) {
+          el('metric-cards').innerHTML = `<div class="col-12">
+            <div class="alert alert-warning mb-0">
+              <i class="bi bi-exclamation-circle me-2"></i>
+              <strong>Koi data nahi mila</strong> (${fromStr} to ${toStr})<br>
+              <small class="text-muted">Is date range mein koi transaction nahi, ya RLS enabled hai.</small>
+            </div></div>`;
+          renderCharts();
+          return;
+        }
+
+        renderMetricCards();
+        renderSalesClassification();
+        renderPLStatement();
+        renderMonthlyTable();
+        renderDailyTable();
+        renderTransactionDetail();
+        renderExpenseDetail();
+        renderAdvanceTable();
+        renderCharts();
+
+      } catch (e) {
+        console.error('P&L Error:', e);
+        el('metric-cards').innerHTML = `<div class="col-12 text-center py-4 text-danger">
+          <i class="bi bi-exclamation-triangle me-2"></i><strong>Error:</strong> ${e.message}
+        </div>`;
+      }
+    }
+
+    // ── Compute Aggregates ────────────────────────────────────────
+    function computeAgg() {
+      const a = {
+        petrolCash: 0, dieselCash: 0, creditSales: 0, mobilSales: 0,
+        vasooli: 0, expenses: 0, advanceOut: 0, pendingAdv: 0,
+        txnCnt: 0, mobilCnt: 0, expCnt: 0, vCnt: 0
+      };
+
+      STATE.txns.forEach(t => {
+        const v = parseFloat(t.charges) || 0;
+        switch(t.transaction_type) {
+          case 'CashSale':
+            const ft = (t.fuel_type || '').toLowerCase();
+            if (ft === 'diesel') a.dieselCash += v; else a.petrolCash += v;
+            a.txnCnt++; break;
+          case 'Credit':  a.creditSales += v; a.txnCnt++; break;
+          case 'Debit':   a.vasooli     += v; a.vCnt++;   break;
+          case 'Expense': a.expenses    += v; a.expCnt++; break;
+          case 'Advance': a.advanceOut  += v; break;
+        }
+      });
+
+      STATE.mobilSales.forEach(m => { a.mobilSales += parseFloat(m.total_amount) || 0; a.mobilCnt++; });
+
+      a.pendingAdv    = STATE.advances.filter(x => x.status === 'pending').reduce((s,x) => s + (parseFloat(x.amount)||0), 0);
+      a.totalFuelSales = a.petrolCash + a.dieselCash + a.creditSales;
+      a.totalSales     = a.totalFuelSales + a.mobilSales;
+      a.net            = a.totalSales - a.expenses - a.advanceOut;
+      return a;
+    }
+
+    // ── Section 1: KPI Cards ──────────────────────────────────────
+    function renderMetricCards() {
+      const a = computeAgg();
+      const isProfit = a.net >= 0;
+
+      el('metric-cards').innerHTML = `
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="metric-card green">
+            <div class="d-flex justify-content-between align-items-start">
+              <h6><i class="bi bi-graph-up me-1"></i>Total Sales</h6>
+              <div class="icon-wrap" style="background:#e8f5e9;">💰</div>
+            </div>
+            <div class="val text-success">Rs.${fmt(a.totalSales)}</div>
+            <div class="sub">
+              <span class="breakdown-pill bp-petrol">⛽ Rs.${fmt(a.petrolCash+a.dieselCash+a.creditSales)}</span>
+              <span class="breakdown-pill bp-mobil">🛢️ Rs.${fmt(a.mobilSales)}</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="metric-card petrol">
+            <div class="d-flex justify-content-between align-items-start">
+              <h6><i class="bi bi-fuel-pump me-1"></i>Petrol/Diesel</h6>
+              <div class="icon-wrap" style="background:#e3f0fd;">⛽</div>
+            </div>
+            <div class="val" style="color:var(--clr-petrol)">Rs.${fmt(a.totalFuelSales)}</div>
+            <div class="sub">Cash: Rs.${fmt(a.petrolCash+a.dieselCash)}<br>Udhaar: Rs.${fmt(a.creditSales)}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="metric-card purple">
+            <div class="d-flex justify-content-between align-items-start">
+              <h6><i class="bi bi-droplet-fill me-1"></i>Mobil Oil</h6>
+              <div class="icon-wrap" style="background:#f0e6ff;">🛢️</div>
+            </div>
+            <div class="val" style="color:var(--clr-mobil)">Rs.${fmt(a.mobilSales)}</div>
+            <div class="sub">${a.mobilCnt} transactions</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="metric-card red">
+            <div class="d-flex justify-content-between align-items-start">
+              <h6><i class="bi bi-bag-x me-1"></i>Total Kharche</h6>
+              <div class="icon-wrap" style="background:#fdecea;">💸</div>
+            </div>
+            <div class="val text-danger">Rs.${fmt(a.expenses)}</div>
+            <div class="sub">${a.expCnt} expenses</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="metric-card blue">
+            <div class="d-flex justify-content-between align-items-start">
+              <h6><i class="bi bi-wallet2 me-1"></i>Vasooli</h6>
+              <div class="icon-wrap" style="background:#e3f2fd;">🏦</div>
+            </div>
+            <div class="val" style="color:#2980b9">Rs.${fmt(a.vasooli)}</div>
+            <div class="sub">${a.vCnt} collections</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="metric-card ${isProfit ? 'green' : 'red'}">
+            <div class="d-flex justify-content-between align-items-start">
+              <h6><i class="bi bi-${isProfit?'arrow-up-circle-fill':'arrow-down-circle-fill'} me-1"></i>${isProfit?'Net Munafa':'Net Nuqsan'}</h6>
+              <div class="icon-wrap" style="background:${isProfit?'#e8f5e9':'#fdecea'};">${isProfit?'📈':'📉'}</div>
+            </div>
+            <div class="val ${isProfit?'text-success':'text-danger'}">Rs.${fmt(Math.abs(a.net))}</div>
+            <div class="sub">Sales − Kharche − Advance</div>
+          </div>
+        </div>`;
+    }
+
+    // ── Section 2: Sales Classification ──────────────────────────
+    function renderSalesClassification() {
+      const a = computeAgg();
+      if (a.totalSales === 0) { el('sales-classification').style.display = 'none'; return; }
+      el('sales-classification').style.display = '';
+
+      const pct = (v) => a.totalSales > 0 ? (v / a.totalSales * 100).toFixed(1) : 0;
+      const pP = pct(a.petrolCash), pD = pct(a.dieselCash), pC = pct(a.creditSales), pM = pct(a.mobilSales);
+
+      el('classification-cards').innerHTML = `
+        <div class="col-6 col-md-3">
+          <div style="background:#e3f0fd;border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;">⛽</div>
+            <div style="font-size:11px;color:var(--clr-petrol);font-weight:700;margin:4px 0;">Petrol Cash Sales</div>
+            <div style="font-size:18px;font-weight:800;color:var(--clr-petrol);">Rs.${fmt(a.petrolCash)}</div>
+            <div style="font-size:11px;color:#888;">${pP}% of total</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div style="background:#e0f4ee;border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;">🚛</div>
+            <div style="font-size:11px;color:var(--clr-diesel);font-weight:700;margin:4px 0;">Diesel Cash Sales</div>
+            <div style="font-size:18px;font-weight:800;color:var(--clr-diesel);">Rs.${fmt(a.dieselCash)}</div>
+            <div style="font-size:11px;color:#888;">${pD}% of total</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div style="background:#fff3cd;border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;">📋</div>
+            <div style="font-size:11px;color:#856404;font-weight:700;margin:4px 0;">Udhaar / Credit</div>
+            <div style="font-size:18px;font-weight:800;color:#856404;">Rs.${fmt(a.creditSales)}</div>
+            <div style="font-size:11px;color:#888;">${pC}% of total</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div style="background:#f0e6ff;border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;">🛢️</div>
+            <div style="font-size:11px;color:var(--clr-mobil);font-weight:700;margin:4px 0;">Mobil Oil Sales</div>
+            <div style="font-size:18px;font-weight:800;color:var(--clr-mobil);">Rs.${fmt(a.mobilSales)}</div>
+            <div style="font-size:11px;color:#888;">${pM}% of total</div>
+          </div>
+        </div>`;
+
+      el('sales-total-lbl').textContent = 'Total: Rs.' + fmt(a.totalSales);
+      el('sales-bar').innerHTML = `
+        <div class="sbb-petrol" style="width:${pP}%" title="Petrol ${pP}%"></div>
+        <div class="sbb-diesel" style="width:${pD}%" title="Diesel ${pD}%"></div>
+        <div class="sbb-credit" style="width:${pC}%" title="Udhaar ${pC}%"></div>
+        <div class="sbb-mobil"  style="width:${pM}%" title="Mobil ${pM}%"></div>`;
+      el('sales-bar-legend').innerHTML = `
+        <span class="breakdown-pill bp-petrol">⛽ Petrol ${pP}%</span>
+        <span class="breakdown-pill bp-diesel">🚛 Diesel ${pD}%</span>
+        <span class="breakdown-pill bp-credit">📋 Udhaar ${pC}%</span>
+        <span class="breakdown-pill bp-mobil">🛢️ Mobil ${pM}%</span>`;
+    }
+
+    // ── Section 3: P&L Income Statement ──────────────────────────
+    function renderPLStatement() {
+      const a = computeAgg();
+      el('pl-statement-section').style.display = '';
+      const isProfit = a.net >= 0;
+
+      el('pl-statement-body').innerHTML = `
+        <div class="pls-row"><span style="font-weight:700;color:var(--clr-primary);font-size:12px;text-transform:uppercase;letter-spacing:.5px;">INCOME</span><span></span></div>
+        <div class="pls-row indent"><span>⛽ Petrol Cash Sales</span><span class="profit-pos">+ Rs.${fmt(a.petrolCash)}</span></div>
+        <div class="pls-row indent"><span>🚛 Diesel Cash Sales</span><span class="profit-pos">+ Rs.${fmt(a.dieselCash)}</span></div>
+        <div class="pls-row indent"><span>📋 Udhaar / Credit Sales</span><span class="profit-pos">+ Rs.${fmt(a.creditSales)}</span></div>
+        <div class="pls-row indent"><span>🛢️ Mobil Oil Sales</span><span class="profit-pos">+ Rs.${fmt(a.mobilSales)}</span></div>
+        <div class="pls-row subtotal"><span>TOTAL INCOME</span><span class="profit-pos">Rs.${fmt(a.totalSales)}</span></div>
+
+        <div class="pls-row" style="margin-top:8px;"><span style="font-weight:700;color:var(--clr-expense);font-size:12px;text-transform:uppercase;letter-spacing:.5px;">DEDUCTIONS</span><span></span></div>
+        <div class="pls-row indent"><span>💸 Operating Expenses (Kharche)</span><span class="profit-neg">− Rs.${fmt(a.expenses)}</span></div>
+        <div class="pls-row indent"><span>💵 Cash Advances Given</span><span class="profit-neg">− Rs.${fmt(a.advanceOut)}</span></div>
+        <div class="pls-row subtotal"><span>TOTAL DEDUCTIONS</span><span class="profit-neg">Rs.${fmt(a.expenses + a.advanceOut)}</span></div>
+
+        <div class="pls-row ${isProfit ? 'grand-profit' : 'grand-loss'}">
+          <span>${isProfit ? '📈 NET MUNAFA (PROFIT)' : '📉 NET NUQSAN (LOSS)'}</span>
+          <span style="font-size:18px;">${isProfit ? '+' : '−'} Rs.${fmt(Math.abs(a.net))}</span>
+        </div>
+
+        <div class="mt-3 p-3 rounded" style="background:#f8f9fa;font-size:12px;color:#666;line-height:1.7;">
+          <i class="bi bi-info-circle me-1"></i>
+          <strong>Note:</strong> Vasooli (Rs.${fmt(a.vasooli)}) = udhaar ki payment received — 
+          income mein count nahi ki gayi (double-counting se bachne ke liye). 
+          Pending recovery: <strong style="color:#c0392b;">Rs.${fmt(a.pendingAdv)}</strong> 
+          from ${STATE.advances.filter(x=>x.status==='pending').length} advances.
+        </div>`;
+    }
+
+    // ── Section 5: Monthly Table ──────────────────────────────────
+    function renderMonthlyTable() {
+      const months = {};
+
+      STATE.txns.forEach(t => {
+        const d   = new Date(t.created_at);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        const lbl = d.toLocaleDateString('en-PK', { month: 'long', year: 'numeric' });
+        if (!months[key]) months[key] = { lbl, fuel:0, mobil:0, vasooli:0, expenses:0, advances:0 };
+        const v = parseFloat(t.charges) || 0;
+        if (t.transaction_type==='CashSale'||t.transaction_type==='Credit') months[key].fuel     += v;
+        if (t.transaction_type==='Debit')   months[key].vasooli  += v;
+        if (t.transaction_type==='Expense') months[key].expenses += v;
+        if (t.transaction_type==='Advance') months[key].advances += v;
+      });
+
+      STATE.mobilSales.forEach(m => {
+        const d   = new Date(m.sale_date);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        const lbl = d.toLocaleDateString('en-PK', { month: 'long', year: 'numeric' });
+        if (!months[key]) months[key] = { lbl, fuel:0, mobil:0, vasooli:0, expenses:0, advances:0 };
+        months[key].mobil += parseFloat(m.total_amount) || 0;
+      });
+
+      const keys = Object.keys(months).sort((a,b) => b.localeCompare(a));
+      el('table-count').textContent = keys.length + ' months';
+
+      if (!keys.length) {
+        el('monthly-tbody').innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">Koi data nahi</td></tr>';
+        el('monthly-tfoot').innerHTML = '';
+        return;
+      }
+
+      let tF=0, tM=0, tV=0, tE=0, tA=0;
+      el('monthly-tbody').innerHTML = keys.map(key => {
+        const m   = months[key];
+        const tot = m.fuel + m.mobil;
+        const net = tot - m.expenses - m.advances;
+        tF+=m.fuel; tM+=m.mobil; tV+=m.vasooli; tE+=m.expenses; tA+=m.advances;
+        const badge = net>=0
+          ? `<span class="badge" style="background:#d4edda;color:#155724;">✓ Munafa</span>`
+          : `<span class="badge" style="background:#f8d7da;color:#721c24;">✗ Nuqsan</span>`;
+        return `<tr>
+          <td><strong>${m.lbl}</strong></td>
+          <td class="text-end" style="color:var(--clr-petrol)">Rs.${fmt(m.fuel)}</td>
+          <td class="text-end" style="color:var(--clr-mobil)">Rs.${fmt(m.mobil)}</td>
+          <td class="text-end text-success fw-semibold">Rs.${fmt(tot)}</td>
+          <td class="text-end" style="color:#2980b9">Rs.${fmt(m.vasooli)}</td>
+          <td class="text-end text-danger">Rs.${fmt(m.expenses)}</td>
+          <td class="text-end ${net>=0?'profit-pos':'profit-neg'}">Rs.${fmt(Math.abs(net))} ${net>=0?'▲':'▼'}</td>
+          <td class="text-center">${badge}</td>
+        </tr>`;
+      }).join('');
+
+      const tNet = tF+tM-tE-tA;
+      el('monthly-tfoot').innerHTML = `<tr class="total-row">
+        <td>Total</td>
+        <td class="text-end" style="color:var(--clr-petrol)">Rs.${fmt(tF)}</td>
+        <td class="text-end" style="color:var(--clr-mobil)">Rs.${fmt(tM)}</td>
+        <td class="text-end text-success">Rs.${fmt(tF+tM)}</td>
+        <td class="text-end" style="color:#2980b9">Rs.${fmt(tV)}</td>
+        <td class="text-end text-danger">Rs.${fmt(tE)}</td>
+        <td class="text-end ${tNet>=0?'profit-pos':'profit-neg'}">Rs.${fmt(Math.abs(tNet))}</td>
+        <td></td>
+      </tr>`;
+    }
+
+    // ── Section 6: Daily Table ────────────────────────────────────
+    function renderDailyTable() {
+      const days = {};
+
+      STATE.txns.forEach(t => {
+        const d   = new Date(t.created_at);
+        const key = d.toISOString().split('T')[0];
+        const lbl = d.toLocaleDateString('en-PK', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+        if (!days[key]) days[key] = { lbl, fuel:0, mobil:0, vasooli:0, expenses:0, advances:0 };
+        const v = parseFloat(t.charges) || 0;
+        if (t.transaction_type==='CashSale'||t.transaction_type==='Credit') days[key].fuel     += v;
+        if (t.transaction_type==='Debit')   days[key].vasooli  += v;
+        if (t.transaction_type==='Expense') days[key].expenses += v;
+        if (t.transaction_type==='Advance') days[key].advances += v;
+      });
+
+      STATE.mobilSales.forEach(m => {
+        const key = m.sale_date;
+        if (!days[key]) {
+          const d = new Date(key);
+          days[key] = { lbl: d.toLocaleDateString('en-PK', { weekday:'short', day:'2-digit', month:'short', year:'numeric' }), fuel:0, mobil:0, vasooli:0, expenses:0, advances:0 };
+        }
+        days[key].mobil += parseFloat(m.total_amount) || 0;
+      });
+
+      const keys = Object.keys(days).sort((a,b) => b.localeCompare(a));
+      el('daily-count').textContent = keys.length + ' days';
+
+      if (!keys.length) {
+        el('daily-tbody').innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">Koi data nahi</td></tr>';
+        return;
+      }
+
+      el('daily-tbody').innerHTML = keys.map(key => {
+        const d   = days[key];
+        const tot = d.fuel + d.mobil;
+        const net = tot - d.expenses - d.advances;
+        const badge = net>=0
+          ? `<span class="badge" style="background:#d4edda;color:#155724;font-size:10px;">Munafa</span>`
+          : `<span class="badge" style="background:#f8d7da;color:#721c24;font-size:10px;">Nuqsan</span>`;
+        return `<tr>
+          <td style="white-space:nowrap;">${d.lbl}</td>
+          <td class="text-end" style="color:var(--clr-petrol)">Rs.${fmt(d.fuel)}</td>
+          <td class="text-end" style="color:var(--clr-mobil)">Rs.${fmt(d.mobil)}</td>
+          <td class="text-end text-success fw-semibold">Rs.${fmt(tot)}</td>
+          <td class="text-end" style="color:#2980b9">Rs.${fmt(d.vasooli)}</td>
+          <td class="text-end text-danger">Rs.${fmt(d.expenses)}</td>
+          <td class="text-end ${net>=0?'profit-pos':'profit-neg'}">Rs.${fmt(Math.abs(net))}</td>
+          <td class="text-center">${badge}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ── Section 7: Transaction Detail ────────────────────────────
+    window.renderTransactionDetail = function() {
+      const filter = el('txn-filter') ? el('txn-filter').value : 'all';
+      const rows = [];
+
+      STATE.txns.forEach(t => {
+        let src, srcClass, typeLabel, typeClass, isIncome = false, show = false;
+        const tt = t.transaction_type;
+
+        if (tt === 'CashSale') {
+          const ft = (t.fuel_type || 'Petrol');
+          src = ft; srcClass = ft.toLowerCase()==='diesel' ? 'src-diesel' : 'src-petrol';
+          typeLabel = 'Cash Sale'; typeClass = 'src-cash'; isIncome = true;
+          show = filter==='all' || filter==='petrol_diesel';
+        } else if (tt === 'Credit') {
+          src = 'Udhaar'; srcClass = 'src-credit';
+          typeLabel = 'Credit'; typeClass = 'src-credit'; isIncome = true;
+          show = filter==='all' || filter==='petrol_diesel';
+        } else if (tt === 'Debit') {
+          src = 'Vasooli'; srcClass = 'src-cash';
+          typeLabel = 'Payment'; typeClass = 'src-cash'; isIncome = true;
+          show = filter==='all' || filter==='vasooli';
+        } else if (tt === 'Expense') {
+          src = t.expense_type || 'Expense'; srcClass = 'src-exp';
+          typeLabel = 'Expense'; typeClass = 'src-exp'; isIncome = false;
+          show = filter==='all' || filter==='expense';
+        } else if (tt === 'Advance') {
+          src = 'Advance'; srcClass = 'src-credit';
+          typeLabel = 'Advance'; typeClass = 'src-credit'; isIncome = false;
+          show = filter==='all' || filter==='expense';
+        }
+
+        if (show && src !== undefined) {
+          rows.push({
+            dateSort: new Date(t.created_at).getTime(),
+            date: t.created_at,
+            src, srcClass,
+            desc: t.description || t.expense_type || '—',
+            customer: t.customers?.name || '—',
+            amount: parseFloat(t.charges) || 0,
+            typeLabel, typeClass, isIncome
+          });
+        }
+      });
+
+      if (filter === 'all' || filter === 'mobil') {
+        STATE.mobilSales.forEach(m => {
+          rows.push({
+            dateSort: new Date(m.sale_date).getTime(),
+            date: m.sale_date,
+            src: 'Mobil Oil', srcClass: 'src-mobil',
+            desc: `${m.product_name||''} — Qty: ${m.quantity}`,
+            customer: m.customer_name || 'Walk-in',
+            amount: parseFloat(m.total_amount) || 0,
+            typeLabel: m.payment_type || 'Cash', typeClass: 'src-cash', isIncome: true
+          });
+        });
+      }
+
+      rows.sort((a,b) => b.dateSort - a.dateSort);
+      el('txn-detail-count').textContent = rows.length + ' records';
+
+      if (!rows.length) {
+        el('txn-detail-tbody').innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">Koi record nahi</td></tr>';
+        return;
+      }
+
+      el('txn-detail-tbody').innerHTML = rows.map(r => `<tr>
+        <td style="white-space:nowrap;">${fmtDate(r.date)}</td>
+        <td><span class="src-badge ${r.srcClass}">${r.src}</span></td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.desc}">${r.desc}</td>
+        <td>${r.customer}</td>
+        <td class="text-end fw-semibold ${r.isIncome ? 'text-success' : 'text-danger'}">
+          ${r.isIncome ? '+' : '−'} Rs.${fmt(r.amount)}
+        </td>
+        <td class="text-center"><span class="src-badge ${r.typeClass}">${r.typeLabel}</span></td>
+      </tr>`).join('');
+    };
+
+    // ── Section 8: Expense Detail ─────────────────────────────────
+    function renderExpenseDetail() {
+      const cats = {};
+      STATE.txns.filter(t => t.transaction_type==='Expense').forEach(t => {
+        const cat = t.expense_type
+          || (t.description && t.description.includes(':') ? t.description.split(':')[0].trim() : null)
+          || 'Miscellaneous';
+        cats[cat] = (cats[cat] || 0) + (parseFloat(t.charges) || 0);
+      });
+
+      const entries = Object.entries(cats).sort((a,b) => b[1]-a[1]);
+      const total   = entries.reduce((s,[,v]) => s+v, 0);
+
+      if (!entries.length) {
+        el('expense-detail-list').innerHTML = '<div class="text-center text-muted py-3">Is period mein koi expense nahi</div>';
+        return;
+      }
+
+      el('expense-detail-list').innerHTML = entries.map(([cat, amount]) => {
+        const pct = total > 0 ? ((amount/total)*100).toFixed(1) : 0;
+        return `<div class="py-2" style="border-bottom:1px solid #f0f2f5;">
+          <div class="d-flex justify-content-between mb-1">
+            <span style="font-size:13px;font-weight:600;">${cat}</span>
+            <span style="font-size:13px;color:#c0392b;font-weight:700;">Rs.${fmt(amount)} <small class="text-muted">(${pct}%)</small></span>
+          </div>
+          <div style="height:6px;background:#f0f2f5;border-radius:3px;">
+            <div class="exp-prog" style="width:${pct}%;"></div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Section 9: Cash Advances ──────────────────────────────────
+    function renderAdvanceTable() {
+      if (!STATE.advances.length) {
+        el('advance-tbody').innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">Is period mein koi cash advance nahi</td></tr>';
+        return;
+      }
+      const sm = {
+        pending: '<span class="badge" style="background:#fff3cd;color:#856404;">Pending</span>',
+        partial: '<span class="badge" style="background:#cce5ff;color:#004085;">Partial</span>',
+        cleared: '<span class="badge" style="background:#d4edda;color:#155724;">Cleared</span>',
+      };
+      el('advance-tbody').innerHTML = STATE.advances.map(a => `<tr>
+        <td><strong>${a.customers?.name||'N/A'}</strong> <small class="text-muted">(#${a.customers?.sr_no||'-'})</small></td>
+        <td>${fmtDate(a.advance_date)}</td>
+        <td class="text-end fw-bold" style="color:#8e44ad">Rs.${fmt(a.amount)}</td>
+        <td>${a.reason||'—'}</td>
+        <td class="text-center">${sm[a.status]||a.status}</td>
+      </tr>`).join('');
+    }
+
+    // ── Charts ────────────────────────────────────────────────────
+    function renderCharts() {
+      const now = new Date();
+      const months6 = [];
+      for (let i=5; i>=0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+        months6.push({
+          key: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,
+          lbl: d.toLocaleDateString('en-PK', { month:'short', year:'2-digit' }),
+          fuel:0, mobil:0, expenses:0, net:0
+        });
+      }
+
+      STATE.txns.forEach(t => {
+        const d   = new Date(t.created_at);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        const m   = months6.find(x => x.key===key);
+        if (!m) return;
+        const v = parseFloat(t.charges) || 0;
+        if (t.transaction_type==='CashSale'||t.transaction_type==='Credit') m.fuel     += v;
+        if (t.transaction_type==='Expense'||t.transaction_type==='Advance') m.expenses += v;
+      });
+
+      STATE.mobilSales.forEach(ms => {
+        const d   = new Date(ms.sale_date);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        const m   = months6.find(x => x.key===key);
+        if (m) m.mobil += parseFloat(ms.total_amount) || 0;
+      });
+
+      months6.forEach(m => { m.net = m.fuel + m.mobil - m.expenses; });
+
+      // Monthly bar chart — safe DOM recreation to avoid parentElement error
+      if (monthlyChart) { try { monthlyChart.destroy(); } catch(e) {} monthlyChart = null; }
+      const mcWrap = el('monthly-chart-wrap');
+      if (mcWrap) {
+        mcWrap.innerHTML = '<canvas id="monthlyChart" height="110"></canvas>';
+        const cvs = el('monthlyChart');
+        if (cvs) {
+          monthlyChart = new Chart(cvs, {
+            type: 'bar',
+            data: {
+              labels: months6.map(m => m.lbl),
+              datasets: [
+                { label: '⛽ Petrol/Diesel', data: months6.map(m => m.fuel),     backgroundColor: 'rgba(26,115,232,.75)', borderRadius: 4 },
+                { label: '🛢️ Mobil Oil',    data: months6.map(m => m.mobil),    backgroundColor: 'rgba(123,47,247,.75)', borderRadius: 4 },
+                { label: '💸 Kharche+Adv',  data: months6.map(m => m.expenses), backgroundColor: 'rgba(192,57,43,.75)',  borderRadius: 4 },
+                { label: 'Net', data: months6.map(m => m.net), type: 'line', borderColor: '#16a085', backgroundColor: 'transparent', tension: 0.4, pointRadius: 4, borderWidth: 2.5 }
+              ]
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { position:'bottom', labels:{ font:{ size:11 } } } },
+              scales: { y: { beginAtZero:true, ticks:{ callback: v=>'Rs.'+(v/1000).toFixed(0)+'k' } } }
+            }
+          });
+        }
+      }
+
+      // Expense doughnut — safe DOM recreation
+      if (expenseChart) { try { expenseChart.destroy(); } catch(e) {} expenseChart = null; }
+      const ecWrap = el('expense-chart-wrap');
+      if (ecWrap) {
+        const cats = {};
+        STATE.txns.filter(t => t.transaction_type==='Expense').forEach(t => {
+          const cat = t.expense_type || 'Other';
+          cats[cat] = (cats[cat]||0) + (parseFloat(t.charges)||0);
+        });
+        const expE   = Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,6);
+        const colors = ['#e74c3c','#f39c12','#3498db','#2ecc71','#9b59b6','#1abc9c'];
+        const legEl  = el('expense-legend');
+
+        if (expE.length) {
+          ecWrap.innerHTML = '<canvas id="expenseChart" height="200"></canvas>';
+          const cvs2 = el('expenseChart');
+          if (cvs2) {
+            expenseChart = new Chart(cvs2, {
+              type: 'doughnut',
+              data: {
+                labels: expE.map(([k])=>k),
+                datasets: [{ data: expE.map(([,v])=>v), backgroundColor: colors, borderWidth: 2 }]
+              },
+              options: { responsive:true, plugins:{ legend:{ display:false } }, cutout:'60%' }
+            });
+          }
+          if (legEl) legEl.innerHTML = expE.map(([cat,amt],i) =>
+            `<div class="d-flex justify-content-between py-1" style="font-size:11px;">
+              <span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${colors[i]};margin-right:5px;"></span>${cat}</span>
+              <span class="fw-bold">Rs.${fmt(amt)}</span>
+            </div>`).join('');
+        } else {
+          ecWrap.innerHTML = '<div class="text-center text-muted py-4 small">Koi expense data nahi</div>';
+          if (legEl) legEl.innerHTML = '';
+        }
+      }
+    }
+
+    // ── Export CSV ────────────────────────────────────────────────
+    window.exportCSV = function () {
+      const rows = [['Date','Source','Description','Customer','Amount','Type']];
+      STATE.txns.forEach(t => rows.push([
+        fmtDate(t.created_at), t.transaction_type,
+        (t.description||t.expense_type||'').replace(/,/g,' '),
+        t.customers?.name||'N/A', t.charges||0, t.transaction_type
+      ]));
+      STATE.mobilSales.forEach(m => rows.push([
+        fmtDate(m.sale_date), 'Mobil Oil',
+        (m.product_name||'').replace(/,/g,' '),
+        m.customer_name||'Walk-in', m.total_amount||0, 'MobilSale'
+      ]));
+
+      if (rows.length <= 1) { alert('Koi data nahi'); return; }
+      const csv  = rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type:'text/csv' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = `pl-report-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+    };
+
+    window.runReport = loadReport;
+
+  })();
+  </script>
+</body>
+</html>
