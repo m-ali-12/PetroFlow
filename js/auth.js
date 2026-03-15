@@ -16,8 +16,20 @@
         setTimeout(init, 250);
     });
 
+    let _authAttempts = 0;
     function init() {
-        if (!window.supabaseClient) { setTimeout(init, 150); return; }
+        _authAttempts++;
+        if (!window.supabaseClient) {
+            if (_authAttempts > 60) {
+                // 9 seconds ke baad bhi nahi mila — config error
+                console.error('❌ supabaseClient nahi bana. js/config.js mein SUPABASE_ANON_KEY check karein.');
+                // Phir bhi navbar attach karo
+                attachLogout();
+                return;
+            }
+            setTimeout(init, 150);
+            return;
+        }
 
         if (!isAuthPage) {
             checkAuth();

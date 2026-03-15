@@ -1,75 +1,185 @@
+/* ============================================================
+   KHALID & SONS — MAIN STYLES
+   ============================================================ */
+
+/* Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
 body {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Poppins', 'Segoe UI', sans-serif;
   background: #f8fafc;
+  margin: 0;
+  padding: 0;
 }
 
-h1 {
-  font-size: 2rem;
+/* ── Navbar padding fix ─────────────────────────────────── */
+/* Sticky navbar ke baad content uske neeche aaye */
+.main-wrapper {
+  padding-top: 1.5rem;
 }
 
+/* ── Cards ──────────────────────────────────────────────── */
 .card {
-  border-radius: 15px;
-  transition: 0.3s ease;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  transition: box-shadow 0.2s ease;
 }
 
 .card:hover {
-  transform: translateY(-5px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  transform: none; /* Remove translateY - causes layout shift */
 }
 
+/* ── Tables ─────────────────────────────────────────────── */
+.table th {
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.table td {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+/* ── Badges ─────────────────────────────────────────────── */
+.badge {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn {
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+/* ── Forms ──────────────────────────────────────────────── */
+.form-control, .form-select {
+  border-radius: 8px;
+  border: 1.5px solid #dee2e6;
+  font-size: 0.9rem;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+/* ── Scrollbar (simple, no lag) ─────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f3f5;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #adb5bd;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6c757d;
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
 @media (max-width: 768px) {
-  h1 {
-    font-size: 1.5rem;
+  .main-wrapper {
+    padding-top: 1rem;
   }
-
-  .card {
-    padding: 1rem !important;
+  .table-responsive {
+    font-size: 0.82rem;
   }
 }
 
-/* ==============================
-   FORCE ANIMATED SCROLLBAR
-============================== */
-
-/* Apply to whole page */
-html {
-  scroll-behavior: smooth;
+/* ── Welcome Card ───────────────────────────────────────── */
+.welcome-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 14px;
+  padding: 28px 32px;
+  color: white;
+  margin-bottom: 24px;
 }
 
-/* Chrome / Edge / Brave */
-html::-webkit-scrollbar,
-body::-webkit-scrollbar {
-  width: 14px;
+.welcome-card h3 {
+  font-weight: 700;
+  margin-bottom: 6px;
 }
 
-html::-webkit-scrollbar-track,
-body::-webkit-scrollbar-track {
-  background: #eef2f7;
-  border-radius: 10px;
+/* ── Stock Featured Card ────────────────────────────────── */
+.stock-featured-card {
+  background: linear-gradient(135deg, #1a3a5c 0%, #0d4f2e 100%);
+  border-radius: 12px;
+  padding: 20px 24px;
+  color: white;
 }
 
-html::-webkit-scrollbar-thumb,
-body::-webkit-scrollbar-thumb {
-  background: linear-gradient(270deg, #2563eb, #7c3aed, #2563eb);
-  background-size: 400% 400%;
-  border-radius: 10px;
-  animation: scrollbarFlow 5s linear infinite;
-  border: 3px solid #eef2f7;
+.stock-featured-card:hover {
+  opacity: 0.95;
 }
 
-/* Hover effect */
-html::-webkit-scrollbar-thumb:hover,
-body::-webkit-scrollbar-thumb:hover {
-  box-shadow: 0 0 12px #7c3aed;
+.stock-fuel-icon {
+  background: rgba(255,255,255,0.15);
+  border-radius: 12px;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
 }
 
-/* Animation */
-@keyframes scrollbarFlow {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 400% 50%; }
+.stock-featured-label {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
 }
 
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #7c3aed #eef2f7;
+.stock-featured-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.stock-featured-sub {
+  font-size: 0.8rem;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+.stock-pill {
+  background: rgba(255,255,255,0.15);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.stock-arrow-btn {
+  font-size: 1.8rem;
+  opacity: 0.8;
+}
+
+/* ── Toast ───────────────────────────────────────────────── */
+.toast-container {
+  z-index: 9999;
+}
+
+/* ── Print ───────────────────────────────────────────────── */
+@media print {
+  .navbar, .no-print, .btn, #footer-placeholder {
+    display: none !important;
+  }
+  .main-wrapper {
+    padding-top: 0 !important;
+  }
 }

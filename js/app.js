@@ -762,22 +762,23 @@
   document.addEventListener("DOMContentLoaded", async () => {
     console.log("🚀 App initializing...");
 
-    // Wait for supabaseClient to be ready
+    // Navbar/Footer already inline in HTML - no fetch needed
+    setActiveNav();
+    initClock();
+    initFooterYear();
+
+    // Wait for supabaseClient
     await new Promise((resolve) => {
+      let attempts = 0;
       function check() {
+        attempts++;
         if (window.supabaseClient) return resolve();
+        if (attempts > 50) { resolve(); return; }
         setTimeout(check, 100);
       }
       check();
     });
 
-    // Load navbar/footer
-    await loadComponentWithFallback("navbar-placeholder", "components/navbar.html", "navbar.html");
-    await loadComponentWithFallback("footer-placeholder", "components/footer.html", "footer.html");
-
-    setActiveNav();
-    initClock();
-    initFooterYear();
     loadFuelPrices();
     initSaleAutoCalc();
 
