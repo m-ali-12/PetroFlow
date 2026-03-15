@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Shop Rent | Khalid & Sons Petroleum</title>
+  <link rel="icon" type="image/png" href="assets/logo.jfif">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/styles.css">
+  <style>
+    .selection-bar {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: #1a237e;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .selection-bar .sel-info { flex: 1; font-size: 14px; }
+    .entry-chk { width: 16px; height: 16px; cursor: pointer; }
+    #select-all-chk { width: 16px; height: 16px; cursor: pointer; }
+    tr.table-success td { background-color: #d1f0d1 !important; }
+    tr.table-danger td  { background-color: #ffd6d6 !important; }
+  </style>
+</head>
+
+<body data-page="rent">
+  <div id="navbar-placeholder"></div>
+
+  <div class="container-fluid py-4 px-3 px-md-4">
+
+    <!-- Header + Month/Year filter -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <h3 class="mb-0"><i class="bi bi-shop me-2"></i>Shop Rent Management</h3>
+      <div class="d-flex gap-2 align-items-center">
+        <select id="month-filter" class="form-select form-select-sm" style="width:130px;">
+          <option value="1">January</option><option value="2">February</option>
+          <option value="3">March</option><option value="4">April</option>
+          <option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option>
+          <option value="9">September</option><option value="10">October</option>
+          <option value="11">November</option><option value="12">December</option>
+        </select>
+        <select id="year-filter" class="form-select form-select-sm" style="width:100px;"></select>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-primary h-100">
+          <div class="card-body text-center py-3">
+            <i class="bi bi-shop text-primary" style="font-size:1.8rem;"></i>
+            <h6 class="mt-2 text-muted small">Total Shops</h6>
+            <h3 id="total-shops" class="mb-0">0</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-success h-100">
+          <div class="card-body text-center py-3">
+            <i class="bi bi-cash-stack text-success" style="font-size:1.8rem;"></i>
+            <h6 class="mt-2 text-muted small">Month Due</h6>
+            <h4 id="month-rent" class="mb-0">Rs. 0</h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-warning h-100">
+          <div class="card-body text-center py-3">
+            <i class="bi bi-clock-history text-warning" style="font-size:1.8rem;"></i>
+            <h6 class="mt-2 text-muted small">Pending</h6>
+            <h3 id="pending-rent" class="mb-0">0</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-info h-100">
+          <div class="card-body text-center py-3">
+            <i class="bi bi-check-circle text-info" style="font-size:1.8rem;"></i>
+            <h6 class="mt-2 text-muted small">Paid This Month</h6>
+            <h4 id="paid-rent" class="mb-0">Rs. 0</h4>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-2 mb-4">
+      <div class="col-6 col-md-3">
+        <button class="btn btn-primary w-100 py-2" data-bs-toggle="modal" data-bs-target="#addShopModal">
+          <i class="bi bi-plus-circle me-1"></i>Add Shop
+        </button>
+      </div>
+      <div class="col-6 col-md-3">
+        <button class="btn btn-success w-100 py-2" data-bs-toggle="modal" data-bs-target="#recordPaymentModal">
+          <i class="bi bi-cash me-1"></i>Record Payment
+        </button>
+      </div>
+      <div class="col-6 col-md-3">
+        <button class="btn btn-warning w-100 py-2" onclick="generateMonthlyRent()">
+          <i class="bi bi-calendar-check me-1"></i>Generate Monthly
+        </button>
+      </div>
+      <div class="col-6 col-md-3">
+        <button class="btn btn-secondary w-100 py-2" onclick="viewRentHistory()">
+          <i class="bi bi-clock-history me-1"></i>View History
+        </button>
+      </div>
+    </div>
+
+    <!-- Shops Table -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h5 class="mb-0"><i class="bi bi-shop me-2 text-primary"></i>Registered Shops</h5>
+        <div class="input-group input-group-sm" style="width:220px;">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input id="shop-search" type="text" class="form-control" placeholder="Search shops...">
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Shop Name</th><th>Tenant Name</th><th>Monthly Rent</th>
+                <th>Phone</th><th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="shops-table">
+              <tr><td colspan="6" class="text-center py-4 text-muted">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card-footer bg-white"><div id="shops-pagination"></div></div>
+    </div>
+
+    <!-- Rent Payment Status -->
+    <div class="card shadow-sm">
+      <div class="card-header bg-white">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+          <h5 class="mb-0"><i class="bi bi-cash-coin me-2 text-success"></i>Rent Payment Status</h5>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm" onclick="printRentReport()">
+              <i class="bi bi-printer me-1"></i>Print All
+            </button>
+          </div>
+        </div>
+        <!-- Search + Filter -->
+        <div class="d-flex gap-2 flex-wrap">
+          <div class="input-group input-group-sm" style="width:220px;">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input id="pay-search" type="text" class="form-control" placeholder="Search by shop/tenant...">
+          </div>
+          <select id="status-filter" class="form-select form-select-sm" style="width:140px;">
+            <option value="all">All Status</option>
+            <option value="paid">Paid</option>
+            <option value="pending">Pending</option>
+            <option value="overdue">Overdue</option>
+            <option value="partial">Partial</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Unpaid Alert -->
+      <div class="px-3 pt-2"><div id="unpaid-summary"></div></div>
+
+      <!-- ✅ SELECTION ACTION BAR -->
+      <div class="px-3">
+        <div class="selection-bar" id="selection-bar">
+          <div class="sel-info">
+            <i class="bi bi-check2-square me-1"></i>
+            <strong id="sel-count">0</strong> entries selected
+            &nbsp;|&nbsp; Total: <strong>Rs. <span id="sel-total">0.00</span></strong>
+          </div>
+          <button class="btn btn-sm btn-light" onclick="selectAllPages()">
+            <i class="bi bi-check-all me-1"></i>Select All Pages
+          </button>
+          <button class="btn btn-sm btn-warning" onclick="printSelected()">
+            <i class="bi bi-printer me-1"></i>Print Selected
+          </button>
+          <button class="btn btn-sm btn-outline-light" onclick="clearSelection()">
+            <i class="bi bi-x me-1"></i>Clear
+          </button>
+        </div>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+              <tr>
+                <!-- Select All checkbox -->
+                <th style="width:40px;" class="text-center">
+                  <input type="checkbox" id="select-all-chk" class="form-check-input"
+                    title="Select all on this page" onchange="toggleSelectAll(this.checked)">
+                </th>
+                <th>Shop / Tenant</th>
+                <th>Month/Year</th>
+                <th>Amount Due</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Paid Date / Amount</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="rent-payments-table">
+              <tr><td colspan="8" class="text-center py-4 text-muted">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card-footer bg-white"><div id="pay-pagination"></div></div>
+    </div>
+
+  </div><!-- /container -->
+
+  <!-- ══ ADD SHOP MODAL ══════════════════════════════════════ -->
+  <div class="modal fade" id="addShopModal" tabindex="-1" aria-modal="true" role="dialog">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="addShopForm" onsubmit="event.preventDefault(); addShop();">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title"><i class="bi bi-shop me-2"></i>Add New Shop</h5>
+            <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Shop Name *</label>
+                <input id="shop-name" class="form-control" type="text" required placeholder="e.g., Shop #1">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Tenant Name *</label>
+                <input id="tenant-name" class="form-control" type="text" required placeholder="Full name">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Phone Number</label>
+                <input id="tenant-phone" class="form-control" type="tel" placeholder="03XX-XXXXXXX">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Monthly Rent (Rs.) *</label>
+                <input id="monthly-rent" class="form-control" type="number" step="1" min="1" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Rent Due Day <small class="text-muted">(of month)</small></label>
+                <input id="due-day" class="form-control" type="number" min="1" max="31" value="1">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Agreement Start Date *</label>
+                <input id="agreement-start" class="form-control" type="date" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Notes</label>
+                <textarea id="shop-notes" class="form-control" rows="2" placeholder="Optional..."></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-primary" type="submit"><i class="bi bi-check-circle me-1"></i>Add Shop</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ EDIT SHOP MODAL ════════════════════════════════════ -->
+  <div class="modal fade" id="editShopModal" tabindex="-1" aria-modal="true" role="dialog">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="editShopForm" onsubmit="event.preventDefault(); updateShop();">
+          <div class="modal-header bg-warning">
+            <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Shop</h5>
+            <button class="btn-close" type="button" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="edit-shop-id">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Shop Name *</label>
+                <input id="edit-shop-name" class="form-control" type="text" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Tenant Name *</label>
+                <input id="edit-tenant-name" class="form-control" type="text" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Phone</label>
+                <input id="edit-tenant-phone" class="form-control" type="tel">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Monthly Rent (Rs.) *</label>
+                <input id="edit-monthly-rent" class="form-control" type="number" step="1" min="1" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Due Day</label>
+                <input id="edit-due-day" class="form-control" type="number" min="1" max="31">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Start Date</label>
+                <input id="edit-agreement-start" class="form-control" type="date">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Status</label>
+                <select id="edit-shop-status" class="form-select">
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Notes</label>
+                <textarea id="edit-shop-notes" class="form-control" rows="2"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-warning" type="submit"><i class="bi bi-check me-1"></i>Update Shop</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ RECORD PAYMENT MODAL ══════════════════════════════ -->
+  <div class="modal fade" id="recordPaymentModal" tabindex="-1" aria-modal="true" role="dialog">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="recordPaymentForm" onsubmit="event.preventDefault(); recordPayment();">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title"><i class="bi bi-cash me-2"></i>Record Rent Payment</h5>
+            <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Select Rent Entry *</label>
+              <select id="rent-entry-select" class="form-select" required>
+                <option value="">Loading...</option>
+              </select>
+              <small class="text-muted">Only unpaid/overdue entries shown</small>
+            </div>
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Payment Date *</label>
+                <input id="payment-date" class="form-control" type="date" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Amount Paid *</label>
+                <input id="payment-amount" class="form-control" type="number" step="1" required>
+              </div>
+            </div>
+            <div class="mt-2 mb-3">
+              <label class="form-label">Payment Method</label>
+              <select id="payment-method" class="form-select">
+                <option value="Cash">Cash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Cheque">Cheque</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Notes</label>
+              <textarea id="payment-notes" class="form-control" rows="2" placeholder="Optional remarks..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-success" type="submit">
+              <i class="bi bi-check-circle me-1"></i>Record Payment
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ HISTORY MODAL ════════════════════════════════════ -->
+  <div class="modal fade" id="historyModal" tabindex="-1" aria-modal="true" role="dialog">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header bg-secondary text-white">
+          <h5 class="modal-title"><i class="bi bi-clock-history me-2"></i>Rent History (Full Year)</h5>
+          <button class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
+        </div>
+        <div class="modal-body" id="history-body">Loading...</div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+    <div id="liveToast" class="toast" role="alert" aria-live="assertive">
+      <div class="toast-header">
+        <strong class="me-auto" id="toast-title">Info</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body" id="toast-message">...</div>
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/rent-management.js"></script>
+</body>
+</html>
