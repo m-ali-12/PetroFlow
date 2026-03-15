@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setup Config | Khalid & Sons</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #1a1a2e; color: #eee; min-height: 100vh; padding: 40px 20px; }
+    .card { background: #16213e; border: 1px solid #0f3460; border-radius: 15px; }
+    .step { background: #0f3460; border-radius: 10px; padding: 20px; margin-bottom: 15px; }
+    .step-num { background: #e94560; color: white; border-radius: 50%; width: 35px; height: 35px; 
+                display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 10px; }
+    code { background: #0a0a1a; padding: 3px 8px; border-radius: 5px; color: #4ecca3; }
+    .btn-primary { background: #e94560; border: none; }
+    input { background: #0a0a1a !important; color: #4ecca3 !important; border-color: #0f3460 !important; }
+    .saved { color: #4ecca3; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width:700px">
+    <div class="text-center mb-4">
+      <h2>⚙️ Supabase Config Setup</h2>
+      <p class="text-muted">Ek baar setup karo — phir sab kuch kaam karega</p>
+    </div>
+
+    <div class="card p-4">
+      <div class="step">
+        <span class="step-num">1</span>
+        <strong>Supabase Dashboard kholein</strong>
+        <p class="mt-2 mb-0">
+          <a href="https://supabase.com/dashboard" target="_blank" class="btn btn-sm btn-primary">
+            Supabase Dashboard Open Karein →
+          </a>
+        </p>
+      </div>
+
+      <div class="step">
+        <span class="step-num">2</span>
+        <strong>Project Select karein → Settings → API</strong>
+        <p class="mt-2 mb-1">Wahan se copy karein:</p>
+        <ul>
+          <li><strong>Project URL</strong> — jaise <code>https://xxxx.supabase.co</code></li>
+          <li><strong>anon public key</strong> — lamba JWT token</li>
+        </ul>
+      </div>
+
+      <div class="step">
+        <span class="step-num">3</span>
+        <strong>Neeche paste karein aur Save karein</strong>
+        <div class="mt-3">
+          <label class="form-label">Project URL:</label>
+          <input type="text" id="inputUrl" class="form-control mb-3" 
+                 placeholder="https://ejvnglvplhizdkvujszj.supabase.co"
+                 value="">
+          <label class="form-label">Anon Public Key:</label>
+          <textarea id="inputKey" class="form-control mb-3" rows="3" 
+                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."></textarea>
+          <button class="btn btn-primary w-100" onclick="saveConfig()">
+            ✅ Config Save Karo aur Test Karo
+          </button>
+          <div id="saveResult" class="mt-3"></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-num">4</span>
+        <strong>Email Confirmation Band Karo (Important!)</strong>
+        <p class="mt-2">Supabase Dashboard → Authentication → Providers → Email</p>
+        <p><strong>"Confirm email"</strong> toggle → <span style="color:#e94560">OFF</span> kar do → Save</p>
+        <p class="text-muted small">Yeh karne se signup ke baad seedha login ho sakta hai bina email verify kiye.</p>
+      </div>
+    </div>
+
+    <div class="text-center mt-4">
+      <a href="login.html" class="btn btn-outline-light me-2">Login Page</a>
+      <a href="signup.html" class="btn btn-outline-light">Signup Page</a>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    function saveConfig() {
+      const url = document.getElementById('inputUrl').value.trim();
+      const key = document.getElementById('inputKey').value.trim();
+      const resultDiv = document.getElementById('saveResult');
+
+      if (!url || !key) {
+        resultDiv.innerHTML = '<div class="alert alert-danger">URL aur Key dono zaroori hain!</div>';
+        return;
+      }
+      if (!url.includes('supabase.co')) {
+        resultDiv.innerHTML = '<div class="alert alert-danger">URL mein supabase.co hona chahiye!</div>';
+        return;
+      }
+      if (!key.startsWith('eyJ')) {
+        resultDiv.innerHTML = '<div class="alert alert-danger">Key sahi nahi lagti. eyJ se shuru honi chahiye.</div>';
+        return;
+      }
+
+      // Test connection
+      resultDiv.innerHTML = '<div class="alert alert-info">🔄 Connection test ho raha hai...</div>';
+      
+      try {
+        const client = window.supabase.createClient(url, key);
+        client.auth.getSession().then(({ data, error }) => {
+          if (error && error.message.includes('Invalid API key')) {
+            resultDiv.innerHTML = '<div class="alert alert-danger">❌ Key galat hai. Supabase se dobara copy karein.</div>';
+          } else {
+            // Save to localStorage for reference
+            localStorage.setItem('sb_url', url);
+            localStorage.setItem('sb_key', key);
+            resultDiv.innerHTML = `
+              <div class="alert alert-success">
+                ✅ Connection kamyab! Ab <code>js/config.js</code> mein yeh values dalo:
+                <hr>
+                <small>URL: <code>${url}</code></small><br>
+                <small>Key: <code>${key.substring(0,50)}...</code></small>
+                <hr>
+                <strong>config.js update karne ke baad Vercel pe redeploy karo.</strong>
+              </div>`;
+          }
+        });
+      } catch(e) {
+        resultDiv.innerHTML = '<div class="alert alert-danger">Error: ' + e.message + '</div>';
+      }
+    }
+
+    // Pre-fill if saved
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedUrl = localStorage.getItem('sb_url');
+      const savedKey = localStorage.getItem('sb_key');
+      if (savedUrl) document.getElementById('inputUrl').value = savedUrl;
+      if (savedKey) document.getElementById('inputKey').value = savedKey;
+    });
+  </script>
+</body>
+</html>

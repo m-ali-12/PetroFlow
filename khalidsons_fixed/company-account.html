@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Go Company Account | Khalid & Sons Petroleum</title>
+  <link rel="icon" type="image/png" href="assets/logo.jfif">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/styles.css">
+  <style>
+    :root {
+      --ink:    #0f1923;
+      --accent: #c0392b;
+      --green:  #1a6b3c;
+      --blue:   #1a3a6b;
+      --gold:   #b7860b;
+    }
+
+    /* ── Summary Cards ── */
+    .sum-card { border-radius:8px; padding:18px 20px; position:relative; overflow:hidden; border:1px solid #dee2e6; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+    .sum-card::before { content:''; position:absolute; left:0;top:0;bottom:0;width:4px; }
+    .sum-card.red::before   { background:var(--accent); }
+    .sum-card.green::before { background:var(--green); }
+    .sum-card.blue::before  { background:var(--blue); }
+    .sum-card.gold::before  { background:var(--gold); }
+    .sum-card .s-label { font-size:11px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#888;margin-bottom:5px; }
+    .sum-card .s-value { font-family:'Courier New',monospace;font-size:1.25rem;font-weight:800;color:var(--ink); }
+    .sum-card .s-value.danger  { color:var(--accent); }
+    .sum-card .s-value.success { color:var(--green); }
+    .sum-card .s-sub { font-size:11px;color:#aaa;margin-top:3px; }
+
+    /* ── Tabs ── */
+    .nav-tabs .nav-link { font-size:13px;font-weight:600;color:#555; }
+    .nav-tabs .nav-link.active { color:var(--accent);border-bottom:2px solid var(--accent); }
+
+    /* ── Ledger Table ── */
+    .ledger-wrap { background:#fff;border:1px solid #dee2e6;border-radius:8px;overflow:hidden;margin-top:14px; }
+    .ledger-tbl  { width:100%;border-collapse:collapse; }
+    .ledger-tbl thead th { background:var(--ink);color:#fff;padding:10px 13px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px; }
+    .ledger-tbl tbody tr:hover { background:#f9f9f9; }
+    .ledger-tbl tbody tr+tr { border-top:1px solid #f0f0f0; }
+    .ledger-tbl td { padding:10px 13px;font-size:13px;vertical-align:middle; }
+
+    .filter-bar { background:#fff;border:1px solid #dee2e6;border-radius:8px;padding:14px 18px; }
+    .total-box  { background:#fff3cd;border:1px solid #ffc107;border-radius:5px;padding:8px 14px;font-weight:800;font-size:1.05rem;color:#856404;display:none; }
+    .progress   { height:16px;border-radius:4px; }
+
+    /* ── Modal headers ── */
+    .modal-hdr-green { background:var(--green);color:#fff; }
+    .modal-hdr-blue  { background:var(--blue);color:#fff; }
+    .modal-hdr-ink   { background:var(--ink);color:#fff; }
+    .modal-hdr-gold  { background:var(--gold);color:#fff; }
+    .modal-hdr-green .btn-close,
+    .modal-hdr-blue  .btn-close,
+    .modal-hdr-ink   .btn-close,
+    .modal-hdr-gold  .btn-close { filter:invert(1); }
+
+    /* ── Searchable Dropdown (matches transactions page style) ── */
+    .sd-wrap { position:relative; }
+    .sd-input-row {
+      display:flex; align-items:center;
+      border:1px solid #dee2e6; border-radius:6px;
+      background:#fff; overflow:hidden;
+      transition: border-color .15s;
+    }
+    .sd-input-row:focus-within { border-color:#0d6efd; box-shadow:0 0 0 .2rem rgba(13,110,253,.15); }
+    .sd-icon  { padding:0 10px; color:#aaa; font-size:14px; flex-shrink:0; }
+    .sd-input {
+      border:none; outline:none; width:100%;
+      padding:8px 4px; font-size:14px; background:transparent;
+    }
+    .sd-clear {
+      padding:0 10px; color:#aaa; cursor:pointer;
+      font-size:18px; flex-shrink:0; display:none;
+      line-height:1;
+    }
+    .sd-clear:hover { color:#dc3545; }
+    .sd-list {
+      display:none; position:absolute; top:calc(100% + 2px);
+      left:0; right:0; z-index:9999;
+      background:#fff; border:1px solid #dee2e6;
+      border-radius:6px; max-height:240px; overflow-y:auto;
+      box-shadow:0 4px 16px rgba(0,0,0,0.13);
+    }
+    .sd-item {
+      padding:9px 14px; cursor:pointer;
+      display:flex; justify-content:space-between; align-items:center;
+      font-size:13px; border-bottom:1px solid #f5f5f5;
+      transition:background .1s;
+    }
+    .sd-item:last-child { border-bottom:none; }
+    .sd-item:hover { background:#f0f4ff; }
+    .sd-item.selected { background:#e8f0fe; font-weight:700; }
+    .sd-item .sd-badge {
+      border-radius:5px; padding:2px 8px;
+      font-size:11px; font-weight:700; color:#fff;
+      margin-right:8px; flex-shrink:0;
+    }
+    .sd-item .sd-bal {
+      font-size:11px; font-weight:700;
+      white-space:nowrap; margin-left:8px;
+    }
+    .sd-empty { padding:12px 14px; color:#aaa; font-size:13px; text-align:center; }
+    .sd-balance-info {
+      font-size:11px; font-weight:700;
+      display:block; min-height:16px; margin-top:4px;
+    }
+  </style>
+</head>
+
+<body data-page="company-account">
+
+  <!-- Navbar -->
+  <div id="navbar-placeholder"></div>
+
+  <div class="container py-4">
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div>
+        <h3 class="mb-0"><i class="bi bi-building me-2 text-danger"></i>Go Company cc — Account No. 9</h3>
+        <small class="text-muted" id="sum-company-name">Company Credit Account — Stock Supplier</small>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#stockPurchaseModal">
+          <i class="bi bi-truck me-1"></i>Stock Purchase
+        </button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#memberCardModal">
+          <i class="bi bi-credit-card me-1"></i>Member Card
+        </button>
+        <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#repaymentModal">
+          <i class="bi bi-check2-circle me-1"></i>Repayment
+        </button>
+        <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#dualExpenseModal">
+          <i class="bi bi-receipt me-1"></i>Expense Entry
+        </button>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-3 col-6"><div class="sum-card green">
+        <div class="s-label">Initial Credit</div>
+        <div class="s-value success" id="sum-initial-credit">Rs. —</div>
+        <div class="s-sub">Credit from company</div>
+      </div></div>
+      <div class="col-md-3 col-6"><div class="sum-card red">
+        <div class="s-label">Stock Purchased</div>
+        <div class="s-value danger" id="sum-stock-purchased">Rs. —</div>
+        <div class="s-sub">Petrol + Diesel + Mobil</div>
+      </div></div>
+      <div class="col-md-3 col-6"><div class="sum-card gold">
+        <div class="s-label">Total Charges</div>
+        <div class="s-value" style="color:var(--gold)" id="sum-total-charges">Rs. —</div>
+        <div class="s-sub">ATM + Bank + Misc</div>
+      </div></div>
+      <div class="col-md-3 col-6"><div class="sum-card blue">
+        <div class="s-label">Total Repaid</div>
+        <div class="s-value success" id="sum-total-repaid">Rs. —</div>
+        <div class="s-sub">Check + Online</div>
+      </div></div>
+      <div class="col-md-3 col-6"><div class="sum-card red">
+        <div class="s-label" style="color:var(--accent)">⚠️ Net Payable</div>
+        <div class="s-value danger" id="sum-net-payable">Rs. —</div>
+        <div class="s-sub">Credit+Stock+Charges−Repaid</div>
+      </div></div>
+      <div class="col-md-3 col-6"><div class="sum-card green">
+        <div class="s-label">Remaining Limit</div>
+        <div class="s-value" id="sum-remaining-credit">Rs. —</div>
+        <div class="s-sub">Available to use</div>
+      </div></div>
+      <div class="col-md-3 col-6"><div class="sum-card gold">
+        <div class="s-label">Linked Expenses</div>
+        <div class="s-value" style="color:var(--gold)" id="sum-linked-expenses">Rs. —</div>
+        <div class="s-sub">Dual-role accounts</div>
+      </div></div>
+      <div class="col-md-3 col-6"><div class="sum-card blue">
+        <div class="s-label">Grand Expenses</div>
+        <div class="s-value" id="sum-grand-expenses">Rs. —</div>
+        <div class="s-sub">All expense transactions</div>
+      </div></div>
+    </div>
+
+    <!-- Credit Usage Bar -->
+    <div class="card shadow-sm mb-3 p-3">
+      <div class="d-flex justify-content-between mb-1">
+        <small class="fw-bold text-muted">Credit Utilisation</small>
+        <small class="text-muted" id="credit-limit-label">Limit: Rs. —</small>
+      </div>
+      <div class="progress">
+        <div class="progress-bar bg-success" id="credit-usage-bar" style="width:0%;transition:width .6s ease;font-size:11px;font-weight:700;">0%</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs">
+      <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-transactions">All Transactions</a></li>
+      <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-stock"      onclick="window.loadStockHistory()">Stock Ledger</a></li>
+      <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-member"     onclick="window.loadMemberUsageSummary()">Member Usage</a></li>
+      <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-repayments" onclick="window.loadRepaymentHistory()">Repayments</a></li>
+      <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-expenses"   onclick="window.loadExpenseLedger()">Expense Ledger</a></li>
+    </ul>
+
+    <div class="tab-content mt-3">
+
+      <!-- Tab 1 -->
+      <div class="tab-pane fade show active" id="tab-transactions">
+        <div class="filter-bar mb-3 d-flex flex-wrap gap-2 align-items-end">
+          <div>
+            <label class="form-label mb-1" style="font-size:11px;font-weight:700;">From Date</label>
+            <input type="date" class="form-control form-control-sm" id="cfilter-date-from">
+          </div>
+          <div>
+            <label class="form-label mb-1" style="font-size:11px;font-weight:700;">To Date</label>
+            <input type="date" class="form-control form-control-sm" id="cfilter-date-to">
+          </div>
+          <div>
+            <label class="form-label mb-1" style="font-size:11px;font-weight:700;">Type</label>
+            <select class="form-select form-select-sm" id="cfilter-type" style="min-width:160px;">
+              <option value="">All Types</option>
+              <option value="stock_purchase">Stock Purchase</option>
+              <option value="member_usage">Member Card</option>
+              <option value="atm_charge">ATM Charge</option>
+              <option value="misc_charge">Misc Charge</option>
+              <option value="repayment_check">Repayment (Check)</option>
+              <option value="repayment_online">Repayment (Online)</option>
+              <option value="adjustment">Adjustment</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-apply-company-filter"><i class="bi bi-funnel"></i> Filter</button>
+          <button class="btn btn-secondary btn-sm" id="btn-clear-company-filter"><i class="bi bi-x-circle"></i> Clear</button>
+          <div class="ms-auto d-flex gap-3 align-items-center" style="font-size:12px;font-family:'Courier New',monospace;">
+            <span>In: <strong id="ctxn-total-in" class="text-success">—</strong></span>
+            <span>Out: <strong id="cxtn-total-out" class="text-danger">—</strong></span>
+            <span>Net: <strong id="cxtn-net" class="text-danger">—</strong></span>
+          </div>
+        </div>
+        <div class="ledger-wrap"><div class="table-responsive">
+          <table class="ledger-tbl">
+            <thead><tr><th>#</th><th>Date</th><th>Type</th><th>Amount</th><th>Charges</th><th>Net</th><th>Member</th><th>Details</th><th></th></tr></thead>
+            <tbody id="company-txn-table"><tr><td colspan="9" class="text-center py-4 text-muted">Loading...</td></tr></tbody>
+          </table>
+        </div></div>
+      </div>
+
+      <!-- Tab 2 -->
+      <div class="tab-pane fade" id="tab-stock">
+        <div class="ledger-wrap"><div class="table-responsive">
+          <table class="ledger-tbl">
+            <thead><tr><th>Fuel Type</th><th>Purchases</th><th>Total Liters</th><th>Avg Price</th><th>Stock Value</th><th>Charges</th><th>Net Payable</th></tr></thead>
+            <tbody id="stock-breakdown-table"><tr><td colspan="7" class="text-center py-3 text-muted">Tab open hone par load hoga...</td></tr></tbody>
+          </table>
+        </div></div>
+      </div>
+
+      <!-- Tab 3 -->
+      <div class="tab-pane fade" id="tab-member">
+        <div class="ledger-wrap"><div class="table-responsive">
+          <table class="ledger-tbl">
+            <thead><tr><th>#</th><th>Member</th><th>Fuel</th><th>Uses</th><th>Liters</th><th>Stock Value</th><th>Charges</th><th>Grand Total</th></tr></thead>
+            <tbody id="member-usage-summary-table"><tr><td colspan="8" class="text-center py-3 text-muted">Tab open hone par load hoga...</td></tr></tbody>
+          </table>
+        </div></div>
+      </div>
+
+      <!-- Tab 4 -->
+      <div class="tab-pane fade" id="tab-repayments">
+        <p class="fw-bold text-success mb-2" style="font-family:'Courier New',monospace;">Total Repaid: <span id="repayment-total">—</span></p>
+        <div class="ledger-wrap"><div class="table-responsive">
+          <table class="ledger-tbl">
+            <thead><tr><th>#</th><th>Date</th><th>Amount</th><th>Method</th><th>Reference</th><th>Notes</th><th>Status</th></tr></thead>
+            <tbody id="repayment-history-table"><tr><td colspan="7" class="text-center py-3 text-muted">Loading...</td></tr></tbody>
+          </table>
+        </div></div>
+      </div>
+
+      <!-- Tab 5 -->
+      <div class="tab-pane fade" id="tab-expenses">
+        <div class="ledger-wrap"><div class="table-responsive">
+          <table class="ledger-tbl">
+            <thead><tr><th>Date</th><th>Acc#</th><th>Account</th><th>Category</th><th>Amount</th><th>Description</th><th>Paid From</th></tr></thead>
+            <tbody id="expense-ledger-table"><tr><td colspan="7" class="text-center py-3 text-muted">Tab open hone par load hoga...</td></tr></tbody>
+          </table>
+        </div></div>
+      </div>
+
+    </div>
+  </div><!-- /container -->
+
+
+  <!-- ══════════════════════════════════════════════
+       MODAL 1 — Stock Purchase
+  ══════════════════════════════════════════════ -->
+  <div class="modal fade" id="stockPurchaseModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="stockPurchaseForm">
+          <div class="modal-header modal-hdr-green">
+            <h5 class="modal-title"><i class="bi bi-truck me-2"></i>Stock Purchase (Company Credit)</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Fuel Type *</label>
+                <select class="form-select" id="sp-fuel-type" required>
+                  <option value="">-- Select --</option>
+                  <option value="Petrol">⛽ Petrol</option>
+                  <option value="Diesel">🛢️ Diesel</option>
+                  <option value="Mobil Oil">🔧 Mobil Oil</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label">Liters *</label>
+                <input type="number" class="form-control" id="sp-liters" placeholder="0.00" step="0.01" min="0" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label">Unit Price (Rs./L) *</label>
+                <input type="number" class="form-control" id="sp-unit-price" placeholder="0.00" step="0.01" min="0" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label">Charges (ATM/Bank)</label>
+                <input type="number" class="form-control" id="sp-charges" placeholder="0.00" step="0.01" min="0" value="0">
+              </div>
+              <div class="col-6">
+                <label class="form-label">Purchase Date</label>
+                <input type="date" class="form-control" id="sp-date">
+              </div>
+              <div class="col-6">
+                <label class="form-label">Invoice No.</label>
+                <input type="text" class="form-control" id="sp-invoice-no" placeholder="Optional">
+              </div>
+              <div class="col-6">
+                <label class="form-label">Truck No.</label>
+                <input type="text" class="form-control" id="sp-truck-no" placeholder="Optional">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Notes</label>
+                <textarea class="form-control" id="sp-notes" rows="2" placeholder="Optional..."></textarea>
+              </div>
+              <div class="col-12"><div class="total-box" id="sp-total-display"></div></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-success"><i class="bi bi-check2 me-1"></i>Record Purchase</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════
+       MODAL 2 — Member Card Usage
+       🔍 SEARCHABLE: type naam ya SR No
+  ══════════════════════════════════════════════ -->
+  <div class="modal fade" id="memberCardModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="memberCardForm">
+          <div class="modal-header modal-hdr-blue">
+            <h5 class="modal-title"><i class="bi bi-credit-card me-2"></i>Member Card Usage</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+
+              <!-- ✅ SEARCHABLE MEMBER DROPDOWN -->
+              <div class="col-12">
+                <label class="form-label">Member * <small class="text-muted">(naam ya SR No likho)</small></label>
+                <div class="sd-wrap" id="mcu-wrap">
+                  <div class="sd-input-row">
+                    <span class="sd-icon">🔍</span>
+                    <input class="sd-input" id="mcu-search" type="text"
+                           autocomplete="off" placeholder="Naam ya SR No likho...">
+                    <span class="sd-clear" id="mcu-clear" title="Clear">✕</span>
+                  </div>
+                  <div class="sd-list" id="mcu-list"></div>
+                  <input type="hidden" id="mcu-member-id">
+                </div>
+                <span class="sd-balance-info" id="mcu-balance-info"></span>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Fuel Type *</label>
+                <select class="form-select" id="mcu-fuel-type" required>
+                  <option value="">-- Select --</option>
+                  <option value="Petrol">⛽ Petrol</option>
+                  <option value="Diesel">🛢️ Diesel</option>
+                  <option value="Mobil Oil">🔧 Mobil Oil</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label">Liters *</label>
+                <input type="number" class="form-control" id="mcu-liters" placeholder="0.00" step="0.01" min="0" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label">Unit Price *</label>
+                <input type="number" class="form-control" id="mcu-unit-price" placeholder="0.00" step="0.01" min="0" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label">ATM Charges</label>
+                <input type="number" class="form-control" id="mcu-atm-charges" placeholder="0.00" step="0.01" min="0" value="0">
+              </div>
+              <div class="col-6">
+                <label class="form-label">Misc Charges</label>
+                <input type="number" class="form-control" id="mcu-misc-charges" placeholder="0.00" step="0.01" min="0" value="0">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Usage Date</label>
+                <input type="date" class="form-control" id="mcu-date">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Notes</label>
+                <textarea class="form-control" id="mcu-notes" rows="2" placeholder="Optional..."></textarea>
+              </div>
+              <div class="col-12"><div class="total-box" id="mcu-total-display"></div></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-1"></i>Record Usage</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════
+       MODAL 3 — Repayment
+  ══════════════════════════════════════════════ -->
+  <div class="modal fade" id="repaymentModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="repaymentForm">
+          <div class="modal-header modal-hdr-ink">
+            <h5 class="modal-title"><i class="bi bi-check2-circle me-2"></i>Repayment to Go Company</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Amount (Rs.) *</label>
+                <input type="number" class="form-control" id="rp-amount" placeholder="0.00" step="0.01" min="0" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Payment Method *</label>
+                <select class="form-select" id="rp-payment-mode" required>
+                  <option value="">-- Select --</option>
+                  <option value="check">🏷️ Check</option>
+                  <option value="online">🌐 Online Transfer</option>
+                  <option value="cash">💵 Cash</option>
+                  <option value="other">📋 Other</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Reference No. (Check# / TxID)</label>
+                <input type="text" class="form-control" id="rp-reference-no" placeholder="Optional">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Payment Date</label>
+                <input type="date" class="form-control" id="rp-date">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Notes</label>
+                <textarea class="form-control" id="rp-notes" rows="2" placeholder="Optional..."></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-dark"><i class="bi bi-check2-circle me-1"></i>Record Repayment</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════
+       MODAL 4 — Expense Entry (Dual Account)
+       🔍 SEARCHABLE: Account + Paid From
+  ══════════════════════════════════════════════ -->
+  <div class="modal fade" id="dualExpenseModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="dualExpenseForm">
+          <div class="modal-header modal-hdr-gold">
+            <h5 class="modal-title"><i class="bi bi-receipt me-2"></i>Expense Entry (Dual Account)</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-warning py-2 mb-3" style="font-size:12px;">
+              <i class="bi bi-info-circle me-1"></i>
+              Yeh entry <strong>Expense section</strong> mein bhi jayegi <strong>aur</strong> selected account ke ledger mein bhi record hogi.
+            </div>
+            <div class="row g-3">
+
+              <!-- ✅ SEARCHABLE ACCOUNT DROPDOWN -->
+              <div class="col-12">
+                <label class="form-label">Account * <small class="text-muted">(naam ya SR No likho)</small></label>
+                <div class="sd-wrap" id="dre-wrap">
+                  <div class="sd-input-row">
+                    <span class="sd-icon">🔍</span>
+                    <input class="sd-input" id="dre-search" type="text"
+                           autocomplete="off" placeholder="Naam ya SR No likho...">
+                    <span class="sd-clear" id="dre-clear" title="Clear">✕</span>
+                  </div>
+                  <div class="sd-list" id="dre-list"></div>
+                  <input type="hidden" id="dre-account-id">
+                </div>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Expense Category *</label>
+                <!-- ✅ From expense_categories table -->
+                <select class="form-select" id="dre-expense-type" required>
+                  <option value="">-- Category --</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Amount (Rs.) *</label>
+                <input type="number" class="form-control" id="dre-amount" placeholder="0.00" step="0.01" min="0" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Description *</label>
+                <input type="text" class="form-control" id="dre-description" placeholder="e.g. November mahine ka kiraya" required>
+              </div>
+
+              <!-- ✅ SEARCHABLE PAID FROM DROPDOWN -->
+              <div class="col-6">
+                <label class="form-label">Paid From * <small class="text-muted">(account ya cash)</small></label>
+                <div class="sd-wrap" id="paid-wrap">
+                  <div class="sd-input-row">
+                    <span class="sd-icon">🔍</span>
+                    <input class="sd-input" id="paid-search" type="text"
+                           autocomplete="off" placeholder="Source...">
+                    <span class="sd-clear" id="paid-clear" title="Clear">✕</span>
+                  </div>
+                  <div class="sd-list" id="paid-list"></div>
+                  <input type="hidden" id="dre-paid-from">
+                </div>
+              </div>
+
+              <div class="col-6">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-control" id="dre-date">
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-warning"><i class="bi bi-check2 me-1"></i>Record Expense</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Toast -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+    <div id="liveToast" class="toast" role="alert">
+      <div class="toast-header">
+        <strong class="me-auto" id="toast-title">Info</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body" id="toast-message">...</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div id="footer-placeholder"></div>
+
+  <!-- Scripts — same order as customers.html -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/company-account.js"></script>
+</body>
+</html>
