@@ -14,11 +14,15 @@
 
     window.PETRO_CONFIG_LOADED = true;
 
-    // ✅ MUST MATCH PROJECT REF INSIDE YOUR API KEY
-    const SUPABASE_URL = 'https://ljcfbctwpcznzyhabfiw.supabase.co';
+    // // ✅ MUST MATCH PROJECT REF INSIDE YOUR API KEY
+    // const SUPABASE_URL = 'https://ljcfbctwpcznzyhabfiw.supabase.co';
+    
+    const SUPABASE_URL = 'https://ugdcucdgokahdicenbcf.supabase.co';
 
     // ✅ COPY EXACT FROM SUPABASE DASHBOARD → SETTINGS → API → anon public
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqY2ZiY3R3cGN6bnp5aGFiZml3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NzUwNjQsImV4cCI6MjA4OTA1MTA2NH0.zQ4Rw8zkFOd46Ef6AXy6lg5FM7Q4xsi4-c0s0Kl1SjY";
+    // const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqY2ZiY3R3cGN6bnp5aGFiZml3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NzUwNjQsImV4cCI6MjA4OTA1MTA2NH0.zQ4Rw8zkFOd46Ef6AXy6lg5FM7Q4xsi4-c0s0Kl1SjY";
+
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZGN1Y2Rnb2thaGRpY2VuYmNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjUyMjEsImV4cCI6MjA4OTMwMTIyMX0.P9rYp5RSj9TNw8OtF0Nupy5jUJkNEEf2QYJswdc8mjw"
 
     function initSupabase() {
 
