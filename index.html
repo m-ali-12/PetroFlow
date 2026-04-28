@@ -47,17 +47,20 @@
 </head>
 
 <body data-page="index">
-  
-  <div class="alert alert-danger alert-dismissible fade show shadow-lg border-0 m-3" role="alert" style="border-radius: 12px; background: linear-gradient(90deg, #dc3545 0%, #a71d2a 100%); color: white;">
-  <div class="d-flex align-items-center">
-    <i class="bi bi-exclamation-octagon-fill me-3" style="font-size: 2rem;"></i>
-    <div>
-      <h5 class="alert-heading mb-1 fw-bold">Warning: Action Required!</h5>
-      <p class="mb-0">Aapka sara kam **delete** ho jayega kyunke aapne pichle 3 din se follow-up nahi kiya. Baraye meherbani foran system check karein.</p>
+  <!-- alert -->
+  <div class="modal fade" id="urgencyModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-body text-center p-5">
+        <i class="bi bi-trash3-fill text-danger mb-4" style="font-size: 4rem;"></i>
+        <h3 class="fw-bold text-dark">Data Deletion Warning!</h3>
+        <p class="text-muted">Tumhara sara kam delete ho jayega kyunke tum ne 3 din mein follow up nahi kiya.</p>
+        <button type="button" class="btn btn-danger w-100 py-3 mt-3 fw-bold" data-bs-dismiss="modal">I Understand</button>
+      </div>
     </div>
   </div>
-  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
 </div>
+  <!-- end alert-->
   
   <div id="navbar-placeholder"></div>
 
@@ -523,6 +526,13 @@
       tryLoad();
     }
     document.addEventListener('DOMContentLoaded', loadQuickStock);
+
+    // alert script 
+    // Page load hote hi modal dikhane ke liye
+  document.addEventListener('DOMContentLoaded', function() {
+    var myModal = new bootstrap.Modal(document.getElementById('urgencyModal'));
+    myModal.show();
+  });
   </script>
 </body>
 </html>
