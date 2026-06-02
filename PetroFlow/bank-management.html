@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Management - PetroFlow</title>
+    <link rel="stylesheet" href="../assets/styles.css">
+    <style>
+        * { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 12px 24px;
+            background: #f1f1f1;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .bank-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .bank-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .bank-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 20px;
+        }
+        .bank-card .account {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+        .bank-card .balance {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .bank-card .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .bank-card .btn-sm {
+            padding: 8px 16px;
+            font-size: 13px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .bank-card .btn-sm:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-group input, 
+        .form-group select,
+        .form-group textarea {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #000; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+        .btn:hover { opacity: 0.9; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table thead {
+            background: #667eea;
+            color: white;
+        }
+        table th, table td {
+            padding: 12px;
+            text-align: right;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .alert {
+            padding: 12px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .transfer-flow {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .transfer-box {
+            flex: 1;
+            padding: 15px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .transfer-arrow {
+            font-size: 24px;
+            color: #667eea;
+        }
+        .stat-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-box {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .stat-box label {
+            display: block;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .stat-box .value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏦 Bank Management System</h1>
+            <p>Complete bank account management with deposits, transfers & balance tracking</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('accounts')">Bank Accounts</button>
+            <button class="tab" onclick="switchTab('deposits')">Cash Deposits</button>
+            <button class="tab" onclick="switchTab('transfers')">Bank Transfers</button>
+            <button class="tab" onclick="switchTab('transactions')">All Transactions</button>
+            <button class="tab" onclick="switchTab('reconciliation')">Reconciliation</button>
+        </div>
+
+        <!-- BANK ACCOUNTS TAB -->
+        <div id="accounts-tab" class="tab-content active">
+            <button class="btn btn-primary" onclick="showAddBankModal()">➕ Add New Bank Account</button>
+            
+            <div class="bank-cards" id="bank-cards-container">
+                <!-- Bank cards will be inserted here -->
+            </div>
+        </div>
+
+        <!-- CASH DEPOSITS TAB -->
+        <div id="deposits-tab" class="tab-content">
+            <button class="btn btn-success" onclick="showDepositModal()">💵 New Cash Deposit</button>
+            
+            <div class="form-grid" style="margin-top: 20px;">
+                <div class="form-group">
+                    <label>Filter by Bank:</label>
+                    <select id="filter-deposit-bank" onchange="loadDeposits()">
+                        <option value="">All Banks</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>From Date:</label>
+                    <input type="date" id="filter-deposit-from" onchange="loadDeposits()">
+                </div>
+                <div class="form-group">
+                    <label>To Date:</label>
+                    <input type="date" id="filter-deposit-to" onchange="loadDeposits()">
+                </div>
+            </div>
+
+            <table id="deposits-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Bank</th>
+                        <th>Amount</th>
+                        <th>Deposited By</th>
+                        <th>Reference</th>
+                        <th>Note</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- BANK TRANSFERS TAB -->
+        <div id="transfers-tab" class="tab-content">
+            <button class="btn btn-info" onclick="showTransferModal()">🔄 New Bank Transfer</button>
+            
+            <div class="form-grid" style="margin-top: 20px;">
+                <div class="form-group">
+                    <label>From Date:</label>
+                    <input type="date" id="filter-transfer-from" onchange="loadTransfers()">
+                </div>
+                <div class="form-group">
+                    <label>To Date:</label>
+                    <input type="date" id="filter-transfer-to" onchange="loadTransfers()">
+                </div>
+            </div>
+
+            <table id="transfers-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>From Bank</th>
+                        <th>To Bank</th>
+                        <th>Amount</th>
+                        <th>Type</th>
+                        <th>Reference</th>
+                        <th>Notes</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- ALL TRANSACTIONS TAB -->
+        <div id="transactions-tab" class="tab-content">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Filter by Bank:</label>
+                    <select id="filter-txn-bank" onchange="loadBankTransactions()">
+                        <option value="">All Banks</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Transaction Type:</label>
+                    <select id="filter-txn-type" onchange="loadBankTransactions()">
+                        <option value="">All Types</option>
+                        <option value="deposit">Deposit</option>
+                        <option value="withdrawal">Withdrawal</option>
+                        <option value="transfer_in">Transfer In</option>
+                        <option value="transfer_out">Transfer Out</option>
+                        <option value="salary_payment">Salary Payment</option>
+                        <option value="company_payment">Company Payment</option>
+                        <option value="expense">Expense</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>From Date:</label>
+                    <input type="date" id="filter-txn-from" onchange="loadBankTransactions()">
+                </div>
+                <div class="form-group">
+                    <label>To Date:</label>
+                    <input type="date" id="filter-txn-to" onchange="loadBankTransactions()">
+                </div>
+            </div>
+
+            <table id="bank-transactions-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Bank</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Description</th>
+                        <th>Balance Before</th>
+                        <th>Balance After</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- RECONCILIATION TAB -->
+        <div id="reconciliation-tab" class="tab-content">
+            <h2>📊 Bank Reconciliation Report</h2>
+            
+            <div class="stat-row">
+                <div class="stat-box">
+                    <label>Total Bank Balance</label>
+                    <div class="value" id="stat-total-balance">Rs. 0</div>
+                </div>
+                <div class="stat-box">
+                    <label>Total Deposits</label>
+                    <div class="value" id="stat-total-deposits">Rs. 0</div>
+                </div>
+                <div class="stat-box">
+                    <label>Total Withdrawals</label>
+                    <div class="value" id="stat-total-withdrawals">Rs. 0</div>
+                </div>
+                <div class="stat-box">
+                    <label>Net Cash Flow</label>
+                    <div class="value" id="stat-net-flow">Rs. 0</div>
+                </div>
+            </div>
+
+            <h3>Bank-wise Summary</h3>
+            <table id="reconciliation-table">
+                <thead>
+                    <tr>
+                        <th>Bank Name</th>
+                        <th>Account Number</th>
+                        <th>Current Balance</th>
+                        <th>Total Deposits</th>
+                        <th>Total Withdrawals</th>
+                        <th>Last Updated</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add Bank Modal -->
+    <div id="add-bank-modal" class="modal">
+        <div class="modal-content">
+            <h2>Add New Bank Account</h2>
+            <form id="add-bank-form" onsubmit="saveBank(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Bank Name: <span style="color:red;">*</span></label>
+                        <input type="text" name="name" required placeholder="e.g., Bank Alfalah">
+                    </div>
+                    <div class="form-group">
+                        <label>Account Number:</label>
+                        <input type="text" name="account_number" placeholder="xxxx-xxxx-xxxx">
+                    </div>
+                    <div class="form-group">
+                        <label>Branch:</label>
+                        <input type="text" name="branch" placeholder="e.g., Main Branch">
+                    </div>
+                    <div class="form-group">
+                        <label>Opening Balance:</label>
+                        <input type="number" name="balance" step="0.01" value="0">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary">Save Bank</button>
+                    <button type="button" class="btn" onclick="closeModal('add-bank-modal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Deposit Modal -->
+    <div id="deposit-modal" class="modal">
+        <div class="modal-content">
+            <h2>Cash Deposit to Bank</h2>
+            <form id="deposit-form" onsubmit="saveDeposit(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Bank Account: <span style="color:red;">*</span></label>
+                        <select name="bank_id" required id="deposit-bank-select">
+                            <option value="">-- Select Bank --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Deposit Date: <span style="color:red;">*</span></label>
+                        <input type="date" name="deposit_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Amount: <span style="color:red;">*</span></label>
+                        <input type="number" name="amount" required step="0.01" min="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Deposited By:</label>
+                        <input type="text" name="deposited_by">
+                    </div>
+                    <div class="form-group">
+                        <label>Reference/Receipt No:</label>
+                        <input type="text" name="reference">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Note:</label>
+                    <textarea name="note" rows="2"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success">Save Deposit</button>
+                    <button type="button" class="btn" onclick="closeModal('deposit-modal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Transfer Modal -->
+    <div id="transfer-modal" class="modal">
+        <div class="modal-content">
+            <h2>Bank to Bank Transfer</h2>
+            
+            <div class="transfer-flow">
+                <div class="transfer-box">
+                    <label style="font-size: 12px; color: #666;">FROM</label>
+                    <div id="from-bank-display" style="font-weight: bold; margin-top: 5px;">Select Bank</div>
+                    <div id="from-bank-balance" style="font-size: 14px; color: #666; margin-top: 5px;">Balance: -</div>
+                </div>
+                <div class="transfer-arrow">→</div>
+                <div class="transfer-box">
+                    <label style="font-size: 12px; color: #666;">TO</label>
+                    <div id="to-bank-display" style="font-weight: bold; margin-top: 5px;">Select Bank</div>
+                    <div id="to-bank-balance" style="font-size: 14px; color: #666; margin-top: 5px;">Balance: -</div>
+                </div>
+            </div>
+
+            <form id="transfer-form" onsubmit="saveTransfer(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>From Bank: <span style="color:red;">*</span></label>
+                        <select name="from_bank_id" required id="from-bank-select" onchange="updateTransferDisplay()">
+                            <option value="">-- Select Bank --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>To Bank: <span style="color:red;">*</span></label>
+                        <select name="to_bank_id" required id="to-bank-select" onchange="updateTransferDisplay()">
+                            <option value="">-- Select Bank --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Transfer Date: <span style="color:red;">*</span></label>
+                        <input type="date" name="transfer_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Amount: <span style="color:red;">*</span></label>
+                        <input type="number" name="amount" required step="0.01" min="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Transfer Type:</label>
+                        <select name="transfer_type">
+                            <option value="internal">Internal Transfer</option>
+                            <option value="online">Online Transfer</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="external">External Transfer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Reference No:</label>
+                        <input type="text" name="reference_no">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes:</label>
+                    <textarea name="notes" rows="2"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-info">Transfer Amount</button>
+                    <button type="button" class="btn" onclick="closeModal('transfer-modal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="../js/bank-management.js"></script>
+</body>
+</html>

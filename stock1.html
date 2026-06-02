@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Management | Khalid and Sons Petroleum</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/styles.css">
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+    :root {
+      --petrol-color: #0d6e3f;
+      --petrol-light: #e6f4ec;
+      --diesel-color: #b45309;
+      --diesel-light: #fef3c7;
+      --ink: #1a1a2e;
+      --paper: #fafaf7;
+      --border: #e5e0d5;
+    }
+
+    body {
+      background: var(--paper);
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .page-hero {
+      background: linear-gradient(135deg, #0a2540 0%, #1a3a5c 60%, #0d6e3f 100%);
+      padding: 2.5rem 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .page-hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .page-hero h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      letter-spacing: -0.5px;
+    }
+
+    /* ---- Stock Cards ---- */
+    .tank-card {
+      border-radius: 16px;
+      border: 2px solid var(--border);
+      background: #fff;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tank-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+    }
+
+    .tank-card.petrol::after { background: var(--petrol-color); }
+    .tank-card.diesel::after { background: var(--diesel-color); }
+
+    .tank-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+    }
+
+    .tank-card.selected {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.2);
+    }
+
+    .stock-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.8rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .fuel-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .badge-petrol { background: var(--petrol-light); color: var(--petrol-color); }
+    .badge-diesel { background: var(--diesel-light); color: var(--diesel-color); }
+
+    /* ---- Form ---- */
+    .stock-form-card {
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+
+    .form-label {
+      font-weight: 500;
+      font-size: 0.875rem;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+
+    .form-control, .form-select {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+    }
+
+    /* ---- Live Calc ---- */
+    .calc-box {
+      background: linear-gradient(135deg, #f0f7ff, #e8f5ff);
+      border: 1.5px dashed #93c5fd;
+      border-radius: 12px;
+      padding: 1.2rem 1.5rem;
+    }
+
+    .calc-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      font-size: 0.9rem;
+    }
+
+    .calc-row.total {
+      border-top: 1.5px solid #93c5fd;
+      margin-top: 8px;
+      padding-top: 12px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #1e40af;
+    }
+
+    /* ---- Submit Button ---- */
+    .btn-add-stock {
+      background: linear-gradient(135deg, #0a2540, #1e40af);
+      border: none;
+      border-radius: 12px;
+      padding: 14px 32px;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      color: white;
+      width: 100%;
+      transition: all 0.3s;
+    }
+
+    .btn-add-stock:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(30,64,175,0.4);
+      color: white;
+    }
+
+    /* ---- History Table ---- */
+    .history-card {
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .history-card table thead {
+      background: #f8fafc;
+    }
+
+    .history-card table th {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: #64748b;
+      padding: 12px 16px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .history-card table td {
+      padding: 12px 16px;
+      font-size: 0.9rem;
+      vertical-align: middle;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .history-card table tr:last-child td { border-bottom: none; }
+    .history-card table tr:hover td { background: #fafbff; }
+
+    /* ---- Invoice Modal ---- */
+    #invoice-preview {
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .invoice-header {
+      background: linear-gradient(135deg, #0a2540, #1a3a5c);
+      color: white;
+      padding: 2rem;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .invoice-body { padding: 2rem; }
+
+    .invoice-company {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .invoice-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #94a3b8;
+      margin-bottom: 2px;
+    }
+
+    .invoice-value {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .invoice-table thead th {
+      background: #f1f5f9;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: #64748b;
+    }
+
+    .invoice-total-box {
+      background: linear-gradient(135deg, #0a2540, #1e40af);
+      color: white;
+      border-radius: 10px;
+      padding: 1rem 1.5rem;
+    }
+
+    @media print {
+      body * { visibility: hidden !important; }
+      #invoice-preview, #invoice-preview * { visibility: visible !important; }
+      #invoice-preview {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+      .btn-print, .btn-close { display: none !important; }
+    }
+  </style>
+</head>
+
+<body data-page="stock">
+  <div id="navbar-placeholder"></div>
+
+  <!-- Hero -->
+  <div class="page-hero">
+    <div class="container">
+      <h2 class="text-white mb-1">
+        <i class="bi bi-fuel-pump me-2"></i>Stock Management
+      </h2>
+      <p class="text-white-50 mb-0">Petrol aur Diesel ka stock add karein — invoice ke saath</p>
+    </div>
+  </div>
+
+  <div class="container py-4">
+
+    <!-- Live Stock Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <div class="tank-card petrol p-4" id="petrol-tank-card">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <span class="fuel-badge badge-petrol"><i class="bi bi-droplet-fill me-1"></i>Petrol</span>
+            <span class="text-muted small" id="petrol-updated">—</span>
+          </div>
+          <div class="stock-num text-success" id="petrol-stock-display">0</div>
+          <div class="text-muted small mb-3">Liters available</div>
+          <div class="progress" style="height:6px; border-radius:4px;">
+            <div class="progress-bar bg-success" id="petrol-bar" style="width:0%"></div>
+          </div>
+          <div class="d-flex justify-content-between mt-1">
+            <small class="text-muted">0 L</small>
+            <small class="text-muted">Capacity: <span id="petrol-cap-display">25,000</span> L</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="tank-card diesel p-4" id="diesel-tank-card">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <span class="fuel-badge badge-diesel"><i class="bi bi-droplet-fill me-1"></i>Diesel</span>
+            <span class="text-muted small" id="diesel-updated">—</span>
+          </div>
+          <div class="stock-num" style="color: var(--diesel-color);" id="diesel-stock-display">0</div>
+          <div class="text-muted small mb-3">Liters available</div>
+          <div class="progress" style="height:6px; border-radius:4px;">
+            <div class="progress-bar bg-warning" id="diesel-bar" style="width:0%"></div>
+          </div>
+          <div class="d-flex justify-content-between mt-1">
+            <small class="text-muted">0 L</small>
+            <small class="text-muted">Capacity: <span id="diesel-cap-display">25,000</span> L</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+
+      <!-- ===== Add Stock Form ===== -->
+      <div class="col-lg-7">
+        <div class="stock-form-card p-4">
+          <h5 class="fw-700 mb-4" style="font-family:'Playfair Display',serif;">
+            <i class="bi bi-plus-circle-fill me-2 text-primary"></i>Naya Stock Add Karein
+          </h5>
+
+          <div class="row g-3">
+            <!-- Fuel Type -->
+            <div class="col-12">
+              <label class="form-label">Fuel Type *</label>
+              <select class="form-select" id="fuel-type">
+                <option value="">-- Select Fuel --</option>
+                <option value="Petrol">⛽ Petrol</option>
+                <option value="Diesel">🛢️ Diesel</option>
+              </select>
+            </div>
+
+            <!-- Liters -->
+            <div class="col-md-6">
+              <label class="form-label">Liters Received *</label>
+              <div class="input-group">
+                <input type="number" class="form-control" id="liters-input" placeholder="e.g. 5000" min="1" step="0.01">
+                <span class="input-group-text">L</span>
+              </div>
+            </div>
+
+            <!-- Price per Liter -->
+            <div class="col-md-6">
+              <label class="form-label">Rate per Liter *</label>
+              <div class="input-group">
+                <span class="input-group-text">Rs.</span>
+                <input type="number" class="form-control" id="rate-input" placeholder="e.g. 285.50" min="0" step="0.01">
+              </div>
+            </div>
+
+            <!-- Supplier -->
+            <div class="col-md-6">
+              <label class="form-label">Supplier Name</label>
+              <input type="text" class="form-control" id="supplier-input" placeholder="e.g. PSO, Shell">
+            </div>
+
+            <!-- Truck Number -->
+            <div class="col-md-6">
+              <label class="form-label">Truck / Vehicle Number</label>
+              <input type="text" class="form-control" id="truck-input" placeholder="e.g. LHR-1234">
+            </div>
+
+            <!-- Notes -->
+            <div class="col-12">
+              <label class="form-label">Notes (Optional)</label>
+              <textarea class="form-control" id="notes-input" rows="2" placeholder="Koi baat note karni ho..."></textarea>
+            </div>
+          </div>
+
+          <!-- Live Calculation -->
+          <div class="calc-box mt-4" id="calc-preview" style="display:none;">
+            <div class="fw-600 mb-2 text-primary small" style="letter-spacing:0.8px; text-transform:uppercase;">Live Calculation</div>
+            <div class="calc-row">
+              <span class="text-muted">Fuel Type</span>
+              <span class="fw-600" id="calc-fuel">—</span>
+            </div>
+            <div class="calc-row">
+              <span class="text-muted">Liters</span>
+              <span class="fw-600" id="calc-liters">0 L</span>
+            </div>
+            <div class="calc-row">
+              <span class="text-muted">Rate per Liter</span>
+              <span class="fw-600" id="calc-rate">Rs. 0</span>
+            </div>
+            <div class="calc-row total">
+              <span>Total Amount</span>
+              <span id="calc-total">Rs. 0</span>
+            </div>
+          </div>
+
+          <button class="btn btn-add-stock mt-4" id="add-stock-btn" onclick="submitStock()">
+            <i class="bi bi-plus-lg me-2"></i>Stock Add Karein & Invoice Banayein
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== Quick Stats ===== -->
+      <div class="col-lg-5">
+        <div class="stock-form-card p-4 mb-3">
+          <h6 class="fw-600 mb-3 text-muted" style="font-size:0.78rem; letter-spacing:1px; text-transform:uppercase;">Is Mahine Ka Stock Summary</h6>
+          <div id="monthly-stats">
+            <div class="text-center text-muted py-3">
+              <div class="spinner-border spinner-border-sm mb-2"></div>
+              <div>Loading...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stock-form-card p-4">
+          <h6 class="fw-600 mb-3 text-muted" style="font-size:0.78rem; letter-spacing:1px; text-transform:uppercase;">Tips</h6>
+          <ul class="list-unstyled mb-0">
+            <li class="mb-2 d-flex gap-2">
+              <i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i>
+              <small>Stock add karne ke baad tank automatically update hoga</small>
+            </li>
+            <li class="mb-2 d-flex gap-2">
+              <i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i>
+              <small>Invoice print ya download kar sakte hain</small>
+            </li>
+            <li class="mb-2 d-flex gap-2">
+              <i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i>
+              <small>Sab entries history mein save rehti hain</small>
+            </li>
+            <li class="d-flex gap-2">
+              <i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i>
+              <small>Truck number aur supplier record rakhna accounting ke liye zaroori hai</small>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Stock History ===== -->
+    <div class="history-card mt-4">
+      <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-700" style="font-family:'Playfair Display',serif;">
+          <i class="bi bi-clock-history me-2 text-primary"></i>Stock Entry History
+        </h5>
+        <div class="d-flex gap-2 align-items-center">
+          <select class="form-select form-select-sm" id="filter-fuel" style="width:auto;" onchange="loadHistory()">
+            <option value="">All Fuels</option>
+            <option value="Petrol">Petrol</option>
+            <option value="Diesel">Diesel</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>Date & Time</th>
+              <th>Invoice #</th>
+              <th>Fuel</th>
+              <th>Liters</th>
+              <th>Rate</th>
+              <th>Total</th>
+              <th>Supplier</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody">
+            <tr><td colspan="8" class="text-center text-muted py-4">Loading history...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+
+  <!-- ===== Invoice Modal ===== -->
+  <div class="modal fade" id="invoiceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-600">Stock Invoice</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-0">
+          <div id="invoice-preview">
+            <!-- Invoice content injected by JS -->
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button class="btn btn-outline-secondary btn-print" onclick="window.print()">
+            <i class="bi bi-printer me-2"></i>Print
+          </button>
+          <button class="btn btn-primary" onclick="downloadInvoice()">
+            <i class="bi bi-download me-2"></i>Download PDF
+          </button>
+          <button class="btn btn-success" data-bs-dismiss="modal">
+            <i class="bi bi-check-lg me-2"></i>Done
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999;">
+    <div id="liveToast" class="toast align-items-center" role="alert">
+      <div class="d-flex">
+        <div class="toast-body" id="toast-msg">Message here</div>
+        <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/stock.js"></script>
+</body>
+</html>

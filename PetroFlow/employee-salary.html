@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Salary Management - PetroFlow</title>
+    <link rel="stylesheet" href="../assets/styles.css">
+    <style>
+        * { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 12px 24px;
+            background: #f1f1f1;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-group input, 
+        .form-group select,
+        .form-group textarea {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #000;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table thead {
+            background: #667eea;
+            color: white;
+        }
+        table th, table td {
+            padding: 12px;
+            text-align: right;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        .stat-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .alert {
+            padding: 12px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧑‍💼 Employee Salary Management</h1>
+            <p>Manage employees, salaries, advances and payments</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('employees')">Employees</button>
+            <button class="tab" onclick="switchTab('salaries')">Salary Payments</button>
+            <button class="tab" onclick="switchTab('advances')">Advances/Loans</button>
+            <button class="tab" onclick="switchTab('reports')">Reports</button>
+        </div>
+
+        <!-- EMPLOYEES TAB -->
+        <div id="employees-tab" class="tab-content active">
+            <div class="stat-cards">
+                <div class="stat-card">
+                    <h3>Total Employees</h3>
+                    <div class="value" id="stat-total-employees">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Active Employees</h3>
+                    <div class="value" id="stat-active-employees">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Monthly Salary</h3>
+                    <div class="value" id="stat-total-salary">Rs. 0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Advances</h3>
+                    <div class="value" id="stat-total-advances">Rs. 0</div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="showAddEmployeeModal()">➕ Add New Employee</button>
+            
+            <table id="employees-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Designation</th>
+                        <th>Phone</th>
+                        <th>Salary</th>
+                        <th>Advance Balance</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- SALARY PAYMENTS TAB -->
+        <div id="salaries-tab" class="tab-content">
+            <button class="btn btn-success" onclick="showPaySalaryModal()">💰 Pay Salary</button>
+            
+            <div class="form-grid" style="margin-top: 20px;">
+                <div class="form-group">
+                    <label>Filter by Month:</label>
+                    <input type="month" id="filter-salary-month" onchange="loadSalaryPayments()">
+                </div>
+                <div class="form-group">
+                    <label>Filter by Employee:</label>
+                    <select id="filter-salary-employee" onchange="loadSalaryPayments()">
+                        <option value="">All Employees</option>
+                    </select>
+                </div>
+            </div>
+
+            <table id="salaries-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Employee</th>
+                        <th>Month</th>
+                        <th>Basic Salary</th>
+                        <th>Advances Cut</th>
+                        <th>Deductions</th>
+                        <th>Bonus</th>
+                        <th>Net Paid</th>
+                        <th>Method</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- ADVANCES TAB -->
+        <div id="advances-tab" class="tab-content">
+            <button class="btn btn-warning" onclick="showGiveAdvanceModal()">💵 Give Advance</button>
+            
+            <table id="advances-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Employee</th>
+                        <th>Amount</th>
+                        <th>Reason</th>
+                        <th>Total Repaid</th>
+                        <th>Balance</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- REPORTS TAB -->
+        <div id="reports-tab" class="tab-content">
+            <h2>📊 Salary Reports</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Select Report Type:</label>
+                    <select id="report-type" onchange="generateReport()">
+                        <option value="">-- Select Report --</option>
+                        <option value="monthly-summary">Monthly Salary Summary</option>
+                        <option value="employee-summary">Employee-wise Summary</option>
+                        <option value="advances-report">Advances Report</option>
+                        <option value="pending-advances">Pending Advances</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Month (if applicable):</label>
+                    <input type="month" id="report-month">
+                </div>
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-primary" onclick="generateReport()">Generate Report</button>
+                </div>
+            </div>
+            <div id="report-output" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+
+    <!-- Add Employee Modal -->
+    <div id="add-employee-modal" class="modal">
+        <div class="modal-content">
+            <h2>Add New Employee</h2>
+            <form id="add-employee-form" onsubmit="saveEmployee(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Employee Code: <span style="color:red;">*</span></label>
+                        <input type="text" name="employee_code" required placeholder="e.g., EMP001">
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name: <span style="color:red;">*</span></label>
+                        <input type="text" name="full_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Father Name:</label>
+                        <input type="text" name="father_name">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone:</label>
+                        <input type="tel" name="phone">
+                    </div>
+                    <div class="form-group">
+                        <label>CNIC:</label>
+                        <input type="text" name="cnic" placeholder="xxxxx-xxxxxxx-x">
+                    </div>
+                    <div class="form-group">
+                        <label>Designation: <span style="color:red;">*</span></label>
+                        <input type="text" name="designation" required placeholder="e.g., Pump Attendant">
+                    </div>
+                    <div class="form-group">
+                        <label>Department:</label>
+                        <input type="text" name="department" placeholder="e.g., Operations">
+                    </div>
+                    <div class="form-group">
+                        <label>Hire Date: <span style="color:red;">*</span></label>
+                        <input type="date" name="hire_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Monthly Salary: <span style="color:red;">*</span></label>
+                        <input type="number" name="salary_amount" required step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Status:</label>
+                        <select name="status">
+                            <option value="active">Active</option>
+                            <option value="suspended">Suspended</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Address:</label>
+                    <textarea name="address" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Notes:</label>
+                    <textarea name="notes" rows="2"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary">Save Employee</button>
+                    <button type="button" class="btn" onclick="closeModal('add-employee-modal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pay Salary Modal -->
+    <div id="pay-salary-modal" class="modal">
+        <div class="modal-content">
+            <h2>Pay Salary</h2>
+            <form id="pay-salary-form" onsubmit="paySalary(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Employee: <span style="color:red;">*</span></label>
+                        <select name="employee_id" required id="salary-employee-select" onchange="updateSalaryDetails()">
+                            <option value="">-- Select Employee --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Date: <span style="color:red;">*</span></label>
+                        <input type="date" name="payment_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Salary Month: <span style="color:red;">*</span></label>
+                        <input type="month" name="salary_month" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Basic Salary:</label>
+                        <input type="number" name="basic_salary" step="0.01" readonly id="basic-salary-display">
+                    </div>
+                    <div class="form-group">
+                        <label>Advance Deduction:</label>
+                        <input type="number" name="advance_deduction" step="0.01" value="0" id="advance-deduction">
+                    </div>
+                    <div class="form-group">
+                        <label>Other Deductions:</label>
+                        <input type="number" name="other_deductions" step="0.01" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Bonuses:</label>
+                        <input type="number" name="bonuses" step="0.01" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Net Salary:</label>
+                        <input type="number" name="net_salary" step="0.01" readonly id="net-salary-display">
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Method: <span style="color:red;">*</span></label>
+                        <select name="payment_method" required onchange="toggleBankField(this)">
+                            <option value="cash">Cash</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="cheque">Cheque</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="bank-select-group" style="display: none;">
+                        <label>Bank Account:</label>
+                        <select name="bank_id" id="salary-bank-select">
+                            <option value="">-- Select Bank --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Reference No:</label>
+                        <input type="text" name="reference_no">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes:</label>
+                    <textarea name="notes" rows="2"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success">Pay Salary</button>
+                    <button type="button" class="btn" onclick="closeModal('pay-salary-modal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Give Advance Modal -->
+    <div id="give-advance-modal" class="modal">
+        <div class="modal-content">
+            <h2>Give Advance/Loan</h2>
+            <form id="give-advance-form" onsubmit="giveAdvance(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Employee: <span style="color:red;">*</span></label>
+                        <select name="employee_id" required>
+                            <option value="">-- Select Employee --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Advance Date: <span style="color:red;">*</span></label>
+                        <input type="date" name="advance_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Amount: <span style="color:red;">*</span></label>
+                        <input type="number" name="amount" required step="0.01" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Method: <span style="color:red;">*</span></label>
+                        <select name="payment_method" required>
+                            <option value="cash">Cash</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Reason: <span style="color:red;">*</span></label>
+                    <textarea name="reason" required rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Notes:</label>
+                    <textarea name="notes" rows="2"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-warning">Give Advance</button>
+                    <button type="button" class="btn" onclick="closeModal('give-advance-modal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="../js/employee-salary.js"></script>
+</body>
+</html>

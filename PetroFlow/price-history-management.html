@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price History Management - PetroFlow</title>
+    <link rel="stylesheet" href="../assets/styles.css">
+    <style>
+        * { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .header p {
+            margin: 0;
+            color: #666;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 12px 24px;
+            background: #f1f1f1;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #000; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn:hover { opacity: 0.9; }
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table thead {
+            background: #667eea;
+            color: white;
+        }
+        table th, table td {
+            padding: 12px;
+            text-align: right;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-group input, 
+        .form-group select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .alert {
+            padding: 12px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .price-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .price-card h3 {
+            margin: 0 0 15px 0;
+        }
+        .price-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        .info-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .info-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        .info-value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 Price History Management</h1>
+            <p>Manage fuel prices (Petrol & Diesel) with edit/delete capabilities</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('petrol')">⛽ Petrol Prices</button>
+            <button class="tab" onclick="switchTab('diesel')">🛢️ Diesel Prices</button>
+            <button class="tab" onclick="switchTab('history')">📊 Price History</button>
+        </div>
+
+        <!-- PETROL PRICES TAB -->
+        <div id="petrol-tab" class="tab-content active">
+            <h2>Petrol Price Management</h2>
+            
+            <div class="price-card">
+                <h3>Current Petrol Price</h3>
+                <div class="price-info">
+                    <div class="info-item">
+                        <div class="info-label">Price per Liter</div>
+                        <div class="info-value" id="petrol-current-price">Rs. -</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Last Updated</div>
+                        <div class="info-value" id="petrol-last-date">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-success" onclick="showAddPriceModal('petrol')">➕ Add New Price</button>
+
+            <table id="petrol-prices-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Price (Rs.)</th>
+                        <th>Added By</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- DIESEL PRICES TAB -->
+        <div id="diesel-tab" class="tab-content">
+            <h2>Diesel Price Management</h2>
+            
+            <div class="price-card">
+                <h3>Current Diesel Price</h3>
+                <div class="price-info">
+                    <div class="info-item">
+                        <div class="info-label">Price per Liter</div>
+                        <div class="info-value" id="diesel-current-price">Rs. -</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Last Updated</div>
+                        <div class="info-value" id="diesel-last-date">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-success" onclick="showAddPriceModal('diesel')">➕ Add New Price</button>
+
+            <table id="diesel-prices-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Price (Rs.)</th>
+                        <th>Added By</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- PRICE HISTORY TAB -->
+        <div id="history-tab" class="tab-content">
+            <h2>Complete Price History</h2>
+            
+            <div class="form-grid" style="margin-bottom: 20px;">
+                <div class="form-group">
+                    <label>Filter by Fuel Type:</label>
+                    <select id="filter-fuel-type" onchange="loadPriceHistory()">
+                        <option value="">Both (Petrol & Diesel)</option>
+                        <option value="petrol">Petrol Only</option>
+                        <option value="diesel">Diesel Only</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>From Date:</label>
+                    <input type="date" id="filter-from-date" onchange="loadPriceHistory()">
+                </div>
+                <div class="form-group">
+                    <label>To Date:</label>
+                    <input type="date" id="filter-to-date" onchange="loadPriceHistory()">
+                </div>
+            </div>
+
+            <table id="history-prices-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Fuel Type</th>
+                        <th>Price (Rs.)</th>
+                        <th>Added By</th>
+                        <th>Days Active</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add/Edit Price Modal -->
+    <div id="price-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modal-title">Add Price</h2>
+            <form id="price-form" onsubmit="savePrice(event)">
+                <div class="form-group">
+                    <label>Fuel Type:</label>
+                    <select name="fuel_type" id="modal-fuel-type" required>
+                        <option value="petrol">Petrol</option>
+                        <option value="diesel">Diesel</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Date: <span style="color:red;">*</span></label>
+                    <input type="date" name="price_date" required id="modal-date">
+                </div>
+                <div class="form-group">
+                    <label>Price (Rs. per Liter): <span style="color:red;">*</span></label>
+                    <input type="number" name="price" step="0.01" required id="modal-price">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary">Save Price</button>
+                    <button type="button" class="btn" onclick="closeModal('price-modal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content">
+            <h2>⚠️ Confirm Delete</h2>
+            <p id="delete-message">Are you sure you want to delete this price entry?</p>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-danger" onclick="confirmDelete()">Yes, Delete</button>
+                <button class="btn" onclick="closeModal('delete-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { supabase } from '../js/supabase-client.js';
+
+        let currentUser = null;
+        let currentDeleteId = null;
+        let editingPriceId = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            await loadAllPrices();
+        });
+
+        async function checkAuth() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                window.location.href = '../login.html';
+                return;
+            }
+            currentUser = session.user;
+        }
+
+        async function loadAllPrices() {
+            await Promise.all([
+                loadPetrolPrices(),
+                loadDieselPrices(),
+                loadPriceHistory()
+            ]);
+        }
+
+        async function loadPetrolPrices() {
+            try {
+                const { data, error } = await supabase
+                    .from('fuel_prices')
+                    .select('*')
+                    .eq('fuel_type', 'petrol')
+                    .order('price_date', { ascending: false });
+
+                if (error) throw error;
+
+                const tbody = document.querySelector('#petrol-prices-table tbody');
+                tbody.innerHTML = '';
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No prices recorded</td></tr>';
+                    document.getElementById('petrol-current-price').textContent = 'No data';
+                    document.getElementById('petrol-last-date').textContent = 'Never';
+                    return;
+                }
+
+                const current = data[0];
+                document.getElementById('petrol-current-price').textContent = `Rs. ${parseFloat(current.price).toFixed(2)}`;
+                document.getElementById('petrol-last-date').textContent = new Date(current.price_date).toLocaleDateString();
+
+                data.forEach(price => {
+                    const row = `
+                        <tr>
+                            <td>${new Date(price.price_date).toLocaleDateString()}</td>
+                            <td><strong>Rs. ${parseFloat(price.price).toFixed(2)}</strong></td>
+                            <td>${price.added_by_user || 'System'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" onclick="editPrice(${price.id}, '${price.fuel_type}')">Edit</button>
+                                <button class="btn btn-sm btn-danger" onclick="deletePrice(${price.id}, '${price.fuel_type}')">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            } catch (error) {
+                console.error('Error loading petrol prices:', error);
+            }
+        }
+
+        async function loadDieselPrices() {
+            try {
+                const { data, error } = await supabase
+                    .from('fuel_prices')
+                    .select('*')
+                    .eq('fuel_type', 'diesel')
+                    .order('price_date', { ascending: false });
+
+                if (error) throw error;
+
+                const tbody = document.querySelector('#diesel-prices-table tbody');
+                tbody.innerHTML = '';
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No prices recorded</td></tr>';
+                    document.getElementById('diesel-current-price').textContent = 'No data';
+                    document.getElementById('diesel-last-date').textContent = 'Never';
+                    return;
+                }
+
+                const current = data[0];
+                document.getElementById('diesel-current-price').textContent = `Rs. ${parseFloat(current.price).toFixed(2)}`;
+                document.getElementById('diesel-last-date').textContent = new Date(current.price_date).toLocaleDateString();
+
+                data.forEach(price => {
+                    const row = `
+                        <tr>
+                            <td>${new Date(price.price_date).toLocaleDateString()}</td>
+                            <td><strong>Rs. ${parseFloat(price.price).toFixed(2)}</strong></td>
+                            <td>${price.added_by_user || 'System'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" onclick="editPrice(${price.id}, '${price.fuel_type}')">Edit</button>
+                                <button class="btn btn-sm btn-danger" onclick="deletePrice(${price.id}, '${price.fuel_type}')">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            } catch (error) {
+                console.error('Error loading diesel prices:', error);
+            }
+        }
+
+        async function loadPriceHistory() {
+            try {
+                const fuelType = document.getElementById('filter-fuel-type')?.value || '';
+                const fromDate = document.getElementById('filter-from-date')?.value;
+                const toDate = document.getElementById('filter-to-date')?.value;
+
+                let query = supabase
+                    .from('fuel_prices')
+                    .select('*')
+                    .order('price_date', { ascending: false });
+
+                if (fuelType) query = query.eq('fuel_type', fuelType);
+                if (fromDate) query = query.gte('price_date', fromDate);
+                if (toDate) query = query.lte('price_date', toDate);
+
+                const { data, error } = await query;
+                if (error) throw error;
+
+                const tbody = document.querySelector('#history-prices-table tbody');
+                tbody.innerHTML = '';
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No price history found</td></tr>';
+                    return;
+                }
+
+                data.forEach((price, index) => {
+                    const nextPrice = data[index + 1];
+                    let daysActive = 'Current';
+                    if (nextPrice) {
+                        const currDate = new Date(price.price_date);
+                        const nextDate = new Date(nextPrice.price_date);
+                        daysActive = Math.floor((nextDate - currDate) / (1000 * 60 * 60 * 24)) + ' days';
+                    }
+
+                    const row = `
+                        <tr>
+                            <td>${new Date(price.price_date).toLocaleDateString()}</td>
+                            <td><strong>${price.fuel_type.toUpperCase()}</strong></td>
+                            <td><strong>Rs. ${parseFloat(price.price).toFixed(2)}</strong></td>
+                            <td>${price.added_by_user || 'System'}</td>
+                            <td>${daysActive}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" onclick="editPrice(${price.id}, '${price.fuel_type}')">Edit</button>
+                                <button class="btn btn-sm btn-danger" onclick="deletePrice(${price.id}, '${price.fuel_type}')">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            } catch (error) {
+                console.error('Error loading price history:', error);
+            }
+        }
+
+        window.switchTab = function(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        };
+
+        window.showAddPriceModal = function(fuelType) {
+            editingPriceId = null;
+            document.getElementById('modal-title').textContent = 'Add New Price';
+            document.getElementById('modal-fuel-type').value = fuelType;
+            document.getElementById('modal-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('modal-price').value = '';
+            document.getElementById('price-modal').classList.add('active');
+        };
+
+        window.editPrice = async function(priceId, fuelType) {
+            try {
+                const { data, error } = await supabase
+                    .from('fuel_prices')
+                    .select('*')
+                    .eq('id', priceId)
+                    .single();
+
+                if (error) throw error;
+
+                editingPriceId = priceId;
+                document.getElementById('modal-title').textContent = 'Edit Price';
+                document.getElementById('modal-fuel-type').value = data.fuel_type;
+                document.getElementById('modal-date').value = data.price_date;
+                document.getElementById('modal-price').value = data.price;
+                document.getElementById('price-modal').classList.add('active');
+            } catch (error) {
+                alert('Error loading price: ' + error.message);
+            }
+        };
+
+        window.savePrice = async function(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                if (editingPriceId) {
+                    // Update existing
+                    const { error } = await supabase
+                        .from('fuel_prices')
+                        .update({
+                            fuel_type: data.fuel_type,
+                            price_date: data.price_date,
+                            price: data.price,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', editingPriceId);
+
+                    if (error) throw error;
+                    alert('✅ Price updated successfully!');
+                } else {
+                    // Insert new
+                    const { error } = await supabase
+                        .from('fuel_prices')
+                        .insert([{
+                            fuel_type: data.fuel_type,
+                            price_date: data.price_date,
+                            price: data.price,
+                            added_by_user: currentUser.email,
+                            created_at: new Date().toISOString()
+                        }]);
+
+                    if (error) throw error;
+                    alert('✅ Price added successfully!');
+                }
+
+                closeModal('price-modal');
+                await loadAllPrices();
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        };
+
+        window.deletePrice = function(priceId, fuelType) {
+            currentDeleteId = priceId;
+            document.getElementById('delete-message').textContent = 
+                `Are you sure you want to delete this ${fuelType.toUpperCase()} price entry? This cannot be undone.`;
+            document.getElementById('delete-modal').classList.add('active');
+        };
+
+        window.confirmDelete = async function() {
+            try {
+                const { error } = await supabase
+                    .from('fuel_prices')
+                    .delete()
+                    .eq('id', currentDeleteId);
+
+                if (error) throw error;
+
+                alert('✅ Price deleted successfully!');
+                closeModal('delete-modal');
+                await loadAllPrices();
+            } catch (error) {
+                alert('❌ Error deleting price: ' + error.message);
+            }
+        };
+
+        window.closeModal = function(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        };
+    </script>
+</body>
+</html>

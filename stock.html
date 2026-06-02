@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Management | Khalid and Sons Petroleum</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/styles.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+    :root { --petrol-color:#0d6e3f; --petrol-light:#e6f4ec; --diesel-color:#b45309; --diesel-light:#fef3c7; --border:#e5e0d5; }
+    body { background:#fafaf7; font-family:'DM Sans',sans-serif; }
+
+    .page-hero { background:linear-gradient(135deg,#0a2540 0%,#1a3a5c 60%,#0d6e3f 100%); padding:2.5rem 0; }
+    .page-hero h2 { font-family:'Playfair Display',serif; font-size:2rem; }
+
+    .tank-card { border-radius:16px; border:2px solid var(--border); background:#fff; transition:all .3s; position:relative; overflow:hidden; }
+    .tank-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:4px; }
+    .tank-card.petrol::after { background:var(--petrol-color); }
+    .tank-card.diesel::after { background:var(--diesel-color); }
+    .tank-card:hover { transform:translateY(-4px); box-shadow:0 12px 30px rgba(0,0,0,.12); }
+    .stock-num { font-family:'Playfair Display',serif; font-size:2.8rem; font-weight:800; line-height:1; }
+    .fuel-badge { font-size:.7rem; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; padding:4px 10px; border-radius:20px; }
+    .badge-petrol { background:var(--petrol-light); color:var(--petrol-color); }
+    .badge-diesel { background:var(--diesel-light); color:var(--diesel-color); }
+
+    .stock-form-card { border-radius:16px; border:1px solid var(--border); background:#fff; }
+    .form-label { font-weight:500; font-size:.875rem; color:#475569; margin-bottom:6px; }
+    .form-control,.form-select { border:1.5px solid #e2e8f0; border-radius:10px; padding:10px 14px; font-size:.95rem; }
+    .form-control:focus,.form-select:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
+
+    .calc-box { background:linear-gradient(135deg,#f0f7ff,#e8f5ff); border:1.5px dashed #93c5fd; border-radius:12px; padding:1.2rem 1.5rem; }
+    .calc-row { display:flex; justify-content:space-between; align-items:center; padding:5px 0; font-size:.9rem; }
+    .calc-row.total { border-top:1.5px solid #93c5fd; margin-top:8px; padding-top:12px; font-weight:700; font-size:1.1rem; color:#1e40af; }
+
+    .btn-add-stock { background:linear-gradient(135deg,#0a2540,#1e40af); border:none; border-radius:12px; padding:14px 32px; font-size:1rem; font-weight:600; color:white; width:100%; transition:all .3s; }
+    .btn-add-stock:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(30,64,175,.4); color:white; }
+
+    .history-card { border-radius:16px; border:1px solid var(--border); background:#fff; overflow:hidden; }
+    .history-card table thead { background:#f8fafc; }
+    .history-card table th { font-size:.73rem; font-weight:600; letter-spacing:.8px; text-transform:uppercase; color:#64748b; padding:11px 12px; border-bottom:2px solid var(--border); white-space:nowrap; }
+    .history-card table td { padding:9px 12px; font-size:.87rem; vertical-align:middle; border-bottom:1px solid #f1f5f9; }
+    .history-card table tr:last-child td { border-bottom:none; }
+    .history-card table tr:hover td { background:#fafbff; }
+
+    /* Invoice */
+    #invoice-preview { font-family:'DM Sans',sans-serif; }
+    .invoice-header { background:linear-gradient(135deg,#0a2540,#1a3a5c); color:white; padding:2rem; border-radius:8px 8px 0 0; }
+    .invoice-body { padding:2rem; }
+    .invoice-company { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; }
+    .invoice-label { font-size:.7rem; text-transform:uppercase; letter-spacing:1.2px; color:#94a3b8; margin-bottom:4px; }
+    .invoice-value { font-weight:600; color:#1e293b; }
+    .invoice-table thead th { background:#f8fafc; font-size:.75rem; text-transform:uppercase; letter-spacing:.8px; color:#64748b; padding:10px 16px; }
+    .invoice-table td { padding:12px 16px; }
+    .invoice-total-box { background:linear-gradient(135deg,#0a2540,#1e40af); color:white; border-radius:12px; padding:1.2rem 1.5rem; }
+
+    @media print {
+      .modal-footer,.modal-header .btn-close,nav,.page-hero,.history-card,.stock-form-card,.tank-card { display:none !important; }
+      .modal { position:static !important; }
+    }
+  </style>
+</head>
+<body data-page="stock">
+
+<div id="navbar-placeholder"></div>
+
+<!-- Hero -->
+<div class="page-hero text-white mb-4">
+  <div class="container">
+    <div style="font-size:.7rem;letter-spacing:2px;text-transform:uppercase;opacity:.75;margin-bottom:4px;">Khalid and Sons Petroleum</div>
+    <h2 class="mb-1">⛽ Stock Receiving</h2>
+    <p class="mb-0 opacity-75" style="font-size:.9rem;">Petrol aur Diesel ka stock manage karein — mahine wari record ke saath</p>
+  </div>
+</div>
+
+<div class="container pb-5">
+
+  <!-- Tank Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <div class="tank-card petrol p-4">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <span class="fuel-badge badge-petrol"><i class="bi bi-droplet-fill me-1"></i>Petrol</span>
+          <span class="text-muted small" id="petrol-updated">—</span>
+        </div>
+        <div class="stock-num" style="color:var(--petrol-color);" id="petrol-stock-display">0</div>
+        <div class="text-muted small mb-3">Liters available</div>
+        <div class="progress" style="height:6px;border-radius:4px;">
+          <div class="progress-bar bg-success" id="petrol-bar" style="width:0%"></div>
+        </div>
+        <div class="d-flex justify-content-between mt-1">
+          <small class="text-muted">0 L</small>
+          <small class="text-muted">Capacity: <span id="petrol-cap-display">25,000</span> L</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="tank-card diesel p-4">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <span class="fuel-badge badge-diesel"><i class="bi bi-droplet-fill me-1"></i>Diesel</span>
+          <span class="text-muted small" id="diesel-updated">—</span>
+        </div>
+        <div class="stock-num" style="color:var(--diesel-color);" id="diesel-stock-display">0</div>
+        <div class="text-muted small mb-3">Liters available</div>
+        <div class="progress" style="height:6px;border-radius:4px;">
+          <div class="progress-bar bg-warning" id="diesel-bar" style="width:0%"></div>
+        </div>
+        <div class="d-flex justify-content-between mt-1">
+          <small class="text-muted">0 L</small>
+          <small class="text-muted">Capacity: <span id="diesel-cap-display">25,000</span> L</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- Add Stock Form -->
+    <div class="col-lg-7">
+      <div class="stock-form-card p-4">
+        <h5 class="fw-700 mb-4" style="font-family:'Playfair Display',serif;">
+          <i class="bi bi-plus-circle-fill me-2 text-primary"></i>Naya Stock Receiving Darj Karein
+        </h5>
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Fuel Type *</label>
+            <select class="form-select" id="fuel-type">
+              <option value="">-- Select Fuel --</option>
+              <option value="Petrol">⛽ Petrol</option>
+              <option value="Diesel">🛢️ Diesel</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Receiving Date *</label>
+            <input type="date" class="form-control" id="purchase-date-input">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Supplier Invoice No.</label>
+            <input type="text" class="form-control" id="invoice-no-input" placeholder="e.g. PSO-12345 (auto-generate ke liye khali chhoren)">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Liters Received *</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="liters-input" placeholder="e.g. 5000" min="1" step="0.01">
+              <span class="input-group-text">L</span>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Rate per Liter *</label>
+            <div class="input-group">
+              <span class="input-group-text">Rs.</span>
+              <input type="number" class="form-control" id="rate-input" placeholder="e.g. 285.50" min="0" step="0.01">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Truck / Vehicle Number</label>
+            <input type="text" class="form-control" id="truck-input" placeholder="e.g. LHR-1234">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Supplier Name</label>
+            <input type="text" class="form-control" id="supplier-input" placeholder="e.g. PSO, Shell">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Extra Charges <small class="text-muted">(Transport, Misc)</small></label>
+            <div class="input-group">
+              <span class="input-group-text">Rs.</span>
+              <input type="number" class="form-control" id="charges-input" placeholder="0" min="0" step="0.01">
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Notes (Optional)</label>
+            <textarea class="form-control" id="notes-input" rows="2" placeholder="Koi baat note karni ho..."></textarea>
+          </div>
+        </div>
+
+        <!-- Live Calc -->
+        <div class="calc-box mt-4" id="calc-preview" style="display:none;">
+          <div class="fw-600 mb-2 text-primary small" style="letter-spacing:.8px;text-transform:uppercase;">Live Calculation</div>
+          <div class="calc-row"><span class="text-muted">Fuel Type</span><span class="fw-600" id="calc-fuel">—</span></div>
+          <div class="calc-row"><span class="text-muted">Liters</span><span class="fw-600" id="calc-liters">0 L</span></div>
+          <div class="calc-row"><span class="text-muted">Rate per Liter</span><span class="fw-600" id="calc-rate">Rs. 0</span></div>
+          <div class="calc-row"><span class="text-muted">Sub-Total</span><span class="fw-600" id="calc-subtotal">Rs. 0</span></div>
+          <div class="calc-row"><span class="text-muted">Extra Charges</span><span class="fw-600" id="calc-charges">—</span></div>
+          <div class="calc-row total"><span>Net Payable</span><span id="calc-total">Rs. 0</span></div>
+        </div>
+
+        <button class="btn btn-add-stock mt-4" id="add-stock-btn" onclick="submitStock()">
+          <i class="bi bi-plus-lg me-2"></i>Stock Add Karein & Invoice Banayein
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="col-lg-5">
+      <div class="stock-form-card p-4 mb-3">
+        <h6 class="fw-600 mb-3 text-muted" style="font-size:.78rem;letter-spacing:1px;text-transform:uppercase;">
+          <i class="bi bi-calendar-check me-1"></i>Is Mahine Ka Summary
+        </h6>
+        <div id="monthly-stats">
+          <div class="text-center text-muted py-3">
+            <div class="spinner-border spinner-border-sm mb-2"></div><div>Loading...</div>
+          </div>
+        </div>
+      </div>
+      <div class="stock-form-card p-4 mb-3">
+        <h6 class="fw-600 mb-3 text-muted" style="font-size:.78rem;letter-spacing:1px;text-transform:uppercase;">
+          <i class="bi bi-bar-chart me-1"></i>6 Mahine Ka Chart
+        </h6>
+        <div id="monthly-chart-container">
+          <div class="text-center text-muted py-3"><div class="spinner-border spinner-border-sm"></div></div>
+        </div>
+      </div>
+      <div class="stock-form-card p-4">
+        <h6 class="fw-600 mb-3 text-muted" style="font-size:.78rem;letter-spacing:1px;text-transform:uppercase;">Tips</h6>
+        <ul class="list-unstyled mb-0">
+          <li class="mb-2 d-flex gap-2"><i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i><small>Receiving date sahi darj karein — month filter usi pe kaam karta hai</small></li>
+          <li class="mb-2 d-flex gap-2"><i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i><small>History mein ✏️ Edit aur 🗑️ Delete buttons se entry change kar sakte hain</small></li>
+          <li class="mb-2 d-flex gap-2"><i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i><small>Delete karne se tank ka stock bhi automatically adjust hota hai</small></li>
+          <li class="d-flex gap-2"><i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i><small>Extra charges Net Payable mein include hoti hain</small></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Table -->
+  <div class="history-card mt-4">
+    <div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <h5 class="mb-0 fw-700" style="font-family:'Playfair Display',serif;">
+        <i class="bi bi-clock-history me-2 text-primary"></i>Stock Receiving History
+      </h5>
+      <div class="d-flex gap-2 align-items-center flex-wrap">
+        <div class="input-group input-group-sm" style="width:auto;">
+          <span class="input-group-text bg-white border-end-0"><i class="bi bi-calendar3 text-muted"></i></span>
+          <input type="month" class="form-control border-start-0" id="filter-month" onchange="loadHistory()" style="max-width:155px;">
+        </div>
+        <select class="form-select form-select-sm" id="filter-fuel" style="width:auto;" onchange="loadHistory()">
+          <option value="">All Fuels</option>
+          <option value="Petrol">Petrol</option>
+          <option value="Diesel">Diesel</option>
+        </select>
+        <button class="btn btn-sm btn-outline-secondary" onclick="clearFilters()">
+          <i class="bi bi-x-circle me-1"></i>Clear
+        </button>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table mb-0">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Invoice No.</th>
+            <th>Fuel</th>
+            <th>Liters</th>
+            <th>Rate/L</th>
+            <th>Sub-Total</th>
+            <th>Charges</th>
+            <th>Net Payable</th>
+            <th>Truck No.</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="history-tbody">
+          <tr><td colspan="10" class="text-center text-muted py-4">Loading history...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ===== Invoice Modal ===== -->
+<div class="modal fade" id="invoiceModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-600">Stock Receiving Invoice</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0"><div id="invoice-preview"></div></div>
+      <div class="modal-footer border-0">
+        <button class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer me-2"></i>Print</button>
+        <button class="btn btn-primary" onclick="downloadInvoice()"><i class="bi bi-download me-2"></i>Download PDF</button>
+        <button class="btn btn-success" data-bs-dismiss="modal"><i class="bi bi-check-lg me-2"></i>Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== EDIT Modal ===== -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header" style="background:linear-gradient(135deg,#0a2540,#1a3a5c); color:white;">
+        <h5 class="modal-title fw-600"><i class="bi bi-pencil-square me-2"></i>Stock Entry Edit Karein</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <input type="hidden" id="edit-id">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Fuel Type *</label>
+            <select class="form-select" id="edit-fuel">
+              <option value="Petrol">⛽ Petrol</option>
+              <option value="Diesel">🛢️ Diesel</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Receiving Date</label>
+            <input type="date" class="form-control" id="edit-date">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Liters *</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="edit-liters" min="1" step="0.01">
+              <span class="input-group-text">L</span>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Rate per Liter *</label>
+            <div class="input-group">
+              <span class="input-group-text">Rs.</span>
+              <input type="number" class="form-control" id="edit-rate" min="0" step="0.01">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Truck Number</label>
+            <input type="text" class="form-control" id="edit-truck">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Supplier Name</label>
+            <input type="text" class="form-control" id="edit-supplier">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Invoice No.</label>
+            <input type="text" class="form-control" id="edit-invoice-no">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Extra Charges</label>
+            <div class="input-group">
+              <span class="input-group-text">Rs.</span>
+              <input type="number" class="form-control" id="edit-charges" min="0" step="0.01">
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Notes</label>
+            <textarea class="form-control" id="edit-notes" rows="2"></textarea>
+          </div>
+        </div>
+        <!-- Warning -->
+        <div class="alert alert-warning mt-3 mb-0 py-2" style="font-size:.85rem;">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Note:</strong> Liters ya Fuel type change karne se tank ka stock automatically recalculate hoga.
+        </div>
+      </div>
+      <div class="modal-footer border-0">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-warning fw-600" id="save-edit-btn" onclick="saveEdit()">
+          <i class="bi bi-check-lg me-2"></i>Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999;">
+  <div id="liveToast" class="toast align-items-center" role="alert">
+    <div class="d-flex">
+      <div class="toast-body" id="toast-msg">Message here</div>
+      <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<div id="footer-placeholder"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/stock.js"></script>
+</body>
+</html>

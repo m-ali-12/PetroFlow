@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Customer Khata | Khalid & Sons Petroleum</title>
+<link href="/assets/logo.jfif" rel="icon" type="image/png"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet"/>
+<link href="/assets/styles.css" rel="stylesheet"/>
+<style>
+  .cust-card { cursor:pointer; transition:all .2s; border:2px solid transparent; }
+  .cust-card:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,.12); }
+  .cust-card.selected { border-color:#0d6efd !important; }
+  .pending-badge { font-size:13px; font-weight:700; padding:4px 10px; border-radius:12px; }
+  .month-row:hover td { background:#f0f4ff; }
+  .ledger-warning{background:#fff3cd;border:1px solid #ffc107;color:#664d03;border-radius:10px;padding:8px 10px;font-size:12px;margin-top:8px;}
+  .khata-action-btn{font-size:11px;padding:3px 7px;border-radius:8px;}
+  .khata-summary-click{cursor:pointer;transition:all .18s ease;position:relative;}
+  .khata-summary-click:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.12)!important;}
+  .khata-summary-click:after{content:'Details';position:absolute;right:8px;top:6px;font-size:10px;background:rgba(13,110,253,.08);color:#0d6efd;border:1px solid rgba(13,110,253,.18);border-radius:999px;padding:1px 7px;opacity:0;transition:.18s;}
+  .khata-summary-click:hover:after{opacity:1;}
+  .summary-detail-table th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;}
+  .summary-detail-table td{vertical-align:middle;}
+  @media print {
+    #navbar-placeholder,#footer-placeholder,.no-print{display:none!important;}
+    body{font-size:11px;}
+  }
+</style>
+</head>
+<body data-page="khata">
+<div id="navbar-placeholder"></div>
+
+<div class="container-fluid py-3 px-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="mb-0"><i class="bi bi-journal-text me-2 text-primary"></i>Customer Khata — Pending Ledger</h3>
+      <small class="text-muted">Customer-wise total pending + monthly breakdown</small>
+    </div>
+    <div class="d-flex gap-2 no-print">
+      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#advanceDepositModal">
+        <i class="bi bi-plus-circle me-1"></i>Advance Deposit (Jama)
+      </button>
+      <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#oldBalanceModal">
+        <i class="bi bi-pencil-square me-1"></i>Old Pending Daakhil Karein
+      </button>
+      <button class="btn btn-outline-primary" onclick="window.print()">
+        <i class="bi bi-printer me-1"></i>Print
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Bar -->
+  <div class="row g-3 mb-4" id="summary-bar">
+    <div class="col-6 col-md-3">
+      <div class="card border-danger shadow-sm khata-summary-click" onclick="showKhataSummaryDetails('pending','global')" title="Pending customers ki details dekhein">
+        <div class="card-body text-center py-2">
+          <div class="text-muted small">Total Pending (Sab)</div>
+          <div class="text-danger fw-bold fs-5" id="sum-total-pending">Rs. 0</div>
+          <small class="text-muted" id="sum-pending-count">0 customers</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-success shadow-sm khata-summary-click" onclick="showKhataSummaryDetails('credit','global')" title="Jama / vasooli details dekhein">
+        <div class="card-body text-center py-2">
+          <div class="text-muted small">Total Credit (Jama)</div>
+          <div class="text-success fw-bold fs-5" id="sum-total-vasooli">Rs. 0</div>
+          <small class="text-muted" id="sum-vasooli-count">Collected</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-warning shadow-sm khata-summary-click" onclick="showKhataSummaryDetails('advance','global')" title="Cash advance details dekhein">
+        <div class="card-body text-center py-2">
+          <div class="text-muted small">Cash Advances (Pending)</div>
+          <div class="text-warning fw-bold fs-5" id="sum-total-advance">Rs. 0</div>
+          <small class="text-muted">Wapas nahi aaya</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-primary shadow-sm khata-summary-click" onclick="showKhataSummaryDetails('debit','global')" title="Udhaar sale details dekhein">
+        <div class="card-body text-center py-2">
+          <div class="text-muted small">Total Debit (Udhaar)</div>
+          <div class="text-primary fw-bold fs-5" id="sum-total-sale">Rs. 0</div>
+          <small class="text-muted">Udhaar sales</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- LEFT: Customer List -->
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <strong><i class="bi bi-people me-1"></i>Customers</strong>
+          <span class="badge bg-secondary" id="cust-list-count">0</span>
+        </div>
+        <div class="card-body p-2">
+          <input type="text" id="cust-search" class="form-control form-control-sm mb-2"
+            placeholder="🔍 Naam ya Sr# search karein...">
+          <!-- Filter Tabs -->
+          <div class="btn-group w-100 mb-2" role="group">
+            <button type="button" class="btn btn-sm btn-outline-danger active" onclick="filterCusts('pending',this)">Pending</button>
+            <button type="button" class="btn btn-sm btn-outline-success" onclick="filterCusts('clear',this)">Clear</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="filterCusts('all',this)">Sab</button>
+          </div>
+          <div id="cust-list" style="max-height:60vh;overflow-y:auto;">
+            <div class="text-center py-4 text-muted">
+              <div class="spinner-border spinner-border-sm me-2"></div>Loading...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Customer Detail -->
+    <div class="col-md-8">
+      <div id="detail-placeholder" class="card shadow-sm">
+        <div class="card-body text-center py-5 text-muted">
+          <i class="bi bi-arrow-left-circle fs-1 d-block mb-3 text-primary opacity-50"></i>
+          <h5>Koi customer select karein</h5>
+          <p class="small">Left side se customer click karein — us ka pura khata yahan dikhega</p>
+        </div>
+      </div>
+
+      <div id="detail-card" style="display:none;">
+        <!-- Customer Header -->
+        <div class="card shadow-sm mb-3" id="detail-header"></div>
+
+        <!-- Monthly Breakdown -->
+        <div class="card shadow-sm">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <strong><i class="bi bi-calendar3 me-1"></i>Monthly Breakdown</strong>
+            <div class="d-flex gap-2 align-items-center no-print">
+              <select class="form-select form-select-sm" id="year-filter" style="width:100px;" onchange="renderMonthly()">
+                <option value="">Sab Saal</option>
+              </select>
+              <button class="btn btn-sm btn-outline-primary" onclick="printCustomerKhata()">
+                <i class="bi bi-printer me-1"></i>Print Khata
+              </button>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover mb-0">
+                <thead>
+                  <tr style="background:#f8f9fa;">
+                    <th style="padding:10px 14px;">Mahina</th>
+                    <th style="padding:10px 14px;text-align:right;">Debit (Udhaar)</th>
+                    <th style="padding:10px 14px;text-align:right;">Credit (Jama)</th>
+                    <th style="padding:10px 14px;text-align:right;">Advance Out</th>
+                    <th style="padding:10px 14px;text-align:right;">Month Pending</th>
+                    <th style="padding:10px 14px;text-align:center;">Status</th>
+                    <th class="no-print" style="padding:10px 14px;text-align:center;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="monthly-tbody">
+                  <tr><td colspan="7" class="text-center py-3 text-muted">Customer select karein</td></tr>
+                </tbody>
+                <tfoot id="monthly-tfoot"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transaction Detail -->
+        <div class="card shadow-sm mt-3">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <strong id="tx-detail-title"><i class="bi bi-list-ul me-1"></i>Transactions</strong>
+            <select class="form-select form-select-sm no-print" id="tx-month-filter" style="width:160px;" onchange="renderTxDetail()">
+              <option value="">Sab Transactions</option>
+            </select>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <thead>
+                  <tr style="background:#f0f4ff;">
+                    <th style="padding:10px 12px;">Date</th>
+                    <th style="padding:10px 12px;">Doc Type</th>
+                    <th style="padding:10px 12px;">Reference</th>
+                    <th style="padding:10px 12px;">Description</th>
+                    <th style="padding:10px 12px;text-align:right;">Debit (Udhaar)</th>
+                    <th style="padding:10px 12px;text-align:right;">Credit (Jama)</th>
+                    <th style="padding:10px 12px;text-align:right;">Balance</th>
+                    <th class="no-print" style="padding:10px 12px;text-align:center;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="tx-detail-tbody">
+                  <tr><td colspan="8" class="text-center py-3 text-muted">—</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADVANCE DEPOSIT MODAL ────────────────────────────── -->
+<div class="modal fade" id="advanceDepositModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#198754;color:#fff;">
+        <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Naya Advance / Jama Darj Karein</h5>
+        <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-bold">Customer <span class="text-danger">*</span></label>
+          <input type="hidden" id="adv-customer-hidden">
+          <div style="position:relative;">
+            <input type="text" id="adv-cust-search" class="form-control" placeholder="🔍 Sr# ya customer naam likhein...">
+            <div id="adv-cust-list" class="shadow-sm" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:10px;max-height:260px;overflow:auto;z-index:1060;"></div>
+          </div>
+          <div id="adv-cust-selected" class="alert alert-info py-2 mt-2 mb-0" style="display:none;align-items:center;justify-content:space-between;gap:10px;">
+            <div>
+              <strong id="adv-cust-text"></strong><br>
+              <small id="adv-cust-bal"></small>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAdvDepositCust()">Change</button>
+          </div>
+          <small class="text-muted d-block mt-1">List se customer select karein. Agar left side se customer selected hai to woh auto select ho jayega.</small>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-bold">Kis Mahine ki Advance / Jama? <span class="text-danger">*</span></label>
+          <input type="month" id="adv-month" class="form-control" style="border:2px solid #198754;">
+          <small class="text-muted">Yahan woh month select karein jiske khatay mein yeh jama/advance show karni hai.</small>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-bold">Jama Amount (Rs.) <span class="text-danger">*</span></label>
+          <input type="number" id="adv-amount" class="form-control form-control-lg" placeholder="0.00" step="0.01">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-bold">Wajah / Note</label>
+          <input type="text" id="adv-note" class="form-control" placeholder="e.g. Advance deposit for next month">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-success" onclick="saveAdvanceDeposit()">
+          <i class="bi bi-check-circle me-1"></i>Save Jama
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="oldBalanceModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Old Pending / Purana Khata Daakhil Karein</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning py-2 mb-3" style="font-size:13px;">
+          <i class="bi bi-info-circle me-1"></i>
+          <strong>Yeh kab use karein:</strong> Agar kisi customer ka <strong>pichle mah ka grand total pending</strong> tha — chahe petrol/diesel ka alag hisab na ho — sirf total amount enter karein. System ise us mahine ka opening balance tasleem karega.
+        </div>
+
+        <!-- Customer Search for old balance -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Customer <span class="text-danger">*</span></label>
+          <input type="hidden" id="ob-customer-hidden">
+          <div style="position:relative;">
+            <input type="text" id="ob-cust-search" class="form-control"
+              placeholder="🔍 Sr# ya naam likhein..." autocomplete="off"
+              style="border:2px solid #ffc107;">
+            <div id="ob-cust-list"
+              style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;
+                background:#fff;border:1px solid #ffc107;border-radius:6px;
+                max-height:220px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.15);">
+            </div>
+          </div>
+          <div id="ob-cust-selected"
+            style="display:none;background:#fffbea;border:1px solid #ffc107;border-radius:6px;
+              padding:8px 12px;margin-top:4px;justify-content:space-between;align-items:center;">
+            <span id="ob-cust-text" style="font-weight:600;color:#856404;"></span>
+            <span id="ob-cust-bal" style="font-size:12px;font-weight:700;margin-left:8px;"></span>
+            <button type="button" onclick="clearObCust()"
+              style="background:none;border:none;color:#dc3545;font-size:16px;cursor:pointer;padding:0 4px;margin-left:auto;">✕</button>
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Kis Mahine Ka? <span class="text-danger">*</span></label>
+            <input type="month" id="ob-month" class="form-control" style="border:2px solid #fd7e14;"
+              value="" placeholder="2026-01">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Amount (Rs.) <span class="text-danger">*</span></label>
+            <input type="number" id="ob-amount" class="form-control" placeholder="0.00" step="0.01">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Type <span class="text-danger">*</span></label>
+            <select id="ob-tx-type" class="form-select" style="border:2px solid #0d6efd;">
+              <option value="Credit">Debit (Udhaar/Baqi)</option>
+              <option value="Debit">Credit (Advance/Jama)</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Method</label>
+            <select id="ob-method" class="form-select">
+              <option value="add">➕ Add to Balance</option>
+              <option value="set">📌 Set as Balance</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mb-3 mt-3">
+          <label class="form-label">Note / Wajah (Optional)</label>
+          <input type="text" id="ob-note" class="form-control" placeholder="e.g. Dec 2025 ka grand total pending, petrol+diesel detail nahi...">
+        </div>
+
+        <!-- Bulk Entry Table -->
+        <hr>
+        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+          <strong><i class="bi bi-table me-1"></i>Bulk Entry — Sabka ek baar (Sab customers)</strong>
+          <div class="d-flex align-items-center gap-3">
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input" type="checkbox" id="bulk-filter-pending" checked onchange="buildBulkTable()">
+              <label class="form-check-label fw-semibold" for="bulk-filter-pending" style="font-size:13px;">Sirf Pending Dikhao</label>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <label class="form-label mb-0 fw-semibold" style="font-size:13px;">Mahina:</label>
+              <input type="month" id="bulk-ob-month" class="form-control form-control-sm" style="width:160px;border:2px solid #fd7e14;">
+            </div>
+            <button class="btn btn-sm btn-dark" onclick="fillAllBulkBalances()">
+              <i class="bi bi-magic me-1"></i> Sab Fill Karein (Auto)
+            </button>
+          </div>
+        </div>
+        <div style="max-height:300px;overflow-y:auto;">
+          <table class="table table-sm table-hover" id="bulk-balance-table">
+            <thead>
+              <tr style="background:#fff3cd;position:sticky;top:0;">
+                <th>Sr#</th>
+                <th>Customer Naam</th>
+                <th>Current Balance</th>
+                <th>Month</th>
+                <th>Type</th>
+                <th>Amount (Rs.)</th>
+              </tr>
+            </thead>
+            <tbody id="bulk-balance-tbody">
+              <tr><td colspan="6" class="text-center text-muted py-2">Loading customers...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="text-end mt-2 no-print">
+          <button class="btn btn-warning" onclick="saveBulkBalances()">
+            <i class="bi bi-save me-1"></i>Sab Save Karein
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-warning" onclick="saveOldBalance()">
+          <i class="bi bi-check-circle me-1"></i>Is Customer ka Balance Save Karein
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Summary Details Modal -->
+<div class="modal fade" id="khataSummaryDetailModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#0d6efd;color:#fff;">
+        <h5 class="modal-title" id="khataSummaryDetailTitle"><i class="bi bi-card-list me-2"></i>Details</h5>
+        <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="khataSummaryDetailBody">
+        <div class="text-center text-muted py-4">Details loading...</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+  <div class="toast" id="liveToast" role="alert">
+    <div class="toast-header">
+      <strong class="me-auto" id="toast-title">Info</strong>
+      <button class="btn-close" data-bs-dismiss="toast"></button>
+    </div>
+    <div class="toast-body" id="toast-message">...</div>
+  </div>
+</div>
+
+<div id="footer-placeholder"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/config.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/app.js"></script>
+<script>
+(function(){
+  const supabase = window.supabaseClient;
+  let allCustomers = [];
+  let allTransactions = [];
+  let selectedCust = null;
+  let advDepositCust = null;
+  let custTxns = [];
+  let custFilter = 'pending';
+
+  function el(id){ return document.getElementById(id); }
+  function fmt(n){ return Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+  function num(v){ return parseFloat(v || 0) || 0; }
+  function sameMonthKey(t, key){
+    if(!t?.created_at || !key) return false;
+    const d = new Date(t.created_at);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` === key;
+  }
+  function txAmount(t){ return num(t?.amount || t?.charges); }
+  function khataEffect(t) {
+    const amt = txAmount(t);
+    const type = String(t?.transaction_type || '').toLowerCase();
+    // Credit = udhaar/sale/opening pending, it increases balance.
+    // Debit = jama/vasooli/deposit, it decreases balance.
+    // Advance here means cash given out to customer, it increases receivable.
+    if (type === 'debit' || type === 'recovery' || type === 'vasooli' || type === 'payment') return -amt;
+    if (type === 'credit' || type === 'advance' || type === 'cashadvance') return amt;
+    return 0;
+  }
+  function calculateCustomerLedger(customerId, txList = allTransactions){
+    return (txList || [])
+      .filter(t => String(t.customer_id) === String(customerId))
+      .reduce((sum,t) => sum + khataEffect(t), 0);
+  }
+  async function recalcAndUpdateCustomerBalance(customerId){
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('id,customer_id,transaction_type,amount,charges')
+      .eq('customer_id', customerId);
+    if(error) throw error;
+    const ledgerBal = calculateCustomerLedger(customerId, data || []);
+    const { error: updErr } = await supabase.from('customers').update({ balance: ledgerBal }).eq('id', customerId);
+    if(updErr) throw updErr;
+    return ledgerBal;
+  }
+
+  function showToast(type,title,msg){
+    const t=el('liveToast'); if(!t){alert(title+': '+msg);return;}
+    el('toast-title').textContent=title; el('toast-message').textContent=msg;
+    t.className='toast '+(type==='success'?'bg-success text-white':type==='error'?'bg-danger text-white':'bg-warning text-dark');
+    new bootstrap.Toast(t,{delay:3500}).show();
+  }
+
+  // ── Load all data ─────────────────────────────────────────
+  async function loadAll(){
+    try{
+      const [{data:custs},{data:txns}] = await Promise.all([
+        supabase.from('customers').select('*').order('sr_no'),
+        supabase.from('transactions').select('*, customers(name,sr_no)').order('created_at',{ascending:true})
+      ]);
+      allCustomers = (custs||[]).filter(c => c.category !== 'Owner');
+      allTransactions = txns||[];
+      computeSummary();
+      renderCustList();
+      buildBulkTable();
+    }catch(e){console.error(e);}
+  }
+
+  function computeSummary(){
+    let totPending=0,pendCount=0,totVasooli=0,totAdv=0,totSale=0;
+    allCustomers.forEach(c=>{
+      const bal=parseFloat(c.balance)||0;
+      if(bal>0){totPending+=bal;pendCount++;}
+    });
+    allTransactions.forEach(t=>{
+      const a=parseFloat(t.amount || t.charges)||0;
+      if(t.transaction_type==='Credit')totSale+=a;
+      else if(t.transaction_type==='Debit')totVasooli+=a;
+      else if(t.transaction_type==='Advance')totAdv+=a;
+    });
+    if(el('sum-total-pending'))el('sum-total-pending').textContent='Rs. '+fmt(totPending);
+    if(el('sum-pending-count'))el('sum-pending-count').textContent=pendCount+' customers have pending';
+    if(el('sum-total-vasooli'))el('sum-total-vasooli').textContent='Rs. '+fmt(totVasooli);
+    if(el('sum-total-advance'))el('sum-total-advance').textContent='Rs. '+fmt(totAdv);
+    if(el('sum-total-sale'))el('sum-total-sale').textContent='Rs. '+fmt(totSale);
+  }
+
+  // ── Customer List ─────────────────────────────────────────
+  window.filterCusts=function(mode,btn){
+    custFilter=mode;
+    document.querySelectorAll('.btn-group button').forEach(b=>b.classList.remove('active'));
+    if(btn)btn.classList.add('active');
+    renderCustList();
+  };
+
+  function renderCustList(){
+    const q=(el('cust-search')?.value||'').toLowerCase();
+    let list=allCustomers.filter(c=>{
+      if(q && !c.name.toLowerCase().includes(q) && !String(c.sr_no).includes(q))return false;
+      const bal=parseFloat(c.balance)||0;
+      if(custFilter==='pending')return bal>0;
+      if(custFilter==='clear')return bal<=0;
+      return true;
+    });
+    el('cust-list-count').textContent=list.length;
+    const container=el('cust-list');
+    if(!list.length){
+      container.innerHTML=`<div class="text-center py-4 text-muted"><i class="bi bi-inbox fs-3 d-block mb-2"></i>Koi customer nahi</div>`;
+      return;
+    }
+    // Sort: highest pending first
+    list.sort((a,b)=>(parseFloat(b.balance)||0)-(parseFloat(a.balance)||0));
+    container.innerHTML=list.map(c=>{
+      const bal=parseFloat(c.balance)||0;
+      const isSelected=selectedCust?.id===c.id;
+      return `<div class="cust-card card mb-2 ${isSelected?'selected':''}" onclick="selectCust(${c.id})"
+        style="padding:10px 12px;border-radius:8px;${isSelected?'border-color:#0d6efd!important;background:#f0f4ff;':''}">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <span style="background:#0d6efd;color:#fff;border-radius:4px;padding:1px 6px;font-size:11px;margin-right:6px;">#${c.sr_no||'-'}</span>
+            <strong style="font-size:14px;">${c.name}</strong>
+            ${c.phone?`<br><small style="color:#888;padding-left:40px;">${c.phone}</small>`:''}
+          </div>
+          <div class="text-end">
+            <div style="font-weight:800;font-size:15px;color:${bal>0?'#dc3545':'#198754'};">Rs.${fmt(bal)}</div>
+            <small style="color:${bal>0?'#dc3545':'#198754'};">${bal>0?'Baqi':'Saaf'}</small>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Select Customer ───────────────────────────────────────
+  window.selectCust=function(custId){
+    selectedCust=allCustomers.find(c=>c.id===custId);
+    if(!selectedCust)return;
+    custTxns=allTransactions.filter(t=>t.customer_id===custId);
+    renderCustList(); // re-render to highlight selected
+    renderDetail();
+  };
+
+  function renderDetail(){
+    el('detail-placeholder').style.display='none';
+    el('detail-card').style.display='block';
+    const c=selectedCust;
+    const bal=parseFloat(c.balance)||0;
+    const ledgerBal=calculateCustomerLedger(c.id, custTxns);
+    const mismatch=Math.abs(bal-ledgerBal)>0.009;
+    const txCount=custTxns.length;
+    const totalSale=custTxns.filter(t=>t.transaction_type==='Credit').reduce((s,t)=>s+(parseFloat(t.amount)||0),0);
+    const totalVasooli=custTxns.filter(t=>t.transaction_type==='Debit').reduce((s,t)=>s+(parseFloat(t.amount)||0),0);
+    const totalAdv=custTxns.filter(t=>t.transaction_type==='Advance').reduce((s,t)=>s+(parseFloat(t.amount)||0),0);
+
+    el('detail-header').innerHTML=`<div class="card-body">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div>
+          <h4 class="mb-1"><i class="bi bi-person-circle me-2 text-primary"></i>${c.name}
+            <span class="badge bg-secondary ms-2">#${c.sr_no||'-'}</span></h4>
+          ${c.phone?`<div><i class="bi bi-telephone me-1 text-muted"></i>${c.phone}</div>`:''}
+          <small class="text-muted">${txCount} transactions total</small>
+        </div>
+        <div class="text-end">
+          <div style="font-size:28px;font-weight:900;color:${bal>0?'#dc3545':'#198754'};">Rs.${fmt(bal)}</div>
+          <div style="color:${bal>0?'#dc3545':'#198754'};font-weight:600;">${bal>0?'KHATA BAQI':'✅ Account Saaf'}</div>
+          <div class="d-flex gap-1 justify-content-end flex-wrap no-print">
+            <button class="btn btn-sm btn-outline-warning mt-1" onclick="quickEditBalance(${c.id})" title="Adjustment transaction bana kar balance change karega">
+              <i class="bi bi-pencil me-1"></i>Adjustment Entry
+            </button>
+            <button class="btn btn-sm btn-outline-success mt-1" onclick="repairCustomerBalance(${c.id})" title="Transactions ke hisab se balance dobara calculate karega">
+              <i class="bi bi-arrow-repeat me-1"></i>Fix Balance
+            </button>
+          </div>
+        </div>
+      </div>
+      ${mismatch ? `<div class="ledger-warning no-print"><strong>⚠ Balance mismatch:</strong> Customer card mein Rs.${fmt(bal)} hai, lekin ledger transactions ke hisaab se Rs.${fmt(ledgerBal)} banta hai. <button class="btn btn-sm btn-warning ms-2" onclick="repairCustomerBalance(${c.id})">Ledger se thik karein</button></div>` : ''}
+      <div class="row g-2 mt-2">
+        <div class="col-6 col-md-3">
+          <div class="khata-summary-click" onclick="showKhataSummaryDetails('debit','customer')" title="Is customer ki udhaar details" style="background:#fdecea;border-radius:8px;padding:8px 12px;text-align:center;">
+            <div style="font-size:11px;color:#555;">Total Debit (Udhaar)</div>
+            <div style="font-weight:700;color:#dc3545;">Rs.${fmt(totalSale)}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="khata-summary-click" onclick="showKhataSummaryDetails('credit','customer')" title="Is customer ki jama details" style="background:#eafaf1;border-radius:8px;padding:8px 12px;text-align:center;">
+            <div style="font-size:11px;color:#555;">Total Credit (Jama)</div>
+            <div style="font-weight:700;color:#198754;">Rs.${fmt(totalVasooli)}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="khata-summary-click" onclick="showKhataSummaryDetails('advance','customer')" title="Is customer ki advance details" style="background:#ede7f6;border-radius:8px;padding:8px 12px;text-align:center;">
+            <div style="font-size:11px;color:#555;">Cash Advances</div>
+            <div style="font-weight:700;color:#6f42c1;">Rs.${fmt(totalAdv)}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="khata-summary-click" onclick="showKhataSummaryDetails('net','customer')" title="Is customer ka net ledger" style="background:${bal>0?'#fdecea':'#eafaf1'};border-radius:8px;padding:8px 12px;text-align:center;border:2px solid ${bal>0?'#dc3545':'#198754'};">
+            <div style="font-size:11px;color:#555;">Net Pending</div>
+            <div style="font-weight:800;color:${bal>0?'#dc3545':'#198754'};">Rs.${fmt(Math.abs(bal))}</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+    // Populate year filter
+    const years=new Set();
+    custTxns.forEach(t=>{ if(t.created_at) years.add(new Date(t.created_at).getFullYear()); });
+    const yearSel=el('year-filter');
+    yearSel.innerHTML='<option value="">Sab Saal</option>'+
+      [...years].sort((a,b)=>b-a).map(y=>`<option value="${y}">${y}</option>`).join('');
+
+    // Populate month filter for transactions
+    const months=new Set();
+    custTxns.forEach(t=>{ if(t.created_at){ const d=new Date(t.created_at); months.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`); }});
+    const mSel=el('tx-month-filter');
+    mSel.innerHTML='<option value="">Sab Transactions</option>'+
+      [...months].sort((a,b)=>b.localeCompare(a)).map(m=>{
+        const d=new Date(m+'-01');
+        return `<option value="${m}">${d.toLocaleDateString('en-PK',{month:'long',year:'numeric'})}</option>`;
+      }).join('');
+
+    renderMonthly();
+    renderTxDetail();
+  }
+
+  // ── Monthly Breakdown ─────────────────────────────────────
+  window.renderMonthly=function(){
+    const yearF=el('year-filter')?.value||'';
+    const map={};
+    custTxns.forEach(t=>{
+      if(!t.created_at)return;
+      const d=new Date(t.created_at);
+      if(yearF && String(d.getFullYear())!==yearF)return;
+      const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      const lbl=d.toLocaleDateString('en-PK',{month:'long',year:'numeric'});
+      if(!map[key])map[key]={lbl,sale:0,vasooli:0,adv:0,txns:[]};
+      const a=parseFloat(t.amount || t.charges)||0;
+      map[key].txns.push(t);
+      if(t.transaction_type==='Credit')map[key].sale+=a;
+      else if(t.transaction_type==='Debit')map[key].vasooli+=a;
+      else if(t.transaction_type==='Advance')map[key].adv+=a;
+    });
+
+    const sorted=Object.keys(map).sort((a,b)=>b.localeCompare(a));
+    if(!sorted.length){
+      el('monthly-tbody').innerHTML='<tr><td colspan="7" class="text-center text-muted py-3">Koi transactions nahi is period mein</td></tr>';
+      el('monthly-tfoot').innerHTML=''; return;
+    }
+
+    let totSale=0,totVas=0,totAdv=0;
+    el('monthly-tbody').innerHTML=sorted.map(key=>{
+      const m=map[key];
+      const pending=m.sale+m.adv-m.vasooli;
+      totSale+=m.sale; totVas+=m.vasooli; totAdv+=m.adv;
+      const oldTx=m.txns.find(t=>/opening balance|purana record|manual balance adjustment|old pending/i.test(String(t.description||'')));
+      const actionHtml=oldTx
+        ? `<button class="btn btn-sm btn-outline-primary khata-action-btn me-1" onclick="event.stopPropagation();editKhataTransaction(${Number(oldTx.id)})" title="Is month ki old/purani entry edit karein"><i class="bi bi-pencil"></i></button>
+           <button class="btn btn-sm btn-outline-danger khata-action-btn" onclick="event.stopPropagation();deleteKhataTransaction(${Number(oldTx.id)})" title="Is month ki old/purani entry delete/undo karein"><i class="bi bi-trash"></i></button>`
+        : `<button class="btn btn-sm btn-outline-secondary khata-action-btn" onclick="event.stopPropagation();filterByMonth('${key}')"><i class="bi bi-list-ul me-1"></i>Details</button>`;
+      return `<tr class="month-row" onclick="filterByMonth('${key}')" style="cursor:pointer;">
+        <td style="padding:10px 14px;font-weight:600;">${m.lbl}</td>
+        <td style="padding:10px 14px;text-align:right;color:#dc3545;font-weight:600;">Rs.${fmt(m.sale)}</td>
+        <td style="padding:10px 14px;text-align:right;color:#198754;font-weight:600;">Rs.${fmt(m.vasooli)}</td>
+        <td style="padding:10px 14px;text-align:right;color:#6f42c1;font-weight:600;">${m.adv>0?'Rs.'+fmt(m.adv):'-'}</td>
+        <td style="padding:10px 14px;text-align:right;font-weight:800;color:${pending>0?'#dc3545':pending<0?'#198754':'#555'};">
+          Rs.${fmt(Math.abs(pending))}
+        </td>
+        <td style="padding:10px 14px;text-align:center;">
+          ${pending>0
+            ?`<span style="background:#fdecea;color:#dc3545;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;">⏳ Pending</span>`
+            :pending<0
+            ?`<span style="background:#eafaf1;color:#198754;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;">✅ Over-paid</span>`
+            :`<span style="background:#e2e3e5;color:#555;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;">✓ Clear</span>`
+          }
+        </td>
+        <td class="no-print" style="padding:10px 14px;text-align:center;white-space:nowrap;">${actionHtml}</td>
+      </tr>`;
+    }).join('');
+
+    const totPend=totSale+totAdv-totVas;
+    el('monthly-tfoot').innerHTML=`<tr style="background:#f0f4ff;font-weight:800;border-top:2px solid #0d6efd;">
+      <td style="padding:10px 14px;">TOTAL</td>
+      <td style="padding:10px 14px;text-align:right;color:#dc3545;">Rs.${fmt(totSale)}</td>
+      <td style="padding:10px 14px;text-align:right;color:#198754;">Rs.${fmt(totVas)}</td>
+      <td style="padding:10px 14px;text-align:right;color:#6f42c1;">Rs.${fmt(totAdv)}</td>
+      <td style="padding:10px 14px;text-align:right;color:${totPend>0?'#dc3545':'#198754'};font-size:16px;">Rs.${fmt(Math.abs(totPend))}</td>
+      <td style="padding:10px 14px;text-align:center;color:${totPend>0?'#dc3545':'#198754'};font-weight:800;">${totPend>0?'BAQI':'SAAF'}</td>
+      <td class="no-print" style="padding:10px 14px;text-align:center;"><button class="btn btn-sm btn-outline-success khata-action-btn" onclick="repairSelectedBalance()"><i class="bi bi-arrow-repeat me-1"></i>Fix</button></td>
+    </tr>`;
+  };
+
+  window.filterByMonth=function(key){
+    el('tx-month-filter').value=key;
+    renderTxDetail();
+    el('tx-detail-title').innerHTML=`<i class="bi bi-list-ul me-1"></i>Transactions — ${new Date(key+'-01').toLocaleDateString('en-PK',{month:'long',year:'numeric'})}`;
+    setTimeout(()=>el('tx-detail-tbody')?.scrollIntoView({behavior:'smooth',block:'center'}),80);
+  };
+
+  // ── Transaction Detail (Paper Format) ────────────────────
+  window.renderTxDetail=function(){
+    const mFilter=el('tx-month-filter')?.value||'';
+    let txns=custTxns;
+    
+    // Sort transactions by date for running balance
+    txns.sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+
+    const tbody=el('tx-detail-tbody');
+    let html='';
+    let runningBal=0;
+
+    const rows = txns.map(t=>{
+      const amt=parseFloat(t.amount || t.charges)||0;
+      let debit=0, credit=0;
+      
+      // Paper Logic: 
+      // Credit (Sale) -> Debit Column (+)
+      // Debit (Vasooli) -> Credit Column (-)
+      // Advance -> Debit Column (+)
+      if(t.transaction_type==='Credit' || t.transaction_type==='Advance') {
+        debit = amt; runningBal += amt;
+      } else if(t.transaction_type==='Debit') {
+        credit = amt; runningBal -= amt;
+      }
+
+      const d=t.created_at?new Date(t.created_at).toLocaleDateString('en-PK'):'—';
+      const docType = t.transaction_type === 'Credit' ? 'FL' : t.transaction_type === 'Debit' ? 'RV' : t.transaction_type === 'Advance' ? 'AD' : '—';
+      
+      return {
+        key: t.created_at ? `${new Date(t.created_at).getFullYear()}-${String(new Date(t.created_at).getMonth()+1).padStart(2,'0')}` : '',
+        row: `<tr>
+          <td style="padding:8px 12px;">${d}</td>
+          <td style="padding:8px 12px;text-align:center;"><span class="badge bg-light text-dark border">${docType}</span></td>
+          <td style="padding:8px 12px;font-size:11px;">#${t.id}</td>
+          <td style="padding:8px 12px;font-size:12px;color:#555;">${t.description||'—'}</td>
+          <td style="padding:8px 12px;text-align:right;font-weight:700;color:#198754;">${debit>0?'Rs.'+fmt(debit):'—'}</td>
+          <td style="padding:8px 12px;text-align:right;font-weight:700;color:#0d6efd;">${credit>0?'Rs.'+fmt(credit):'—'}</td>
+          <td style="padding:8px 12px;text-align:right;font-weight:800;color:${runningBal>0?'#dc3545':'#198754'};">Rs.${fmt(Math.abs(runningBal))}</td>
+          <td class="no-print" style="padding:8px 12px;text-align:center;white-space:nowrap;">
+            <button class="btn btn-sm btn-outline-primary me-1" onclick="editKhataTransaction(${Number(t.id)})" title="Edit / Update"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteKhataTransaction(${Number(t.id)})" title="Delete / Undo"><i class="bi bi-trash"></i></button>
+          </td>
+        </tr>`
+      };
+    });
+
+    // Apply month filter after calculating running balance if needed, 
+    // but usually user wants to see the whole khata with running balance.
+    // If filter is active, we only show filtered rows but balance is based on history.
+    let filteredRows = rows;
+    if(mFilter) filteredRows = rows.filter(r => r.key === mFilter);
+
+    if(!filteredRows.length){
+      tbody.innerHTML='<tr><td colspan="8" class="text-center text-muted py-3">Koi transaction nahi</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = filteredRows.map(r=>r.row).reverse().join(''); // Show latest first in table
+  };
+
+  // ── Summary Card Details ───────────────────────────────
+  function esc(v){
+    return String(v ?? '')
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'",'&#039;');
+  }
+  function cName(customerId){
+    const c = allCustomers.find(x => String(x.id) === String(customerId));
+    return c ? `#${c.sr_no || '-'} — ${c.name}` : '—';
+  }
+  function dLabel(date){
+    if(!date) return '—';
+    const d = new Date(date);
+    if(Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-PK',{day:'2-digit',month:'short',year:'numeric'});
+  }
+  function monthLabel(date){
+    if(!date) return '—';
+    const d = new Date(date);
+    if(Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-PK',{month:'long',year:'numeric'});
+  }
+  function detailTitle(kind, scope){
+    const prefix = scope === 'customer' && selectedCust ? `${selectedCust.name} — ` : '';
+    const map = {
+      pending: 'Total Pending Customers',
+      debit: 'Debit / Udhaar Details',
+      credit: 'Credit / Jama Details',
+      advance: 'Cash Advance Details',
+      net: 'Net Ledger Details'
+    };
+    return prefix + (map[kind] || 'Summary Details');
+  }
+  function filteredTxnsForSummary(kind, scope){
+    let txns = scope === 'customer' && selectedCust
+      ? allTransactions.filter(t => String(t.customer_id) === String(selectedCust.id))
+      : allTransactions.slice();
+
+    if(kind === 'debit') txns = txns.filter(t => String(t.transaction_type) === 'Credit');
+    else if(kind === 'credit') txns = txns.filter(t => String(t.transaction_type) === 'Debit');
+    else if(kind === 'advance') txns = txns.filter(t => String(t.transaction_type) === 'Advance');
+    else if(kind === 'net') txns = txns.filter(t => ['Credit','Debit','Advance'].includes(String(t.transaction_type)));
+
+    return txns.sort((a,b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+  }
+  window.selectCustFromSummary=function(customerId){
+    const modalEl = el('khataSummaryDetailModal');
+    const inst = bootstrap.Modal.getInstance(modalEl);
+    if(inst) inst.hide();
+    selectCust(Number(customerId));
+    setTimeout(() => el('detail-card')?.scrollIntoView({behavior:'smooth',block:'start'}), 150);
+  };
+  window.showKhataSummaryDetails=function(kind, scope='global'){
+    const titleEl = el('khataSummaryDetailTitle');
+    const bodyEl = el('khataSummaryDetailBody');
+    if(!titleEl || !bodyEl) return;
+
+    titleEl.innerHTML = `<i class="bi bi-card-list me-2"></i>${esc(detailTitle(kind, scope))}`;
+
+    if(kind === 'pending' && scope === 'global'){
+      const rows = allCustomers
+        .filter(c => (parseFloat(c.balance)||0) > 0)
+        .sort((a,b)=>(parseFloat(b.balance)||0)-(parseFloat(a.balance)||0));
+      const total = rows.reduce((s,c)=>s+(parseFloat(c.balance)||0),0);
+      bodyEl.innerHTML = `<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div><strong>${rows.length}</strong> customers pending</div>
+          <div class="badge bg-danger fs-6">Total Rs.${fmt(total)}</div>
+        </div>
+        <div class="table-responsive"><table class="table table-sm table-hover summary-detail-table">
+          <thead class="table-danger"><tr><th>Sr#</th><th>Customer</th><th class="text-end">Pending Balance</th><th class="text-center no-print">Action</th></tr></thead>
+          <tbody>${rows.map(c=>`<tr>
+            <td>${esc(c.sr_no || '-')}</td>
+            <td><strong>${esc(c.name)}</strong>${c.phone?`<br><small class="text-muted">${esc(c.phone)}</small>`:''}</td>
+            <td class="text-end fw-bold text-danger">Rs.${fmt(c.balance)}</td>
+            <td class="text-center no-print"><button class="btn btn-sm btn-outline-primary" onclick="selectCustFromSummary(${Number(c.id)})">Open Khata</button></td>
+          </tr>`).join('') || '<tr><td colspan="4" class="text-center text-muted py-4">Koi pending customer nahi</td></tr>'}</tbody>
+        </table></div>`;
+    } else {
+      const txns = filteredTxnsForSummary(kind, scope);
+      let running = 0;
+      if(scope === 'customer' && selectedCust){
+        // Running balance from oldest to latest for selected customer.
+        const chronological = filteredTxnsForSummary('net','customer').slice().reverse();
+        const runMap = new Map();
+        chronological.forEach(t => { running += khataEffect(t); runMap.set(Number(t.id), running); });
+        txns.forEach(t => t.__running = runMap.get(Number(t.id)) ?? 0);
+      }
+      const totalDebit = txns.filter(t=>String(t.transaction_type)==='Credit' || String(t.transaction_type)==='Advance').reduce((s,t)=>s+txAmount(t),0);
+      const totalCredit = txns.filter(t=>String(t.transaction_type)==='Debit').reduce((s,t)=>s+txAmount(t),0);
+      const net = totalDebit - totalCredit;
+      bodyEl.innerHTML = `<div class="row g-2 mb-3">
+          <div class="col-md-4"><div class="p-2 rounded bg-danger-subtle text-center"><small>Total Debit/Udhaar</small><div class="fw-bold text-danger">Rs.${fmt(totalDebit)}</div></div></div>
+          <div class="col-md-4"><div class="p-2 rounded bg-success-subtle text-center"><small>Total Credit/Jama</small><div class="fw-bold text-success">Rs.${fmt(totalCredit)}</div></div></div>
+          <div class="col-md-4"><div class="p-2 rounded bg-primary-subtle text-center"><small>Net</small><div class="fw-bold ${net>0?'text-danger':'text-success'}">Rs.${fmt(Math.abs(net))}</div></div></div>
+        </div>
+        <div class="table-responsive"><table class="table table-sm table-hover summary-detail-table">
+          <thead class="table-primary"><tr><th>Date</th><th>Month</th><th>Customer</th><th>Type</th><th>Description</th><th class="text-end">Debit</th><th class="text-end">Credit</th>${scope==='customer'?'<th class="text-end">Running</th>':''}<th class="text-center no-print">Action</th></tr></thead>
+          <tbody>${txns.map(t=>{
+            const type = String(t.transaction_type || '');
+            const amt = txAmount(t);
+            const isDebit = type === 'Credit' || type === 'Advance';
+            const badge = type === 'Credit' ? 'bg-danger' : type === 'Debit' ? 'bg-success' : type === 'Advance' ? 'bg-warning text-dark' : 'bg-secondary';
+            return `<tr>
+              <td>${dLabel(t.created_at)}</td>
+              <td>${monthLabel(t.created_at)}</td>
+              <td>${esc(cName(t.customer_id))}</td>
+              <td><span class="badge ${badge}">${esc(type || '—')}</span></td>
+              <td style="max-width:260px;white-space:normal;">${esc(t.description || '—')}</td>
+              <td class="text-end fw-bold text-danger">${isDebit ? 'Rs.'+fmt(amt) : '—'}</td>
+              <td class="text-end fw-bold text-success">${!isDebit ? 'Rs.'+fmt(amt) : '—'}</td>
+              ${scope==='customer'?`<td class="text-end fw-bold ${Number(t.__running)>0?'text-danger':'text-success'}">Rs.${fmt(Math.abs(Number(t.__running)||0))}</td>`:''}
+              <td class="text-center no-print"><button class="btn btn-sm btn-outline-primary" onclick="selectCustFromSummary(${Number(t.customer_id)})">Open</button></td>
+            </tr>`;
+          }).join('') || `<tr><td colspan="${scope==='customer'?9:8}" class="text-center text-muted py-4">Koi detail nahi mili</td></tr>`}</tbody>
+        </table></div>`;
+    }
+
+    new bootstrap.Modal(el('khataSummaryDetailModal')).show();
+  };
+
+  // ── Quick Edit Balance / Repair ─────────────────────────────
+  window.quickEditBalance=async function(custId){
+    const c=allCustomers.find(x=>String(x.id)===String(custId));
+    if(!c)return;
+    const storedBal=parseFloat(c.balance)||0;
+    const ledgerBal=calculateCustomerLedger(c.id, allTransactions);
+    const val=prompt(`${c.name} ka balance correction karein\nCustomer card balance: Rs.${fmt(storedBal)}\nLedger balance: Rs.${fmt(ledgerBal)}\n\nNaya final balance enter karein (Rs.):`, ledgerBal);
+    if(val===null)return;
+    const desired=parseFloat(val);
+    if(!Number.isFinite(desired)){ alert('Sahi amount enter karein.'); return; }
+    const diff=desired-ledgerBal;
+    if(Math.abs(diff)<0.01){
+      if(!confirm(`Koi adjustment transaction zaroori nahi. Sirf customer card balance Rs.${fmt(desired)} set kar doon?`))return;
+      try{
+        const {error}=await supabase.from('customers').update({balance:desired}).eq('id',c.id);
+        if(error)throw error;
+        showToast('success','Balance Fixed',`${c.name} ka balance Rs.${fmt(desired)} ho gaya.`);
+        await loadAll(); selectedCust=allCustomers.find(x=>String(x.id)===String(c.id)); if(selectedCust){custTxns=allTransactions.filter(t=>String(t.customer_id)===String(c.id)); renderDetail();}
+      }catch(e){alert('Error: '+e.message);}
+      return;
+    }
+    const txType=diff>0?'Credit':'Debit';
+    const amt=Math.abs(diff);
+    const desc=diff>0
+      ? `Manual Balance Adjustment: Udhaar correction to Rs.${fmt(desired)}`
+      : `Manual Balance Adjustment: Jama/discount correction to Rs.${fmt(desired)}`;
+    if(!confirm(`Adjustment entry create hogi:\n\nType: ${txType==='Credit'?'Debit/Udhaar add':'Credit/Jama minus'}\nAmount: Rs.${fmt(amt)}\nFinal balance: Rs.${fmt(desired)}\n\nProceed?`))return;
+    try{
+      const { error: txErr } = await supabase.from('transactions').insert([{
+        customer_id: parseInt(c.id),
+        transaction_type: txType,
+        amount: amt,
+        charges: amt,
+        description: desc,
+        created_at: new Date().toISOString()
+      }]);
+      if(txErr)throw txErr;
+      await recalcAndUpdateCustomerBalance(c.id);
+      showToast('success','Adjustment Saved',`${c.name} ka final balance Rs.${fmt(desired)} save ho gaya.`);
+      await loadAll(); selectedCust=allCustomers.find(x=>String(x.id)===String(c.id)); if(selectedCust){custTxns=allTransactions.filter(t=>String(t.customer_id)===String(c.id)); renderDetail();}
+    }catch(e){alert('Error: '+e.message);}
+  };
+
+  window.repairCustomerBalance=async function(custId){
+    const c=allCustomers.find(x=>String(x.id)===String(custId));
+    if(!c)return;
+    const storedBal=parseFloat(c.balance)||0;
+    const ledgerBal=calculateCustomerLedger(c.id, allTransactions);
+    if(!confirm(`${c.name} ka balance transactions ke hisaab se set karna hai?\n\nCurrent customer balance: Rs.${fmt(storedBal)}\nLedger calculated balance: Rs.${fmt(ledgerBal)}\n\nYe old wrong direct balance ko thik karega.`))return;
+    try{
+      const finalBal=await recalcAndUpdateCustomerBalance(c.id);
+      showToast('success','Balance Recalculated',`${c.name} ka balance Rs.${fmt(finalBal)} ho gaya.`);
+      await loadAll(); selectedCust=allCustomers.find(x=>String(x.id)===String(c.id)); if(selectedCust){custTxns=allTransactions.filter(t=>String(t.customer_id)===String(c.id)); renderDetail();}
+    }catch(e){alert('Error: '+e.message);}
+  };
+  window.repairSelectedBalance=function(){ if(selectedCust) repairCustomerBalance(selectedCust.id); };
+
+  function khataTypeLabel(type) {
+    if (type === 'Credit') return 'Debit/Udhaar add karega';
+    if (type === 'Debit') return 'Credit/Jama minus karega';
+    if (type === 'Advance') return 'Cash advance add karega';
+    return type || 'Entry';
+  }
+
+  window.editKhataTransaction = async function(txId) {
+    const t = allTransactions.find(x => Number(x.id) === Number(txId));
+    if (!t) { alert('Entry nahi mili. Page refresh karein.'); return; }
+    const cust = allCustomers.find(c => String(c.id) === String(t.customer_id));
+    if (!cust) { alert('Customer nahi mila.'); return; }
+
+    const oldAmt = txAmount(t);
+    const newAmtRaw = prompt(`Entry update karein\nCustomer: ${cust.name}\nType: ${khataTypeLabel(t.transaction_type)}\nOld amount: Rs.${fmt(oldAmt)}\n\nNew amount enter karein:`, oldAmt);
+    if (newAmtRaw === null) return;
+    const newAmt = parseFloat(newAmtRaw);
+    if (!Number.isFinite(newAmt) || newAmt < 0) { alert('Sahi amount enter karein.'); return; }
+
+    const newType = prompt(`Type update karein:\nCredit = Debit/Udhaar add\nDebit = Credit/Jama minus\nAdvance = Cash advance out add\n\nCurrent: ${t.transaction_type}`, t.transaction_type || 'Credit');
+    if (newType === null) return;
+    const cleanType = String(newType || '').trim();
+    if (!['Credit','Debit','Advance'].includes(cleanType)) { alert('Type sirf Credit, Debit, ya Advance ho sakta hai.'); return; }
+
+    const newDesc = prompt('Description / note update karein:', t.description || '') ?? (t.description || '');
+
+    const currentLedger = calculateCustomerLedger(cust.id, allTransactions);
+    const oldEffect = khataEffect(t);
+    const newEffect = khataEffect({ transaction_type: cleanType, amount: newAmt });
+    const estimatedNewBal = currentLedger - oldEffect + newEffect;
+
+    if (!confirm(`Update confirm?\n\nLedger balance abhi: Rs.${fmt(currentLedger)}\nUpdate ke baad: Rs.${fmt(estimatedNewBal)}\n\nYe customer balance bhi recalculate karega.`)) return;
+
+    try {
+      const { error: tErr } = await supabase.from('transactions').update({
+        transaction_type: cleanType,
+        amount: newAmt,
+        charges: newAmt,
+        description: newDesc,
+        balance_after: estimatedNewBal,
+        customer_balance_after: estimatedNewBal
+      }).eq('id', txId);
+      if (tErr) throw tErr;
+
+      const finalBal = await recalcAndUpdateCustomerBalance(cust.id);
+      showToast('success','Entry Updated',`${cust.name} ka balance Rs.${fmt(finalBal)} ho gaya.`);
+      await loadAll();
+      selectedCust = allCustomers.find(c => String(c.id) === String(cust.id));
+      if (selectedCust) { custTxns = allTransactions.filter(x => String(x.customer_id) === String(selectedCust.id)); renderDetail(); }
+    } catch(e) { alert('Error: ' + e.message); }
+  };
+
+  window.deleteKhataTransaction = async function(txId) {
+    const t = allTransactions.find(x => Number(x.id) === Number(txId));
+    if (!t) { alert('Entry nahi mili. Page refresh karein.'); return; }
+    const cust = allCustomers.find(c => String(c.id) === String(t.customer_id));
+    if (!cust) { alert('Customer nahi mila.'); return; }
+    const effect = khataEffect(t);
+    const currentLedger = calculateCustomerLedger(cust.id, allTransactions);
+    const newLedger = currentLedger - effect;
+    const amt = txAmount(t);
+
+    if (!confirm(`Is khata entry ko delete/undo karna hai?\n\nCustomer: ${cust.name}\nType: ${t.transaction_type}\nAmount: Rs.${fmt(amt)}\nLedger balance abhi: Rs.${fmt(currentLedger)}\nAfter delete: Rs.${fmt(newLedger)}`)) return;
+
+    try {
+      const { error: dErr } = await supabase.from('transactions').delete().eq('id', txId);
+      if (dErr) throw dErr;
+      const finalBal = await recalcAndUpdateCustomerBalance(cust.id);
+      showToast('success','Entry Deleted',`${cust.name} ka balance Rs.${fmt(finalBal)} ho gaya.`);
+      await loadAll();
+      selectedCust = allCustomers.find(c => String(c.id) === String(cust.id));
+      if (selectedCust) { custTxns = allTransactions.filter(x => String(x.customer_id) === String(selectedCust.id)); renderDetail(); }
+    } catch(e) { alert('Error: ' + e.message); }
+  };
+
+  // ── Print Customer Khata ──────────────────────────────────
+  window.printCustomerKhata=function(){
+    const c=selectedCust; if(!c)return;
+    const bal=parseFloat(c.balance)||0;
+    const yearF=el('year-filter')?.value||'';
+    const company='Khalid & Sons Petroleum';
+    const pDate=new Date().toLocaleDateString('en-PK',{day:'2-digit',month:'long',year:'numeric'});
+    const txns=custTxns.filter(t=>{
+      if(!yearF)return true;
+      if(!t.created_at)return false;
+      return String(new Date(t.created_at).getFullYear())===yearF;
+    });
+    const tStyles={Credit:'color:#198754',Debit:'color:#0d6efd',Advance:'color:#6f42c1',Expense:'color:#cc8800'};
+    const rows=txns.map(t=>{
+      const d=t.created_at?new Date(t.created_at).toLocaleDateString('en-PK'):'—';
+      const a=parseFloat(t.amount)||0;
+      return `<tr>
+        <td>${d}</td><td style="${tStyles[t.transaction_type]||''};font-weight:700">${t.transaction_type}</td>
+        <td style="text-align:right;color:${t.transaction_type==='Credit'?'#dc3545':t.transaction_type==='Debit'?'#198754':'#555'};font-weight:700">
+          ${t.transaction_type==='Debit'?'− ':'+ '}Rs.${fmt(a)}</td>
+        <td>${t.description||'—'}</td>
+      </tr>`;
+    }).join('');
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Khata — ${c.name}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;padding:16px}
+.hdr{display:flex;justify-content:space-between;border-bottom:2px solid #1a5276;padding-bottom:10px;margin-bottom:14px}
+h1{font-size:18px;color:#1a5276}h2{font-size:15px;color:#2c3e50}
+.info{display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap}.info-box{flex:1;min-width:120px;padding:8px;border-radius:6px;text-align:center}
+table{width:100%;border-collapse:collapse;margin-bottom:20px}th{background:#1a5276;color:#fff;padding:6px 8px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+td{padding:5px 8px;border-bottom:1px solid #eee}tr:nth-child(even) td{background:#f9f9f9}
+.sig-row{display:flex;justify-content:space-between;margin-top:30px}
+.sig-box{text-align:center;width:180px}.sig-line{border-top:1px solid #555;padding-top:4px;font-size:10px;color:#555;margin-top:30px}
+@media print{body{padding:8px}@page{margin:10mm}}</style></head><body>
+<div class="hdr"><div><h1>⛽ ${company}</h1><p style="color:#666">Customer Khata — Account Statement</p></div>
+<div style="text-align:right;font-size:11px;color:#666"><strong>${pDate}</strong></div></div>
+<h2 style="margin-bottom:10px">${c.name} — Account Statement ${yearF?'('+yearF+')':'(Sab)'}</h2>
+<div class="info">
+<div class="info-box" style="background:#d4edda;border:1px solid #28a745"><div style="font-size:10px">Customer</div><div style="font-weight:700">#${c.sr_no||'-'} | ${c.name}</div></div>
+${c.phone?`<div class="info-box" style="background:#cce5ff;border:1px solid #0069d9"><div style="font-size:10px">Phone</div><div style="font-weight:700">${c.phone}</div></div>`:''}
+<div class="info-box" style="background:${bal>0?'#fdecea':'#eafaf1'};border:1px solid ${bal>0?'#e74c3c':'#27ae60'}">
+<div style="font-size:10px">Net Pending</div><div style="font-weight:900;font-size:16px;color:${bal>0?'#c0392b':'#27ae60'}">Rs.${fmt(Math.abs(bal))}</div>
+<div style="font-size:10px;color:${bal>0?'#c0392b':'#27ae60'}">${bal>0?'BAQI':'SAAF'}</div></div>
+</div>
+<table><thead><tr><th>Date</th><th>Type</th><th style="text-align:right">Amount</th><th>Description</th></tr></thead>
+<tbody>${rows||'<tr><td colspan="4" style="text-align:center;color:#888">Koi transaction nahi</td></tr>'}</tbody></table>
+<div class="sig-row"><div class="sig-box"><div class="sig-line">Customer Signature<br>دستخط</div></div>
+<div class="sig-box"><div class="sig-line">Prepared By</div></div>
+<div class="sig-box"><div class="sig-line">Verified By</div></div></div>
+</body><script>window.onload=function(){window.print();}<\/script></html>`;
+    const w=window.open('','_blank','width=1000,height=700');
+    if(w){w.document.write(html);w.document.close();}
+  };
+
+  // ── Old Balance — Single Customer ─────────────────────────
+  function buildObDropdown(){
+    const searchEl=el('ob-cust-search'), listEl=el('ob-cust-list');
+    let selCust=null;
+    function render(q){
+      const f=q?allCustomers.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())||String(c.sr_no).includes(q)):allCustomers;
+      listEl.innerHTML=f.map(c=>{
+        const b=parseFloat(c.balance)||0;
+        return `<div class="ob-item" data-id="${c.id}"
+          style="padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;border-bottom:1px solid #f5f5f5;font-size:14px;">
+          <span><span style="background:#ffc107;color:#212529;border-radius:4px;padding:1px 7px;font-size:11px;font-weight:700;margin-right:8px;">#${c.sr_no||'-'}</span>${c.name}</span>
+          <span style="font-size:12px;font-weight:700;color:${b>0?'#dc3545':'#198754'};">Rs.${fmt(b)}</span>
+        </div>`;
+      }).join('') || '<div style="padding:12px;text-align:center;color:#888">Nahi mila</div>';
+      listEl.style.display='block';
+      listEl.querySelectorAll('.ob-item').forEach(item=>{
+        item.addEventListener('mouseenter',()=>item.style.background='#fffbea');
+        item.addEventListener('mouseleave',()=>item.style.background='');
+        item.addEventListener('mousedown',e=>{
+          e.preventDefault();
+          selCust=allCustomers.find(c=>c.id==item.dataset.id);
+          el('ob-customer-hidden').value=selCust.id;
+          searchEl.value=''; searchEl.style.display='none'; listEl.style.display='none';
+          el('ob-cust-text').textContent=`#${selCust.sr_no||'-'} — ${selCust.name}`;
+          const b=parseFloat(selCust.balance)||0;
+          el('ob-cust-bal').textContent=b>0?`Mojuda baqi: Rs.${fmt(b)}`:'Account saaf';
+          el('ob-cust-bal').style.color=b>0?'#dc3545':'#198754';
+          el('ob-cust-selected').style.display='flex';
+        });
+      });
+    }
+    searchEl.addEventListener('input',()=>render(searchEl.value));
+    searchEl.addEventListener('focus',()=>render(searchEl.value));
+    searchEl.addEventListener('blur',()=>setTimeout(()=>listEl.style.display='none',200));
+    window.clearObCust=function(){
+      selCust=null; el('ob-customer-hidden').value='';
+      searchEl.value=''; searchEl.style.display='block';
+      el('ob-cust-selected').style.display='none'; listEl.style.display='none'; searchEl.focus();
+    };
+  }
+
+  window.saveOldBalance=async function(){
+    const custId=el('ob-customer-hidden')?.value;
+    const amount=parseFloat(el('ob-amount')?.value)||0;
+    const txType=el('ob-tx-type')?.value || 'Credit';
+    const method=el('ob-method')?.value||'add';
+    const note=el('ob-note')?.value||'Purana balance';
+    const monthVal=el('ob-month')?.value; 
+
+    if(!custId){alert('Customer select karein');return;}
+    if(!amount){alert('Amount enter karein');return;}
+    if(!monthVal){alert('Mahina zaroor select karein');return;}
+    
+    const cust=allCustomers.find(c=>c.id==custId);
+    if(!cust)return;
+    
+    const ledgerBal=calculateCustomerLedger(custId, allTransactions);
+    // Credit (Debit Column) adds to balance, Debit (Credit Column) subtracts
+    const netAmount = txType === 'Credit' ? amount : -amount;
+    const finalTarget = method==='set' ? netAmount : (ledgerBal + netAmount);
+    const diff = finalTarget - ledgerBal;
+    const actualType = diff >= 0 ? 'Credit' : 'Debit';
+    const actualAmount = Math.abs(diff);
+
+    const [yr,mo]=monthVal.split('-').map(Number);
+    const txDate=new Date(yr,mo,0); // last day
+    const monthLabel=txDate.toLocaleDateString('en-PK',{month:'long',year:'numeric'});
+    const desc=`Opening Balance (${monthLabel}) ${method==='set'?'SET':'ADD'}: ${note}`;
+    
+    try{
+      if(actualAmount > 0.009){
+        const { error: txErr } = await supabase.from('transactions').insert([{
+          customer_id:parseInt(custId),
+          transaction_type: actualType,
+          amount: actualAmount,
+          charges: actualAmount,
+          description: desc,
+          created_at:txDate.toISOString()
+        }]);
+        if(txErr) throw txErr;
+      }
+      const finalBal = await recalcAndUpdateCustomerBalance(custId);
+      cust.balance=finalBal;
+      showToast('success','Save Ho Gaya!',`${cust.name} — ${monthLabel} ka record save ho gaya! Balance: Rs.${fmt(finalBal)}`);
+      await loadAll();
+      if(selectedCust?.id==custId){ selectedCust=allCustomers.find(c=>String(c.id)===String(custId)); custTxns=allTransactions.filter(t=>String(t.customer_id)===String(custId)); renderDetail(); }
+      el('ob-amount').value=''; el('ob-note').value='';
+      bootstrap.Modal.getInstance(el('oldBalanceModal')).hide();
+    }catch(e){alert('Error: '+e.message);}
+  };
+
+  // ── Bulk Balance Table ────────────────────────────────────
+  function buildBulkTable(){
+    const tbody=el('bulk-balance-tbody');
+    if(!tbody)return;
+    const globalMonth = el('bulk-ob-month')?.value || '';
+    const onlyPending = el('bulk-filter-pending')?.checked || false;
+    
+    let list = allCustomers;
+    if(onlyPending) {
+      list = list.filter(c => (parseFloat(c.balance)||0) > 0);
+    }
+
+    if(!list.length) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-3 text-muted">Koi matching customer nahi mila</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML=list.map(c=>{
+      const bal=parseFloat(c.balance)||0;
+      return `<tr>
+        <td>${c.sr_no||'-'}</td>
+        <td>${c.name}</td>
+        <td style="color:${bal>0?'#dc3545':'#198754'};font-weight:700;">Rs.${fmt(bal)}</td>
+        <td><input type="month" class="form-control form-control-sm bulk-month-input" data-id="${c.id}" value="${globalMonth}"></td>
+        <td>
+          <select class="form-select form-select-sm bulk-type-input" data-id="${c.id}">
+            <option value="Credit">Debit (Udhaar)</option>
+            <option value="Debit">Credit (Advance)</option>
+          </select>
+        </td>
+        <td><input type="number" class="form-control form-control-sm bulk-bal-input" data-id="${c.id}"
+          placeholder="0.00" step="0.01" value=""
+          style="border:1px solid ${bal>0?'#dc3545':'#ccc'};"></td>
+      </tr>`;
+    }).join('');
+  }
+
+  window.fillAllBulkBalances = function() {
+    const inputs = document.querySelectorAll('.bulk-bal-input');
+    inputs.forEach(inp => {
+      const custId = inp.dataset.id;
+      const cust = allCustomers.find(c => c.id == custId);
+      if(cust) {
+        const bal = parseFloat(cust.balance) || 0;
+        if(bal > 0) inp.value = bal;
+      }
+    });
+    showToast('info', 'Auto Fill Done', 'Sab customers ka current balance fill ho gaya hai.');
+  };
+
+  window.saveBulkBalances=async function(){
+    const balInputs=document.querySelectorAll('.bulk-bal-input');
+    const monthInputs=document.querySelectorAll('.bulk-month-input');
+    const updates=[];
+    let missingMonth = false;
+
+    balInputs.forEach((inp, i) => {
+      const val=parseFloat(inp.value);
+      if(!isNaN(val)&&val>0){
+        const mInp = monthInputs[i];
+        const tInp = document.querySelectorAll('.bulk-type-input')[i];
+        if(!mInp || !mInp.value) { missingMonth = true; return; }
+        const cust=allCustomers.find(c=>c.id==inp.dataset.id);
+        if(cust) updates.push({
+          id:parseInt(inp.dataset.id),
+          balance: val,
+          txType: tInp.value,
+          name:cust.name, 
+          monthVal: mInp.value
+        });
+      }
+    });
+
+    if(missingMonth) { alert('Jis customer ka amount likha hai uska Mahina (Month) bhi select karein!'); return; }
+    if(!updates.length){alert('Koi amount nahi likha — jis customer ka pending hai us ki field mein amount likhein');return;}
+    if(!confirm(`${updates.length} customers ka pending save karein?`))return;
+    
+    try{
+      for(const u of updates){
+        const [yr,mo]=u.monthVal.split('-').map(Number);
+        const txDate=new Date(yr,mo,0); 
+        const monthLabel=txDate.toLocaleDateString('en-PK',{month:'long',year:'numeric'});
+
+        const cust = allCustomers.find(c => c.id === u.id);
+        // Bulk old balance acts as ADD entry, not silent overwrite.
+        const { error: txErr } = await supabase.from('transactions').insert([{
+          customer_id: u.id,
+          transaction_type: u.txType,
+          amount: Math.abs(u.balance),
+          charges: Math.abs(u.balance),
+          description:`Opening Balance (${monthLabel}) — Purana record`,
+          created_at:txDate.toISOString()
+        }]);
+        if(txErr)throw txErr;
+        const finalBal = await recalcAndUpdateCustomerBalance(u.id);
+        if(cust) cust.balance = finalBal;
+      }
+      showToast('success','Save Ho Gaya!',`${updates.length} customers ka pending daakhil ho gaya!`);
+      computeSummary(); renderCustList(); buildBulkTable();
+    }catch(e){alert('Error: '+e.message);}
+  };
+
+  el('bulk-ob-month')?.addEventListener('change', function() {
+    const val = this.value;
+    document.querySelectorAll('.bulk-month-input').forEach(inp => inp.value = val);
+  });
+
+  function buildAdvDepositDropdown(){
+    const searchEl = el('adv-cust-search');
+    const listEl = el('adv-cust-list');
+    if(!searchEl || !listEl) return;
+
+    function setSelected(cust){
+      advDepositCust = cust || null;
+      el('adv-customer-hidden').value = cust?.id || '';
+      if(cust){
+        searchEl.value = '';
+        searchEl.style.display = 'none';
+        listEl.style.display = 'none';
+        el('adv-cust-text').textContent = `#${cust.sr_no || '-'} — ${cust.name}`;
+        const b = parseFloat(cust.balance) || 0;
+        el('adv-cust-bal').textContent = b > 0 ? `Mojuda baqi: Rs.${fmt(b)}` : b < 0 ? `Advance: Rs.${fmt(Math.abs(b))}` : 'Account saaf';
+        el('adv-cust-bal').style.color = b > 0 ? '#dc3545' : b < 0 ? '#0d6efd' : '#198754';
+        el('adv-cust-selected').style.display = 'flex';
+      }else{
+        searchEl.style.display = 'block';
+        el('adv-cust-selected').style.display = 'none';
+      }
+    }
+
+    function render(q){
+      const term = String(q || '').toLowerCase().trim();
+      const filtered = (term
+        ? allCustomers.filter(c => String(c.sr_no || '').includes(term) || String(c.name || '').toLowerCase().includes(term) || String(c.phone || '').includes(term))
+        : allCustomers
+      ).slice(0, 120);
+
+      listEl.innerHTML = filtered.map(c => {
+        const b = parseFloat(c.balance) || 0;
+        const label = b > 0 ? 'Baqi' : b < 0 ? 'Advance' : 'Saaf';
+        const color = b > 0 ? '#dc3545' : b < 0 ? '#0d6efd' : '#198754';
+        return `<div class="adv-item" data-id="${c.id}"
+          style="padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #f1f3f5;font-size:14px;">
+          <span><span style="background:#198754;color:#fff;border-radius:4px;padding:1px 7px;font-size:11px;font-weight:700;margin-right:8px;">#${c.sr_no || '-'}</span>${c.name || '-'}</span>
+          <span style="font-size:12px;font-weight:700;color:${color};white-space:nowrap;">${label}: Rs.${fmt(Math.abs(b))}</span>
+        </div>`;
+      }).join('') || '<div style="padding:12px;text-align:center;color:#888">Customer nahi mila</div>';
+      listEl.style.display = 'block';
+
+      listEl.querySelectorAll('.adv-item').forEach(item => {
+        item.addEventListener('mouseenter', () => item.style.background = '#f8fff9');
+        item.addEventListener('mouseleave', () => item.style.background = '');
+        item.addEventListener('mousedown', e => {
+          e.preventDefault();
+          const cust = allCustomers.find(c => String(c.id) === String(item.dataset.id));
+          setSelected(cust);
+        });
+      });
+    }
+
+    if(!searchEl.dataset.bound){
+      searchEl.addEventListener('input', () => render(searchEl.value));
+      searchEl.addEventListener('focus', () => render(searchEl.value));
+      searchEl.addEventListener('blur', () => setTimeout(() => listEl.style.display = 'none', 200));
+      searchEl.dataset.bound = '1';
+    }
+
+    window.clearAdvDepositCust = function(){
+      setSelected(null);
+      searchEl.value = '';
+      listEl.style.display = 'none';
+      setTimeout(() => searchEl.focus(), 50);
+    };
+
+    if(selectedCust) setSelected(selectedCust);
+    else setSelected(null);
+  }
+
+  window.saveAdvanceDeposit = async function() {
+    const cust = advDepositCust || selectedCust;
+    if(!cust) { alert('Pehle customer select karein!'); return; }
+    const amt = parseFloat(el('adv-amount')?.value) || 0;
+    const note = el('adv-note')?.value || '';
+    const monthVal = el('adv-month')?.value || '';
+    if(amt <= 0) { alert('Sahi amount enter karein'); return; }
+    if(!monthVal) { alert('Kis mahine ki advance/jama hai? Month select karein.'); return; }
+    const [advYr, advMo] = monthVal.split('-').map(Number);
+    const advDate = new Date(advYr, advMo, 0);
+    const advMonthLabel = advDate.toLocaleDateString('en-PK',{month:'long',year:'numeric'});
+
+    try {
+      const currentBal = parseFloat(cust.balance) || 0;
+      const newBal = currentBal - amt;
+
+      const { error: updErr } = await supabase.from('customers').update({ balance: newBal }).eq('id', cust.id);
+      if(updErr) throw updErr;
+
+      const { error: txErr } = await supabase.from('transactions').insert([{
+        customer_id: cust.id,
+        transaction_type: 'Debit',
+        amount: amt,
+        charges: amt,
+        description: `Advance Deposit / Jama (${advMonthLabel}): ${note || 'Customer advance'}`,
+        created_at: advDate.toISOString()
+      }]);
+      if(txErr) throw txErr;
+
+      showToast('success', 'Jama Save Ho Gaya!', `${cust.name} ka Rs.${fmt(amt)} deposit record ho gaya!`);
+      bootstrap.Modal.getInstance(el('advanceDepositModal')).hide();
+      el('adv-amount').value = ''; el('adv-note').value = '';
+      if(el('adv-month')) el('adv-month').value = '';
+      advDepositCust = null;
+      cust.balance = newBal;
+      if(selectedCust && String(selectedCust.id) === String(cust.id)) selectedCust.balance = newBal;
+      loadAll();
+    } catch(e) { alert('Error: ' + e.message); }
+  };
+
+  el('advanceDepositModal')?.addEventListener('show.bs.modal', () => {
+    const monthInput = el('adv-month');
+    if(monthInput && !monthInput.value){
+      const now = new Date();
+      monthInput.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    }
+    buildAdvDepositDropdown();
+  });
+
+  // ── Init ──────────────────────────────────────────────────
+  el('cust-search')?.addEventListener('input',renderCustList);
+  el('oldBalanceModal')?.addEventListener('show.bs.modal',buildObDropdown);
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    loadAll();
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel | PetroFlow</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    body { background: #f4f6fb; font-family: 'Segoe UI', sans-serif; }
+    .page-header { background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; padding: 24px 32px; border-radius: 0 0 16px 16px; margin-bottom: 28px; }
+    .card { border: none; border-radius: 14px; box-shadow: 0 2px 12px rgba(0,0,0,.07); }
+    .badge-role { font-size: 11px; padding: 4px 10px; border-radius: 20px; }
+    .status-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .dot-pending  { background: #f59e0b; }
+    .dot-active   { background: #10b981; }
+    .dot-rejected { background: #ef4444; }
+    .tab-btn { border: none; background: none; padding: 10px 20px; border-bottom: 3px solid transparent; font-weight: 600; color: #888; cursor: pointer; transition: all .2s; }
+    .tab-btn.active { color: #667eea; border-bottom-color: #667eea; }
+    .action-btn { font-size: 13px; padding: 4px 14px; border-radius: 8px; }
+  </style>
+</head>
+<body data-page="admin">
+
+<div id="navbar-placeholder"></div>
+
+<div class="page-header">
+  <div class="container-fluid">
+    <div class="d-flex align-items-center justify-content-between">
+      <div>
+        <h4 class="mb-1"><i class="bi bi-shield-check me-2"></i>Admin Panel</h4>
+        <small class="opacity-75">User Management &amp; Account Approvals</small>
+      </div>
+      <div id="user-role-badge"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid px-4">
+
+  <!-- Stats row -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="card p-3 text-center">
+        <div class="fs-3 fw-bold text-warning" id="stat-pending">0</div>
+        <div class="small text-muted">Pending Approvals</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card p-3 text-center">
+        <div class="fs-3 fw-bold text-success" id="stat-active">0</div>
+        <div class="small text-muted">Active Users</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card p-3 text-center">
+        <div class="fs-3 fw-bold text-danger" id="stat-rejected">0</div>
+        <div class="small text-muted">Rejected</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card p-3 text-center">
+        <div class="fs-3 fw-bold text-primary" id="stat-total">0</div>
+        <div class="small text-muted">Total Users</div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- Invitation Section (New) -->
+  <div class="card mb-4 border-0 shadow-sm" id="invitation-section" style="display:none">
+    <div class="card-header bg-white border-bottom py-3">
+        <h6 class="mb-0"><i class="bi bi-person-plus me-2 text-primary"></i>Invite Team Member</h6>
+    </div>
+    <div class="card-body">
+        <form id="invite-form" class="row g-3">
+            <div class="col-md-5">
+                <input type="email" class="form-control" id="invite-email" placeholder="Staff Email Address" required>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="invite-role" required>
+                    <option value="employee">As Employee</option>
+                    <option value="manager">As Manager</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100" style="background:linear-gradient(135deg,#667eea,#764ba2);border:none">
+                    <i class="bi bi-send me-1"></i>Send Invite
+                </button>
+            </div>
+        </form>
+        <div id="active-invites" class="mt-3 small"></div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="card mb-4">
+    <div class="card-header bg-white border-bottom pt-0 pb-0" style="border-radius:14px 14px 0 0">
+      <button class="tab-btn active" onclick="switchTab('pending')">
+        <i class="bi bi-clock me-1"></i>Pending <span class="badge bg-warning text-dark ms-1" id="badge-pending">0</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('active')">
+        <i class="bi bi-people me-1"></i>Active Users
+      </button>
+      <button class="tab-btn" onclick="switchTab('rejected')" id="rejected-tab-btn" style="display:none">
+        <i class="bi bi-x-circle me-1"></i>Rejected
+      </button>
+    </div>
+
+    <!-- Pending tab -->
+    <div class="card-body" id="tab-pending">
+      <div id="pending-list"><div class="text-center py-4 text-muted">Loading...</div></div>
+    </div>
+
+    <!-- Active tab -->
+    <div class="card-body d-none" id="tab-active">
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <input class="form-control" id="search-active" placeholder="Search by name or email..." oninput="filterActiveUsers()">
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" id="filter-role" onchange="filterActiveUsers()">
+            <option value="">All Roles</option>
+            <option value="super_admin">Super Admin</option>
+            <option value="admin">Admin</option>
+            <option value="manager">Manager</option>
+            <option value="employee">Employee</option>
+          </select>
+        </div>
+      </div>
+      <div id="active-list"><div class="text-center py-4 text-muted">Loading...</div></div>
+    </div>
+
+    <!-- Rejected tab -->
+    <div class="card-body d-none" id="tab-rejected">
+      <div id="rejected-list"><div class="text-center py-4 text-muted">Loading...</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Edit Role Modal -->
+<div class="modal fade" id="editRoleModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:14px;border:none">
+      <div class="modal-header border-0">
+        <h5 class="modal-title"><i class="bi bi-person-gear me-2"></i>Edit User Role</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-user-id">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">User</label>
+          <p id="edit-user-name" class="text-muted mb-0"></p>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Role</label>
+          <select class="form-select" id="edit-role">
+            <option value="employee">Employee</option>
+            <option value="manager">Manager</option>
+            <option value="admin">Admin</option>
+            <option value="super_admin" id="super-admin-option">Super Admin</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Status</label>
+          <select class="form-select" id="edit-status">
+            <option value="active">Active</option>
+            <option value="pending">Pending</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer border-0">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="saveUserEdit()" style="background:linear-gradient(135deg,#667eea,#764ba2);border:none">
+          <i class="bi bi-save me-1"></i>Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+  <div id="liveToast" class="toast" role="alert">
+    <div class="toast-header">
+      <strong class="me-auto" id="toast-title">Notice</strong>
+      <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+    </div>
+    <div class="toast-body" id="toast-message"></div>
+  </div>
+</div>
+
+<div id="footer-placeholder"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/config.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/app.js"></script>
+<script>
+  let allUsers = [];
+
+  async function ensureCompanyId() {
+    if (window.currentUserProfile?.company_id) return window.currentUserProfile.company_id;
+    const sb = window.supabaseClient;
+    const uid = window.currentUser?.id;
+    if (!uid) return null;
+    try {
+      let { data: prof } = await sb.from('user_profiles').select('company_id,role,status').eq('user_id', uid).maybeSingle();
+      if (prof?.company_id) {
+        window.currentUserProfile = { ...(window.currentUserProfile || {}), ...prof };
+        return prof.company_id;
+      }
+      const { data: company, error: ce } = await sb.from('companies')
+        .insert([{ name: 'Khalid & Sons Petroleum', owner_id: uid }])
+        .select('id').single();
+      if (ce) throw ce;
+      await sb.from('user_profiles').update({ company_id: company.id, status: 'active' }).eq('user_id', uid);
+      window.currentUserProfile = { ...(window.currentUserProfile || {}), company_id: company.id };
+      return company.id;
+    } catch (e) {
+      console.warn('ensureCompanyId failed:', e.message);
+      return null;
+    }
+  }
+
+  function findMissingColumn(message){
+    const m = String(message || '').match(/'([^']+)' column|column ['"]?([a-zA-Z0-9_]+)['"]?/i);
+    return m ? (m[1] || m[2]) : null;
+  }
+
+  async function safeInviteInsert(row){
+    let payload = { ...row };
+    const optional = ['invited_by','company_id','status'];
+    for(let i=0;i<6;i++){
+      const { error } = await window.supabaseClient.from('staff_invites').insert([payload]);
+      if(!error) return;
+      const col = findMissingColumn(error.message || error.details || '');
+      if(col && Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; continue; }
+      const rm = optional.find(k => Object.prototype.hasOwnProperty.call(payload,k) && /schema cache|column|could not find/i.test(error.message || error.details || ''));
+      if(rm){ delete payload[rm]; continue; }
+      throw error;
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', () => waitReady(loadAdminPanel));
+
+  function waitReady(cb, n = 0) {
+    if (window.supabaseClient && window.PETRO_AUTH_LOADED) {
+      // Give auth.js time to finish (it sets currentUserProfile)
+      setTimeout(cb, 600);
+    } else {
+      if (n > 80) return;
+      setTimeout(() => waitReady(cb, n + 1), 100);
+    }
+  }
+
+  async function loadAdminPanel() {
+    // Only super_admin or admin can access
+    if (!window.userRole || !['super_admin','admin'].includes(window.userRole)) {
+      document.body.innerHTML = `<div class="d-flex align-items-center justify-content-center vh-100">
+        <div class="text-center"><h4 class="text-danger">Access Denied</h4>
+        <p class="text-muted">You don't have permission to view this page.</p>
+        <a href="index.html" class="btn btn-primary">Go to Dashboard</a></div></div>`;
+      return;
+    }
+
+    await ensureCompanyId();
+
+    // Show rejected tab and full role filter only for super_admin
+    if (window.userRole === 'super_admin') {
+      document.getElementById('rejected-tab-btn').style.display = 'inline-block';
+      document.getElementById('super-admin-option').style.display = 'block';
+    } else {
+      document.getElementById('super-admin-option').style.display = 'none';
+      // Show Invitation section for Junior Admins
+      document.getElementById('invitation-section').style.display = 'block';
+      loadActiveInvites();
+    }
+ 
+    await refreshUsers();
+  }
+
+  // Invitation Logic
+  async function loadActiveInvites() {
+    const companyId = await ensureCompanyId();
+    let q = window.supabaseClient.from('staff_invites').select('*').order('created_at', { ascending:false });
+    if (companyId) q = q.eq('company_id', companyId);
+    const { data, error } = await q;
+    if (error) { document.getElementById('active-invites').innerHTML = '<div class="text-danger small">Invite list error: '+error.message+'</div>'; return; }
+    const el = document.getElementById('active-invites');
+    if (!data.length) { el.innerHTML = ''; return; }
+    el.innerHTML = '<div class="text-muted mb-2 fw-semibold">Pending Invites:</div>' + 
+      data.map(inv => `
+        <div class="d-flex justify-content-between align-items-center mb-1 p-2 bg-light rounded">
+            <span>${inv.email} (${inv.role})</span>
+            <button class="btn btn-sm text-danger p-0" onclick="cancelInvite(${inv.id})"><i class="bi bi-trash"></i></button>
+        </div>
+      `).join('');
+  }
+
+  document.getElementById('invite-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('invite-email').value;
+    const role  = document.getElementById('invite-role').value;
+    const companyId = await ensureCompanyId();
+
+    if (!companyId) { toast('Company ID not found. Please run COMPLETE_PROJECT_FINAL_FIX.sql in Supabase, then refresh.', 'danger'); return; }
+
+    try {
+      await safeInviteInsert({ 
+        email, role, company_id: companyId, invited_by: window.currentUser?.id, status: 'pending'
+      });
+    } catch (error) { toast('Invite failed: ' + error.message, 'danger'); return; }
+    toast('✅ Invitation sent! Ask staff to sign up with this email.', 'success');
+    document.getElementById('invite-form').reset();
+    loadActiveInvites();
+  });
+
+  async function cancelInvite(id) {
+    if (!confirm('Cancel this invite?')) return;
+    await window.supabaseClient.from('staff_invites').delete().eq('id', id);
+    loadActiveInvites();
+  }
+
+  async function refreshUsers() {
+    const sb = window.supabaseClient;
+    const { data, error } = await sb.from('user_profiles').select('*').order('created_at', { ascending: false });
+    if (error) { toast('Error loading users: ' + error.message, 'danger'); return; }
+
+    // ROLLE-BASED FILTERING: Hide superior roles from Junior Admins
+    if (window.userRole === 'admin') {
+      // Admins only see Managers, Employees, and self
+      allUsers = (data || []).filter(u => 
+        ['manager', 'employee'].includes(u.role) || u.user_id === window.currentUser.id
+      );
+    } else {
+      // Super Admins see everyone
+      allUsers = data || [];
+    }
+    
+    updateStats();
+    renderPending();
+    renderActive();
+    renderRejected();
+  }
+
+  function updateStats() {
+    const pending  = allUsers.filter(u => u.status === 'pending').length;
+    const active   = allUsers.filter(u => u.status === 'active').length;
+    const rejected = allUsers.filter(u => u.status === 'rejected').length;
+    document.getElementById('stat-pending').textContent  = pending;
+    document.getElementById('stat-active').textContent   = active;
+    document.getElementById('stat-rejected').textContent = rejected;
+    document.getElementById('stat-total').textContent    = allUsers.length;
+    document.getElementById('badge-pending').textContent = pending;
+  }
+
+  function roleBadge(role) {
+    const map = { super_admin:'danger', admin:'warning', manager:'info', employee:'secondary' };
+    const label = { super_admin:'Super Admin', admin:'Admin', manager:'Manager', employee:'Employee' };
+    return `<span class="badge bg-${map[role]||'secondary'} badge-role">${label[role]||role}</span>`;
+  }
+
+  function renderPending() {
+    const list = allUsers.filter(u => u.status === 'pending');
+    const el   = document.getElementById('pending-list');
+    if (!list.length) { el.innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-check-circle fs-2 d-block mb-2 text-success"></i>No pending approvals</div>'; return; }
+    el.innerHTML = `<div class="table-responsive"><table class="table align-middle">
+      <thead class="table-light"><tr>
+        <th>Name</th><th>Email</th><th>Requested Role</th><th>Requested</th><th>Actions</th>
+      </tr></thead><tbody>
+      ${list.map(u => `<tr>
+        <td><strong>${esc(u.full_name||'—')}</strong></td>
+        <td class="text-muted small">${esc(u.email||'')}</td>
+        <td>${roleBadge(u.role)}</td>
+        <td class="small text-muted">${fmtDate(u.created_at)}</td>
+        <td>
+          <button class="btn btn-success action-btn me-1" onclick="approveUser('${u.user_id}','${u.role}')">
+            <i class="bi bi-check2 me-1"></i>Approve
+          </button>
+          <button class="btn btn-outline-danger action-btn me-1" onclick="rejectUser('${u.user_id}')">
+            <i class="bi bi-x me-1"></i>Reject
+          </button>
+          <button class="btn btn-outline-secondary action-btn" onclick="openEdit('${u.user_id}')">
+            <i class="bi bi-pencil"></i>
+          </button>
+        </td>
+      </tr>`).join('')}
+      </tbody></table></div>`;
+  }
+
+  function renderActive(filtered) {
+    const list = (filtered || allUsers.filter(u => u.status === 'active'));
+    const el   = document.getElementById('active-list');
+    const myId = window.currentUser?.id;
+    if (!list.length) { el.innerHTML = '<div class="text-center py-4 text-muted">No active users found</div>'; return; }
+    el.innerHTML = `<div class="table-responsive"><table class="table align-middle">
+      <thead class="table-light"><tr>
+        <th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Actions</th>
+      </tr></thead><tbody>
+      ${list.map(u => `<tr>
+        <td><strong>${esc(u.full_name||'—')}</strong>${u.user_id===myId?' <span class="badge bg-primary ms-1">You</span>':''}</td>
+        <td class="text-muted small">${esc(u.email||'')}</td>
+        <td>${roleBadge(u.role)}</td>
+        <td class="small text-muted">${fmtDate(u.created_at)}</td>
+        <td>
+          ${u.user_id !== myId ? `
+          <button class="btn btn-outline-primary action-btn me-1" onclick="openEdit('${u.user_id}')">
+            <i class="bi bi-pencil me-1"></i>Edit
+          </button>
+          <button class="btn btn-outline-danger action-btn" onclick="deactivateUser('${u.user_id}')">
+            <i class="bi bi-person-dash me-1"></i>Deactivate
+          </button>` : '<span class="text-muted small">—</span>'}
+        </td>
+      </tr>`).join('')}
+      </tbody></table></div>`;
+  }
+
+  function renderRejected() {
+    const list = allUsers.filter(u => u.status === 'rejected');
+    const el   = document.getElementById('rejected-list');
+    if (!list.length) { el.innerHTML = '<div class="text-center py-4 text-muted">No rejected users</div>'; return; }
+    el.innerHTML = `<div class="table-responsive"><table class="table align-middle">
+      <thead class="table-light"><tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead><tbody>
+      ${list.map(u => `<tr>
+        <td>${esc(u.full_name||'—')}</td>
+        <td class="text-muted small">${esc(u.email||'')}</td>
+        <td>${roleBadge(u.role)}</td>
+        <td><button class="btn btn-success action-btn" onclick="approveUser('${u.user_id}','${u.role}')">
+          <i class="bi bi-arrow-counterclockwise me-1"></i>Re-approve</button></td>
+      </tr>`).join('')}
+      </tbody></table></div>`;
+  }
+
+  function filterActiveUsers() {
+    const q    = document.getElementById('search-active').value.toLowerCase();
+    const role = document.getElementById('filter-role').value;
+    const list = allUsers.filter(u => u.status === 'active')
+      .filter(u => (!q || (u.full_name||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q)))
+      .filter(u => (!role || u.role === role));
+    renderActive(list);
+  }
+
+  async function approveUser(userId, role) {
+    const { error } = await window.supabaseClient.from('user_profiles')
+      .update({ status: 'active', approved_by: window.currentUser.id, approved_at: new Date().toISOString() })
+      .eq('user_id', userId);
+    if (error) { toast('Error: ' + error.message, 'danger'); return; }
+    toast('✅ User approved successfully!', 'success');
+    await refreshUsers();
+  }
+
+  async function rejectUser(userId) {
+    if (!confirm('Are you sure you want to reject this user?')) return;
+    const { error } = await window.supabaseClient.from('user_profiles')
+      .update({ status: 'rejected' }).eq('user_id', userId);
+    if (error) { toast('Error: ' + error.message, 'danger'); return; }
+    toast('User rejected.', 'warning');
+    await refreshUsers();
+  }
+
+  async function deactivateUser(userId) {
+    if (!confirm('Deactivate this user? They will not be able to login.')) return;
+    const { error } = await window.supabaseClient.from('user_profiles')
+      .update({ status: 'pending' }).eq('user_id', userId);
+    if (error) { toast('Error: ' + error.message, 'danger'); return; }
+    toast('User deactivated.', 'warning');
+    await refreshUsers();
+  }
+
+  function openEdit(userId) {
+    const u = allUsers.find(x => x.user_id === userId);
+    if (!u) return;
+    document.getElementById('edit-user-id').value    = userId;
+    document.getElementById('edit-user-name').textContent = `${u.full_name || '—'} (${u.email || ''})`;
+    document.getElementById('edit-role').value   = u.role || 'employee';
+    document.getElementById('edit-status').value = u.status || 'pending';
+
+    // Role restrictions for the dropdown
+    const roleSelect = document.getElementById('edit-role');
+    const superAdminOpt = document.getElementById('super-admin-option');
+    const adminOpt      = roleSelect.querySelector('option[value="admin"]');
+
+    if (window.userRole === 'super_admin') {
+      superAdminOpt.style.display = 'block';
+      if (adminOpt) adminOpt.style.display = 'block';
+    } else {
+      // Junior Admin can only assign Manager or Employee
+      superAdminOpt.style.display = 'none';
+      if (adminOpt) adminOpt.style.display = 'none';
+      
+      // If the user's current role is admin or higher (shouldn't happen with filtering, but for safety), 
+      // don't let them change it.
+      if (['super_admin', 'admin'].includes(u.role) && u.user_id !== window.currentUser.id) {
+        toast('You cannot edit this level of user.', 'danger');
+        return;
+      }
+    }
+    new bootstrap.Modal(document.getElementById('editRoleModal')).show();
+  }
+
+  async function saveUserEdit() {
+    const userId = document.getElementById('edit-user-id').value;
+    const role   = document.getElementById('edit-role').value;
+    const status = document.getElementById('edit-status').value;
+    
+    // Safety check for role escalation
+    if (['super_admin', 'admin'].includes(role) && window.userRole !== 'super_admin') {
+      toast('You are not authorized to assign Admin roles.', 'danger'); 
+      return;
+    }
+    const update = { role, status };
+    if (status === 'active') { update.approved_by = window.currentUser.id; update.approved_at = new Date().toISOString(); }
+    const { error } = await window.supabaseClient.from('user_profiles').update(update).eq('user_id', userId);
+    if (error) { toast('Error: ' + error.message, 'danger'); return; }
+    bootstrap.Modal.getInstance(document.getElementById('editRoleModal')).hide();
+    toast('✅ User updated successfully!', 'success');
+    await refreshUsers();
+  }
+
+  function switchTab(tab) {
+    ['pending','active','rejected'].forEach(t => {
+      document.getElementById('tab-' + t).classList.toggle('d-none', t !== tab);
+      document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+        if (['pending','active','rejected'][i] === tab) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
+    });
+  }
+
+  function fmtDate(d) { if (!d) return '—'; try { return new Date(d).toLocaleDateString('en-PK',{day:'2-digit',month:'short',year:'numeric'}); } catch { return d; } }
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function toast(msg, type='success') {
+    const t = document.getElementById('liveToast');
+    const m = document.getElementById('toast-message');
+    if (!t||!m) return;
+    m.textContent = msg;
+    t.className = `toast bg-${type==='danger'?'danger':type==='warning'?'warning':'success'} text-white`;
+    new bootstrap.Toast(t,{delay:3500}).show();
+  }
+</script>
+</body>
+</html>

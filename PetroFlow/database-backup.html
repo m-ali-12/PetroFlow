@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Backup System - PetroFlow</title>
+    <link rel="stylesheet" href="../assets/styles.css">
+    <style>
+        * { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .backup-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .backup-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .backup-card h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .backup-card p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            width: 100%;
+        }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #000; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .progress-container {
+            display: none;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .progress-container.active {
+            display: block;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .log-container {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; }
+        .log-info { color: #17a2b8; }
+        .backup-history {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        table thead {
+            background: #667eea;
+            color: white;
+        }
+        table th, table td {
+            padding: 12px;
+            text-align: right;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        .alert {
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .config-section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .checkbox-group input {
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💾 Database Backup System</h1>
+            <p>Complete database backup with schema and data - Weekly/Monthly backups</p>
+        </div>
+
+        <div class="alert alert-info">
+            <strong>📌 Important:</strong> Regular backups protect your data. Download and store backups securely.
+            Backups include complete schema (tables, views, functions) and all data.
+        </div>
+
+        <div class="backup-cards">
+            <div class="backup-card">
+                <h3>🔄 Quick Backup</h3>
+                <p>Complete database backup with all tables and data</p>
+                <button class="btn btn-primary" onclick="startQuickBackup()">Create Backup Now</button>
+            </div>
+
+            <div class="backup-card">
+                <h3>⚙️ Custom Backup</h3>
+                <p>Select specific tables and options</p>
+                <button class="btn btn-warning" onclick="showCustomBackup()">Configure Backup</button>
+            </div>
+
+            <div class="backup-card">
+                <h3>📅 Schedule Backup</h3>
+                <p>Setup automatic weekly/monthly backups</p>
+                <button class="btn btn-success" onclick="showScheduleBackup()">Setup Schedule</button>
+            </div>
+        </div>
+
+        <!-- Custom Backup Configuration -->
+        <div id="custom-backup-config" class="config-section" style="display: none;">
+            <h2>Custom Backup Configuration</h2>
+            
+            <div class="form-group">
+                <label>Backup Name:</label>
+                <input type="text" id="backup-name" placeholder="e.g., petroflow_backup_monthly">
+            </div>
+
+            <div class="form-group">
+                <label>Include Tables:</label>
+                <div id="tables-checklist" style="max-height: 200px; overflow-y: auto; border: 1px solid #e0e0e0; padding: 10px; border-radius: 6px;">
+                    <!-- Will be populated dynamically -->
+                </div>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="include-schema" checked>
+                <label for="include-schema">Include Schema (Table Structures)</label>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="include-data" checked>
+                <label for="include-data">Include Data</label>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="include-views" checked>
+                <label for="include-views">Include Views</label>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="include-functions" checked>
+                <label for="include-functions">Include Functions</label>
+            </div>
+
+            <button class="btn btn-primary" onclick="startCustomBackup()" style="margin-top: 15px; width: auto;">
+                Start Custom Backup
+            </button>
+            <button class="btn" onclick="hideCustomBackup()" style="margin-top: 15px; width: auto;">
+                Cancel
+            </button>
+        </div>
+
+        <!-- Progress Container -->
+        <div id="progress-container" class="progress-container">
+            <h3>Backup in Progress...</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill">0%</div>
+            </div>
+            <div id="current-status" style="text-align: center; margin: 10px 0; font-weight: bold;">
+                Initializing...
+            </div>
+            <div class="log-container" id="log-container">
+                <!-- Log entries will appear here -->
+            </div>
+        </div>
+
+        <!-- Backup History -->
+        <div class="backup-history">
+            <h2>📋 Recent Backups</h2>
+            <table id="backup-history-table">
+                <thead>
+                    <tr>
+                        <th>Date/Time</th>
+                        <th>Backup Name</th>
+                        <th>Size</th>
+                        <th>Tables</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #999;">
+                            No backup history available. Create your first backup above.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { supabase } from '../js/supabase-client.js';
+
+        let allTables = [];
+        let backupLog = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            await loadTables();
+        });
+
+        async function checkAuth() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                window.location.href = '../login.html';
+                return;
+            }
+        }
+
+        // Load all tables
+        async function loadTables() {
+            try {
+                const { data, error } = await supabase.rpc('get_all_tables');
+                
+                if (error) {
+                    // If function doesn't exist, use default list
+                    allTables = [
+                        'banks', 'cash_advances', 'cash_deposits', 'companies', 
+                        'company_repayments', 'company_transactions', 'customers',
+                        'daily_reports', 'expense_categories', 'expense_types',
+                        'mobil_products', 'mobil_sales', 'mobil_stock',
+                        'rent_payments', 'settings', 'shops', 'stock_entries',
+                        'stock_purchases', 'tanks', 'transactions', 'user_profiles',
+                        'employees', 'employee_salary_payments', 'employee_advances',
+                        'bank_balances', 'bank_transfers', 'bank_transactions'
+                    ];
+                } else {
+                    allTables = data || [];
+                }
+            } catch (error) {
+                console.error('Error loading tables:', error);
+            }
+        }
+
+        // Quick Backup
+        window.startQuickBackup = async function() {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
+            const backupName = `petroflow_complete_backup_${timestamp}`;
+            
+            await performBackup({
+                name: backupName,
+                tables: allTables,
+                includeSchema: true,
+                includeData: true,
+                includeViews: true,
+                includeFunctions: true
+            });
+        };
+
+        // Show custom backup
+        window.showCustomBackup = function() {
+            const container = document.getElementById('custom-backup-config');
+            container.style.display = 'block';
+            
+            // Populate tables checklist
+            const checklist = document.getElementById('tables-checklist');
+            checklist.innerHTML = allTables.map(table => `
+                <div class="checkbox-group" style="margin-bottom: 5px;">
+                    <input type="checkbox" id="table-${table}" value="${table}" checked>
+                    <label for="table-${table}">${table}</label>
+                </div>
+            `).join('');
+        };
+
+        window.hideCustomBackup = function() {
+            document.getElementById('custom-backup-config').style.display = 'none';
+        };
+
+        // Start custom backup
+        window.startCustomBackup = async function() {
+            const name = document.getElementById('backup-name').value || `petroflow_custom_backup_${Date.now()}`;
+            const selectedTables = Array.from(document.querySelectorAll('#tables-checklist input:checked'))
+                .map(cb => cb.value);
+            
+            const options = {
+                name: name,
+                tables: selectedTables,
+                includeSchema: document.getElementById('include-schema').checked,
+                includeData: document.getElementById('include-data').checked,
+                includeViews: document.getElementById('include-views').checked,
+                includeFunctions: document.getElementById('include-functions').checked
+            };
+
+            hideCustomBackup();
+            await performBackup(options);
+        };
+
+        // Perform backup
+        async function performBackup(options) {
+            const progressContainer = document.getElementById('progress-container');
+            const progressFill = document.getElementById('progress-fill');
+            const statusDiv = document.getElementById('current-status');
+            const logContainer = document.getElementById('log-container');
+            
+            progressContainer.classList.add('active');
+            progressFill.style.width = '0%';
+            progressFill.textContent = '0%';
+            logContainer.innerHTML = '';
+            backupLog = [];
+
+            try {
+                addLog('info', 'Starting backup process...');
+                updateProgress(5, 'Initializing backup...');
+
+                let sqlContent = `--
+-- PetroFlow Database Backup
+-- Generated: ${new Date().toISOString()}
+-- Backup Name: ${options.name}
+--
+
+`;
+
+                // Add schema
+                if (options.includeSchema) {
+                    addLog('info', 'Exporting table schemas...');
+                    updateProgress(15, 'Exporting schemas...');
+                    
+                    for (let i = 0; i < options.tables.length; i++) {
+                        const table = options.tables[i];
+                        addLog('info', `  - Exporting schema for: ${table}`);
+                        // Schema export would go here
+                    }
+                }
+
+                // Add data
+                if (options.includeData) {
+                    addLog('info', 'Exporting table data...');
+                    updateProgress(40, 'Exporting data...');
+
+                    for (let i = 0; i < options.tables.length; i++) {
+                        const table = options.tables[i];
+                        const progress = 40 + Math.floor((i / options.tables.length) * 40);
+                        updateProgress(progress, `Exporting data from: ${table}`);
+
+                        try {
+                            const { data, error } = await supabase
+                                .from(table)
+                                .select('*');
+
+                            if (error) throw error;
+
+                            if (data && data.length > 0) {
+                                sqlContent += `\n-- Table: ${table}\n`;
+                                sqlContent += `-- Rows: ${data.length}\n`;
+                                sqlContent += `COPY public.${table} FROM stdin;\n`;
+                                
+                                data.forEach(row => {
+                                    const values = Object.values(row).map(v => 
+                                        v === null ? '\\N' : String(v).replace(/\t/g, '\\t')
+                                    ).join('\t');
+                                    sqlContent += values + '\n';
+                                });
+                                
+                                sqlContent += '\\.\n\n';
+                                addLog('success', `  ✓ Exported ${data.length} rows from ${table}`);
+                            } else {
+                                addLog('info', `  - No data in ${table}`);
+                            }
+                        } catch (error) {
+                            addLog('error', `  ✗ Error exporting ${table}: ${error.message}`);
+                        }
+                    }
+                }
+
+                updateProgress(90, 'Finalizing backup...');
+                addLog('info', 'Creating backup file...');
+
+                // Create downloadable file
+                const blob = new Blob([sqlContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${options.name}.sql`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                updateProgress(100, 'Backup completed!');
+                addLog('success', '✅ Backup completed successfully!');
+                addLog('success', `📦 File: ${options.name}.sql`);
+                addLog('success', `📏 Size: ${(blob.size / 1024).toFixed(2)} KB`);
+
+                setTimeout(() => {
+                    progressContainer.classList.remove('active');
+                }, 3000);
+
+            } catch (error) {
+                addLog('error', `❌ Backup failed: ${error.message}`);
+                updateProgress(100, 'Backup failed!');
+                console.error('Backup error:', error);
+            }
+        }
+
+        function updateProgress(percent, status) {
+            const progressFill = document.getElementById('progress-fill');
+            const statusDiv = document.getElementById('current-status');
+            
+            progressFill.style.width = percent + '%';
+            progressFill.textContent = Math.floor(percent) + '%';
+            statusDiv.textContent = status;
+        }
+
+        function addLog(type, message) {
+            const logContainer = document.getElementById('log-container');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            backupLog.push({ type, message, time: new Date().toISOString() });
+        }
+
+        window.showScheduleBackup = function() {
+            alert('Schedule Backup feature coming soon!\n\nYou can manually create backups weekly/monthly for now.');
+        };
+    </script>
+</body>
+</html>

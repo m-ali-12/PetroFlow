@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bank Cash Deposits | PetroFlow</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/assets/styles.css">
+  <style>
+    body { background:#f4f6fb; font-family:'Segoe UI',sans-serif; }
+    .page-header { background:linear-gradient(135deg,#1e40af,#3b82f6); color:#fff; padding:24px 32px; border-radius:0 0 16px 16px; margin-bottom:28px; }
+    .card { border:none; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.07); }
+    .bank-chip { display:inline-flex; align-items:center; gap:8px; background:#fff; border:2px solid #e0e7ff; border-radius:12px; padding:10px 18px; cursor:pointer; transition:all .2s; font-weight:600; font-size:14px; }
+    .bank-chip:hover,.bank-chip.selected { background:#3b82f6; border-color:#3b82f6; color:#fff; }
+    .bank-chip .bank-icon { font-size:22px; }
+    .stat-card { border-radius:12px; padding:18px; color:#fff; }
+    .stat-card.blue  { background:linear-gradient(135deg,#3b82f6,#1e40af); }
+    .stat-card.green { background:linear-gradient(135deg,#10b981,#047857); }
+    .stat-card.orange{ background:linear-gradient(135deg,#f59e0b,#d97706); }
+    .stat-card.purple{ background:linear-gradient(135deg,#8b5cf6,#6d28d9); }
+    .deposit-row:hover { background:#f0f4ff; }
+    .badge-bank { font-size:11px; padding:3px 10px; border-radius:20px; }
+    input[type=date].form-control, input[type=number].form-control { border-radius:10px; border:2px solid #e0e0e0; padding:10px 14px; }
+    .form-control:focus,.form-select:focus { border-color:#3b82f6; box-shadow:0 0 0 .2rem rgba(59,130,246,.2); }
+    .btn-primary { background:linear-gradient(135deg,#3b82f6,#1e40af); border:none; border-radius:10px; }
+    .btn-primary:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(59,130,246,.4); }
+  </style>
+</head>
+<body data-page="bank-deposits">
+<div id="navbar-placeholder"></div>
+
+<div class="page-header">
+  <div class="container-fluid">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div>
+        <h4 class="mb-1"><i class="bi bi-bank me-2"></i>Bank Cash Deposits</h4>
+        <small class="opacity-75">Daily cash deposit tracking across multiple banks</small>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        <div id="user-role-badge"></div>
+        <button class="btn btn-light btn-sm fw-semibold" onclick="openAddDepositModal()">
+          <i class="bi bi-plus-circle me-1"></i>New Deposit
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid px-4">
+
+  <!-- Summary stats -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="stat-card blue">
+        <div class="small opacity-75 mb-1">Today's Total Deposits</div>
+        <div class="fs-4 fw-bold" id="stat-today">Rs. 0</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card green">
+        <div class="small opacity-75 mb-1">This Month</div>
+        <div class="fs-4 fw-bold" id="stat-month">Rs. 0</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card orange">
+        <div class="small opacity-75 mb-1">This Month Deposits</div>
+        <div class="fs-4 fw-bold" id="stat-count">0</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card purple">
+        <div class="small opacity-75 mb-1">Active Banks</div>
+        <div class="fs-4 fw-bold" id="stat-banks">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- Left: Filters + table -->
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header bg-white border-bottom">
+          <div class="row g-2 align-items-center">
+            <div class="col-md-3">
+              <input type="date" class="form-control form-control-sm" id="filter-from" onchange="loadDeposits()">
+            </div>
+            <div class="col-md-3">
+              <input type="date" class="form-control form-control-sm" id="filter-to" onchange="loadDeposits()">
+            </div>
+            <div class="col-md-3">
+              <select class="form-select form-select-sm" id="filter-bank" onchange="loadDeposits()">
+                <option value="">All Banks</option>
+              </select>
+            </div>
+            <div class="col-md-3 text-end">
+              <button class="btn btn-sm btn-outline-secondary" onclick="resetFilters()">
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Date</th>
+                  <th>Bank</th>
+                  <th>Amount</th>
+                  <th>Deposited By</th>
+                  <th>Reference</th>
+                  <th>Note</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="deposits-tbody">
+                <tr><td colspan="7" class="text-center py-4 text-muted">Loading deposits...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+          <span class="text-muted small" id="pagination-info">Showing 0 records</span>
+          <div id="pagination-btns"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Bank summary + manage banks -->
+    <div class="col-lg-4">
+
+      <!-- Bank-wise summary -->
+      <div class="card mb-4">
+        <div class="card-header bg-white border-bottom fw-semibold">
+          <i class="bi bi-bar-chart me-1"></i> Bank-wise Summary
+          <span class="text-muted small ms-2" id="summary-period">this month</span>
+        </div>
+        <div class="card-body" id="bank-summary-list">
+          <div class="text-center py-3 text-muted">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Manage banks -->
+      <div class="card">
+        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+          <span class="fw-semibold"><i class="bi bi-building me-1"></i> Manage Banks</span>
+          <button class="btn btn-sm btn-outline-primary" onclick="openBankModal()">
+            <i class="bi bi-plus me-1"></i>Add Bank
+          </button>
+        </div>
+        <div class="card-body" id="banks-list">
+          <div class="text-center py-3 text-muted">Loading banks...</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Add/Edit Deposit Modal ──────────────────────────────── -->
+<div class="modal fade" id="depositModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:14px;border:none">
+      <div class="modal-header" style="background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;border-radius:14px 14px 0 0">
+        <h5 class="modal-title"><i class="bi bi-bank me-2"></i><span id="modal-deposit-title">New Cash Deposit</span></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="dep-id">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Date <span class="text-danger">*</span></label>
+          <input type="date" class="form-control" id="dep-date" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Bank <span class="text-danger">*</span></label>
+          <select class="form-select" id="dep-bank" required>
+            <option value="">— Select Bank —</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Amount (Rs.) <span class="text-danger">*</span></label>
+          <input type="number" class="form-control" id="dep-amount" min="1" step="0.01" placeholder="0.00" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Deposited By</label>
+          <input type="text" class="form-control" id="dep-by" placeholder="Employee name">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Reference / Slip No.</label>
+          <input type="text" class="form-control" id="dep-ref" placeholder="Optional slip or reference number">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Note</label>
+          <textarea class="form-control" id="dep-note" rows="2" placeholder="Optional note..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer border-0">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="saveDeposit()">
+          <i class="bi bi-save me-1"></i>Save Deposit
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add/Edit Bank Modal ────────────────────────────────── -->
+<div class="modal fade" id="bankModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content" style="border-radius:14px;border:none">
+      <div class="modal-header border-0">
+        <h5 class="modal-title"><i class="bi bi-building me-2"></i><span id="modal-bank-title">Add Bank</span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="bank-edit-id">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Bank Name <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" id="bank-name" placeholder="e.g. HBL, MCB, UBL..." required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Account Number</label>
+          <input type="text" class="form-control" id="bank-account" placeholder="Optional">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Branch / IBAN</label>
+          <input type="text" class="form-control" id="bank-branch" placeholder="Optional">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Color</label>
+          <select class="form-select" id="bank-color">
+            <option value="primary">Blue</option>
+            <option value="success">Green</option>
+            <option value="warning">Orange</option>
+            <option value="danger">Red</option>
+            <option value="info">Cyan</option>
+            <option value="purple">Purple</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer border-0">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="saveBank()">
+          <i class="bi bi-save me-1"></i>Save Bank
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+  <div id="liveToast" class="toast" role="alert">
+    <div class="toast-header">
+      <strong class="me-auto" id="toast-title">Notice</strong>
+      <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+    </div>
+    <div class="toast-body" id="toast-message"></div>
+  </div>
+</div>
+
+<div id="footer-placeholder"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/config.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/bank-deposits.js"></script>
+</body>
+</html>

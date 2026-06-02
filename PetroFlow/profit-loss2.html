@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profit & Loss | Khalid and Sons Petroleum</title>
+
+  <link rel="icon" type="image/jfif" href="assets/logo.jfif">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      --p-success: #1e8449;
+      --p-danger:  #c0392b;
+      --p-primary: #1a5276;
+      --p-muted:   #7f8c8d;
+    }
+    .metric-card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,.06); border-left:4px solid transparent; height:100%; }
+    .metric-card.green  { border-color:var(--p-success); }
+    .metric-card.red    { border-color:var(--p-danger); }
+    .metric-card.blue   { border-color:#2980b9; }
+    .metric-card.purple { border-color:#8e44ad; }
+    .metric-card.gold   { border-color:#d4ac0d; }
+    .metric-card h6     { font-size:11px; color:var(--p-muted); margin:0 0 6px; text-transform:uppercase; letter-spacing:.6px; }
+    .metric-card .val   { font-size:22px; font-weight:800; line-height:1.1; }
+    .metric-card .sub   { font-size:11px; color:var(--p-muted); margin-top:4px; }
+
+    .section-card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:20px; }
+    .sc-title { font-weight:700; font-size:14px; color:var(--p-primary); margin-bottom:14px; padding-bottom:10px; border-bottom:2px solid #eaf0fb; display:flex; align-items:center; gap:8px; }
+
+    .filter-bar { background:#fff; border-radius:10px; padding:14px 20px; margin-bottom:20px; box-shadow:0 2px 6px rgba(0,0,0,.05); }
+
+    .page-header-pl { background:linear-gradient(135deg,#1a5276,#2e86c1); color:#fff; border-radius:12px; padding:20px 24px; margin-bottom:24px; }
+
+    .pl-table th { background:#eaf0fb; color:var(--p-primary); font-size:11px; font-weight:700; text-transform:uppercase; padding:10px 12px; }
+    .pl-table td { padding:10px 12px; font-size:13px; vertical-align:middle; border-bottom:1px solid #f0f2f5; }
+    .pl-table tbody tr:hover td { background:#f8fbff; }
+
+    .profit-pos { color:var(--p-success); font-weight:700; }
+    .profit-neg { color:var(--p-danger); font-weight:700; }
+    .total-row td { font-weight:700; background:#f0f4f8 !important; }
+
+    .pl-loading { display:flex; align-items:center; justify-content:center; gap:12px; padding:48px; color:var(--p-muted); font-size:15px; }
+
+    .exp-prog { height:7px; border-radius:4px; background:linear-gradient(90deg,#e74c3c,#f39c12); margin-top:4px; }
+
+    @media print {
+      .no-print { display:none !important; }
+    }
+  </style>
+</head>
+<body data-page="profit-loss">
+
+  <!-- Navbar — same placeholder as index.html -->
+  <div id="navbar-placeholder"></div>
+
+  <div class="container-fluid main-wrapper pt-4">
+    <div class="container-xl">
+
+      <!-- Page Header -->
+      <div class="page-header-pl d-flex justify-content-between align-items-center no-print mb-4">
+        <div>
+          <h4 class="mb-1 fw-bold"><i class="bi bi-graph-up-arrow me-2"></i>Profit &amp; Loss Report</h4>
+          <small style="opacity:.8;">Tamam income, kharche, aur net munafa ek jagah</small>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-light btn-sm" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i>Print
+          </button>
+          <button class="btn btn-outline-light btn-sm" onclick="exportCSV()">
+            <i class="bi bi-download me-1"></i>Export CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar d-flex flex-wrap gap-3 align-items-end no-print">
+        <div>
+          <label class="form-label small fw-semibold mb-1">Report Type</label>
+          <select id="report-period" class="form-select form-select-sm" style="min-width:150px;">
+            <option value="today">Aaj</option>
+            <option value="this_week">Is Hafte</option>
+            <option value="this_month" selected>Is Mahine</option>
+            <option value="last_month">Pichle Mahine</option>
+            <option value="this_year">Is Saal</option>
+            <option value="last_year">Pichle Saal</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+        <div id="custom-range" style="display:none;" class="d-flex gap-2">
+          <div>
+            <label class="form-label small mb-1">From</label>
+            <input type="date" id="date-from" class="form-control form-control-sm">
+          </div>
+          <div>
+            <label class="form-label small mb-1">To</label>
+            <input type="date" id="date-to" class="form-control form-control-sm">
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="runReport()">
+          <i class="bi bi-search me-1"></i>Report Dekho
+        </button>
+        <div class="ms-auto">
+          <small class="text-muted" id="report-label">Is Mahine ki report</small>
+        </div>
+      </div>
+
+      <!-- Metric Cards -->
+      <div class="row g-3 mb-4" id="metric-cards">
+        <div class="col-12">
+          <div class="pl-loading">
+            <div class="spinner-border spinner-border-sm text-primary"></div>
+            Data load ho raha hai...
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+          <div class="section-card">
+            <div class="sc-title"><i class="bi bi-bar-chart"></i> Monthly Income vs Expense (Last 6 Months)</div>
+            <canvas id="monthlyChart" height="110"></canvas>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="section-card">
+            <div class="sc-title"><i class="bi bi-pie-chart"></i> Expense Breakdown</div>
+            <canvas id="expenseChart" height="200"></canvas>
+            <div id="expense-legend" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly Breakdown -->
+      <div class="section-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="sc-title mb-0"><i class="bi bi-calendar3"></i> Monthly Breakdown</div>
+          <small class="text-muted" id="table-count"></small>
+        </div>
+        <div class="table-responsive">
+          <table class="table pl-table mb-0">
+            <thead>
+              <tr>
+                <th>Mahina</th>
+                <th class="text-end">Sales</th>
+                <th class="text-end">Vasooli</th>
+                <th class="text-end">Cash Advance</th>
+                <th class="text-end">Kharche</th>
+                <th class="text-end">Net Munafa</th>
+                <th class="text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="monthly-tbody">
+              <tr><td colspan="7" class="text-center py-4 text-muted">Loading...</td></tr>
+            </tbody>
+            <tfoot id="monthly-tfoot"></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Daily Breakdown -->
+      <div class="section-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="sc-title mb-0"><i class="bi bi-calendar-day"></i> Daily Breakdown</div>
+          <small class="text-muted" id="daily-count"></small>
+        </div>
+        <div class="table-responsive">
+          <table class="table pl-table mb-0">
+            <thead>
+              <tr>
+                <th>Taareekh</th>
+                <th class="text-end">Sales</th>
+                <th class="text-end">Vasooli</th>
+                <th class="text-end">Advance</th>
+                <th class="text-end">Kharche</th>
+                <th class="text-end">Net</th>
+                <th class="text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="daily-tbody">
+              <tr><td colspan="7" class="text-center py-4 text-muted">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Expense Detail -->
+      <div class="section-card">
+        <div class="sc-title"><i class="bi bi-list-ul"></i> Expense Category Detail</div>
+        <div id="expense-detail-list">
+          <div class="text-center text-muted py-3">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Cash Advances -->
+      <div class="section-card">
+        <div class="sc-title"><i class="bi bi-cash-coin"></i> Pending Cash Advances</div>
+        <div class="table-responsive">
+          <table class="table pl-table table-sm mb-0">
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Taareekh</th>
+                <th class="text-end">Amount</th>
+                <th>Wajah</th>
+                <th class="text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="advance-tbody">
+              <tr><td colspan="5" class="text-center py-3 text-muted">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div id="footer-placeholder"></div>
+
+  <!-- Toast -->
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+    <div id="liveToast" class="toast" role="alert">
+      <div class="toast-header">
+        <strong id="toast-title" class="me-auto">Info</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body" id="toast-message"></div>
+    </div>
+  </div>
+
+  <!-- Scripts — exact same order & paths as index.html -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+  (function () {
+    'use strict';
+
+    // ── Helpers ──────────────────────────────────────────────────
+    function fmt(n) {
+      return Number(n || 0).toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function el(id) { return document.getElementById(id); }
+    function fmtDate(d) {
+      return new Date(d).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    let monthlyChart = null;
+    let expenseChart = null;
+    let _allTxns = [];
+    let _allAdv  = [];
+
+    // ── Date Range ────────────────────────────────────────────────
+    // Helper: "YYYY-MM-DD" se timezone-safe ISO strings banao
+    function dateToStartISO(dateStr) {
+      // e.g. "2026-02-01" → "2026-02-01T00:00:00+05:00" (PKT)
+      return dateStr + 'T00:00:00+05:00';
+    }
+    function dateToEndISO(dateStr) {
+      return dateStr + 'T23:59:59+05:00';
+    }
+    function toDateStr(year, month, day) {
+      return year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+    }
+
+    function getDateRange() {
+      const period = el('report-period').value;
+      const now    = new Date();
+      const Y = now.getFullYear();
+      const M = now.getMonth();   // 0-based
+      const D = now.getDate();
+
+      let fromStr, toStr;
+
+      if (period === 'today') {
+        fromStr = toDateStr(Y, M, D);
+        toStr   = fromStr;
+      } else if (period === 'this_week') {
+        const day = now.getDay(); // 0=Sun
+        const weekStart = new Date(Y, M, D - day);
+        fromStr = toDateStr(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate());
+        toStr   = toDateStr(Y, M, D);
+      } else if (period === 'this_month') {
+        fromStr = toDateStr(Y, M, 1);
+        toStr   = toDateStr(Y, M, D);
+      } else if (period === 'last_month') {
+        const lmEnd = new Date(Y, M, 0); // last day of prev month
+        fromStr = toDateStr(Y, M - 1, 1);
+        toStr   = toDateStr(lmEnd.getFullYear(), lmEnd.getMonth(), lmEnd.getDate());
+      } else if (period === 'this_year') {
+        fromStr = toDateStr(Y, 0, 1);
+        toStr   = toDateStr(Y, M, D);
+      } else if (period === 'last_year') {
+        fromStr = toDateStr(Y - 1, 0, 1);
+        toStr   = toDateStr(Y - 1, 11, 31);
+      } else if (period === 'custom') {
+        fromStr = el('date-from').value || toDateStr(Y, M, 1);
+        toStr   = el('date-to').value   || toDateStr(Y, M, D);
+      } else {
+        fromStr = '2020-01-01';
+        toStr   = toDateStr(Y, M, D);
+      }
+
+      return {
+        from:    new Date(fromStr),
+        to:      new Date(toStr),
+        fromISO: dateToStartISO(fromStr),
+        toISO:   dateToEndISO(toStr)
+      };
+    }
+
+    function getPeriodLabel() {
+      const labels = {
+        today:'Aaj ki report', this_week:'Is hafte ki report',
+        this_month:'Is mahine ki report', last_month:'Pichle mahine ki report',
+        this_year:'Is saal ki report', last_year:'Pichle saal ki report',
+        custom:'Custom range ki report'
+      };
+      return labels[el('report-period').value] || 'Report';
+    }
+
+    // ── DOMContentLoaded ─────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+      const now = new Date();
+      el('date-from').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
+      el('date-to').value   = now.toISOString().split('T')[0];
+
+      el('report-period').addEventListener('change', function () {
+        el('custom-range').style.display = this.value === 'custom' ? 'flex' : 'none';
+        if (this.value !== 'custom') tryLoad();
+      });
+
+      // EXACT same pattern as index.html loadQuickStock()
+      tryLoad();
+    });
+
+    // ── tryLoad — same as index.html, NO infinity loop ───────────
+    function tryLoad() {
+      if (!window.supabaseClient) {
+        setTimeout(tryLoad, 200);
+        return;
+      }
+      loadReport();
+    }
+
+    // ── Main Loader ───────────────────────────────────────────────
+    async function loadReport() {
+      el('report-label').textContent = getPeriodLabel();
+
+      el('metric-cards').innerHTML = `<div class="col-12"><div class="pl-loading">
+        <div class="spinner-border spinner-border-sm text-primary"></div> Data load ho raha hai...
+      </div></div>`;
+
+      try {
+        const sb = window.supabaseClient;
+        if (!sb) throw new Error('Supabase client not initialized');
+
+        // Auth check
+        let userId = null;
+        try {
+          const { data: authData } = await sb.auth.getUser();
+          userId = authData?.user?.id || null;
+          console.log('User ID:', userId);
+        } catch (authErr) {
+          console.warn('Auth not available, no user filter');
+        }
+
+        const { from, to, fromISO, toISO } = getDateRange();
+        console.log('Date range (PKT):', fromISO, 'to', toISO);
+
+        // Main transactions query
+        let txQuery = sb
+          .from('transactions')
+          .select('id, transaction_type, charges, description, created_at, expense_type, customers(name, sr_no)')
+          .gte('created_at', fromISO)
+          .lte('created_at', toISO)
+          .order('created_at', { ascending: true });
+        if (userId) txQuery = txQuery.eq('user_id', userId);
+
+        const { data: txns, error: txErr } = await txQuery;
+        console.log('Filtered transactions:', txns?.length, 'Error:', txErr);
+        if (txErr) throw txErr;
+
+        // Cash advances query
+        let advQuery = sb
+          .from('cash_advances')
+          .select('id, amount, reason, advance_date, status, customers(name, sr_no)')
+          .gte('advance_date', fromISO.split('T')[0])
+          .lte('advance_date', toISO.split('T')[0])
+          .order('advance_date', { ascending: false });
+        if (userId) advQuery = advQuery.eq('user_id', userId);
+
+        const { data: advances, error: advErr } = await advQuery;
+        console.log('Advances:', advances?.length, 'Error:', advErr);
+
+        _allTxns = txns   || [];
+        _allAdv  = advances || [];
+
+        // Show warning if no data at all
+        if (_allTxns.length === 0) {
+          el('metric-cards').innerHTML = `
+            <div class="col-12">
+              <div class="alert alert-warning mb-0">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                <strong>Koi data nahi mila</strong><br>
+                <small>Possible reasons: Is date range mein transactions nahi, ya RLS enabled hai (login required). Date range check karein: ${fromISO} to ${toISO}</small>
+              </div>
+            </div>`;
+          renderCharts(_allTxns);
+          return;
+        }
+
+        renderMetricCards(_allTxns, _allAdv);
+        renderMonthlyTable(_allTxns);
+        renderDailyTable(_allTxns);
+        renderExpenseDetail(_allTxns);
+        renderAdvanceTable(_allAdv);
+        renderCharts(_allTxns);
+
+      } catch (e) {
+        console.error('P&L Error:', e);
+        el('metric-cards').innerHTML = `<div class="col-12 text-center py-4 text-danger">
+          <i class="bi bi-exclamation-triangle me-2"></i>Error: ${e.message}
+        </div>`;
+      }
+    }
+
+    // ── Metric Cards ──────────────────────────────────────────────
+    function renderMetricCards(txns, advances) {
+      let sales = 0, vasooli = 0, expenses = 0, advAmt = 0;
+      let sCnt = 0, vCnt = 0, eCnt = 0, aCnt = 0;
+
+      txns.forEach(t => {
+        const a = parseFloat(t.charges) || 0;
+        if (t.transaction_type === 'Credit')  { sales    += a; sCnt++; }
+        if (t.transaction_type === 'Debit')   { vasooli  += a; vCnt++; }
+        if (t.transaction_type === 'Expense') { expenses += a; eCnt++; }
+        if (t.transaction_type === 'Advance') { advAmt   += a; aCnt++; }
+      });
+
+      const pendingAdv = (advances || [])
+        .filter(a => a.status === 'pending')
+        .reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
+
+      const net = sales - expenses - advAmt;
+      const isProfit = net >= 0;
+
+      el('metric-cards').innerHTML = `
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="metric-card green">
+            <h6><i class="bi bi-graph-up me-1"></i>Total Sales</h6>
+            <div class="val text-success">Rs.${fmt(sales)}</div>
+            <div class="sub">${sCnt} transactions</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="metric-card blue">
+            <h6><i class="bi bi-wallet2 me-1"></i>Vasooli</h6>
+            <div class="val" style="color:#2980b9">Rs.${fmt(vasooli)}</div>
+            <div class="sub">${vCnt} collections</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="metric-card red">
+            <h6><i class="bi bi-bag-x me-1"></i>Total Kharche</h6>
+            <div class="val text-danger">Rs.${fmt(expenses)}</div>
+            <div class="sub">${eCnt} expenses</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="metric-card purple">
+            <h6><i class="bi bi-cash-coin me-1"></i>Cash Advance</h6>
+            <div class="val" style="color:#8e44ad">Rs.${fmt(advAmt)}</div>
+            <div class="sub">${aCnt} advances</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="metric-card gold">
+            <h6><i class="bi bi-hourglass-split me-1"></i>Pending Recovery</h6>
+            <div class="val" style="color:${pendingAdv > 0 ? '#c0392b' : '#1e8449'}">Rs.${fmt(pendingAdv)}</div>
+            <div class="sub">${(advances || []).filter(a => a.status === 'pending').length} pending</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="metric-card ${isProfit ? 'green' : 'red'}">
+            <h6><i class="bi bi-${isProfit ? 'arrow-up-circle-fill' : 'arrow-down-circle-fill'} me-1"></i>${isProfit ? 'Net Munafa' : 'Net Nuqsan'}</h6>
+            <div class="val ${isProfit ? 'text-success' : 'text-danger'}">Rs.${fmt(Math.abs(net))}</div>
+            <div class="sub">Sales - Kharche - Advance</div>
+          </div>
+        </div>`;
+    }
+
+    // ── Monthly Table ─────────────────────────────────────────────
+    function renderMonthlyTable(txns) {
+      const months = {};
+      txns.forEach(t => {
+        const d   = new Date(t.created_at);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const lbl = d.toLocaleDateString('en-PK', { month: 'long', year: 'numeric' });
+        if (!months[key]) months[key] = { lbl, sales: 0, vasooli: 0, expenses: 0, advances: 0 };
+        const a = parseFloat(t.charges) || 0;
+        if (t.transaction_type === 'Credit')  months[key].sales    += a;
+        if (t.transaction_type === 'Debit')   months[key].vasooli  += a;
+        if (t.transaction_type === 'Expense') months[key].expenses += a;
+        if (t.transaction_type === 'Advance') months[key].advances += a;
+      });
+
+      const keys = Object.keys(months).sort((a, b) => b.localeCompare(a));
+      el('table-count').textContent = keys.length + ' months';
+
+      if (!keys.length) {
+        el('monthly-tbody').innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Is period mein koi data nahi</td></tr>';
+        el('monthly-tfoot').innerHTML = '';
+        return;
+      }
+
+      let tS = 0, tV = 0, tA = 0, tE = 0;
+
+      el('monthly-tbody').innerHTML = keys.map(key => {
+        const m   = months[key];
+        const net = m.sales - m.expenses - m.advances;
+        tS += m.sales; tV += m.vasooli; tA += m.advances; tE += m.expenses;
+        const badge = net >= 0
+          ? `<span class="badge" style="background:#d4edda;color:#155724;">&#10003; Munafa</span>`
+          : `<span class="badge" style="background:#f8d7da;color:#721c24;">&#10007; Nuqsan</span>`;
+        return `<tr>
+          <td><strong>${m.lbl}</strong></td>
+          <td class="text-end text-success fw-semibold">Rs.${fmt(m.sales)}</td>
+          <td class="text-end" style="color:#2980b9">Rs.${fmt(m.vasooli)}</td>
+          <td class="text-end" style="color:#8e44ad">Rs.${fmt(m.advances)}</td>
+          <td class="text-end text-danger">Rs.${fmt(m.expenses)}</td>
+          <td class="text-end ${net >= 0 ? 'profit-pos' : 'profit-neg'}">
+            Rs.${fmt(Math.abs(net))} ${net >= 0 ? '&#9650;' : '&#9660;'}
+          </td>
+          <td class="text-center">${badge}</td>
+        </tr>`;
+      }).join('');
+
+      const tNet = tS - tE - tA;
+      el('monthly-tfoot').innerHTML = `<tr class="total-row">
+        <td><strong>Total</strong></td>
+        <td class="text-end text-success">Rs.${fmt(tS)}</td>
+        <td class="text-end" style="color:#2980b9">Rs.${fmt(tV)}</td>
+        <td class="text-end" style="color:#8e44ad">Rs.${fmt(tA)}</td>
+        <td class="text-end text-danger">Rs.${fmt(tE)}</td>
+        <td class="text-end ${tNet >= 0 ? 'profit-pos' : 'profit-neg'}">Rs.${fmt(Math.abs(tNet))}</td>
+        <td></td>
+      </tr>`;
+    }
+
+    // ── Daily Table ───────────────────────────────────────────────
+    function renderDailyTable(txns) {
+      const days = {};
+      txns.forEach(t => {
+        const d   = new Date(t.created_at);
+        const key = d.toISOString().split('T')[0];
+        const lbl = d.toLocaleDateString('en-PK', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+        if (!days[key]) days[key] = { lbl, sales: 0, vasooli: 0, expenses: 0, advances: 0 };
+        const a = parseFloat(t.charges) || 0;
+        if (t.transaction_type === 'Credit')  days[key].sales    += a;
+        if (t.transaction_type === 'Debit')   days[key].vasooli  += a;
+        if (t.transaction_type === 'Expense') days[key].expenses += a;
+        if (t.transaction_type === 'Advance') days[key].advances += a;
+      });
+
+      const keys = Object.keys(days).sort((a, b) => b.localeCompare(a));
+      el('daily-count').textContent = keys.length + ' days';
+
+      if (!keys.length) {
+        el('daily-tbody').innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Is period mein koi data nahi</td></tr>';
+        return;
+      }
+
+      el('daily-tbody').innerHTML = keys.map(key => {
+        const d   = days[key];
+        const net = d.sales - d.expenses - d.advances;
+        const badge = net >= 0
+          ? `<span class="badge" style="background:#d4edda;color:#155724;font-size:10px;">Munafa</span>`
+          : `<span class="badge" style="background:#f8d7da;color:#721c24;font-size:10px;">Nuqsan</span>`;
+        return `<tr>
+          <td>${d.lbl}</td>
+          <td class="text-end text-success">Rs.${fmt(d.sales)}</td>
+          <td class="text-end" style="color:#2980b9">Rs.${fmt(d.vasooli)}</td>
+          <td class="text-end" style="color:#8e44ad">Rs.${fmt(d.advances)}</td>
+          <td class="text-end text-danger">Rs.${fmt(d.expenses)}</td>
+          <td class="text-end ${net >= 0 ? 'profit-pos' : 'profit-neg'}">Rs.${fmt(Math.abs(net))}</td>
+          <td class="text-center">${badge}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ── Expense Detail ────────────────────────────────────────────
+    function renderExpenseDetail(txns) {
+      const cats = {};
+      txns.filter(t => t.transaction_type === 'Expense').forEach(t => {
+        const cat = t.expense_type
+          || (t.description && t.description.includes(':') ? t.description.split(':')[0].trim() : null)
+          || 'Miscellaneous';
+        cats[cat] = (cats[cat] || 0) + (parseFloat(t.charges) || 0);
+      });
+
+      const entries = Object.entries(cats).sort((a, b) => b[1] - a[1]);
+      const total   = entries.reduce((s, [, v]) => s + v, 0);
+
+      if (!entries.length) {
+        el('expense-detail-list').innerHTML = '<div class="text-center text-muted py-3">Is period mein koi expense nahi</div>';
+        return;
+      }
+
+      el('expense-detail-list').innerHTML = entries.map(([cat, amount]) => {
+        const pct = total > 0 ? ((amount / total) * 100).toFixed(1) : 0;
+        return `<div class="py-2" style="border-bottom:1px solid #f0f2f5;">
+          <div class="d-flex justify-content-between mb-1">
+            <span style="font-size:13px;font-weight:600;">${cat}</span>
+            <span style="font-size:13px;color:#c0392b;font-weight:700;">
+              Rs.${fmt(amount)} <small class="text-muted">(${pct}%)</small>
+            </span>
+          </div>
+          <div style="height:6px;background:#f0f2f5;border-radius:3px;">
+            <div class="exp-prog" style="width:${pct}%;"></div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Advance Table ─────────────────────────────────────────────
+    function renderAdvanceTable(advances) {
+      if (!advances.length) {
+        el('advance-tbody').innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">Is period mein koi cash advance nahi</td></tr>';
+        return;
+      }
+      const statusMap = {
+        pending: '<span class="badge" style="background:#fff3cd;color:#856404;">Pending</span>',
+        partial: '<span class="badge" style="background:#cce5ff;color:#004085;">Partial</span>',
+        cleared: '<span class="badge" style="background:#d4edda;color:#155724;">Cleared</span>',
+      };
+      el('advance-tbody').innerHTML = advances.map(a => `<tr>
+        <td><strong>${a.customers?.name || 'N/A'}</strong> <small class="text-muted">(#${a.customers?.sr_no || '-'})</small></td>
+        <td>${fmtDate(a.advance_date)}</td>
+        <td class="text-end fw-bold" style="color:#8e44ad">Rs.${fmt(a.amount)}</td>
+        <td>${a.reason || '-'}</td>
+        <td class="text-center">${statusMap[a.status] || a.status}</td>
+      </tr>`).join('');
+    }
+
+    // ── Charts ────────────────────────────────────────────────────
+    function renderCharts(txns) {
+      const now = new Date();
+      const months6 = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months6.push({
+          key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+          lbl: d.toLocaleDateString('en-PK', { month: 'short', year: '2-digit' }),
+          sales: 0, expenses: 0, net: 0
+        });
+      }
+
+      txns.forEach(t => {
+        const d   = new Date(t.created_at);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const m   = months6.find(m => m.key === key);
+        if (!m) return;
+        const a = parseFloat(t.charges) || 0;
+        if (t.transaction_type === 'Credit') m.sales += a;
+        if (t.transaction_type === 'Expense' || t.transaction_type === 'Advance') m.expenses += a;
+      });
+      months6.forEach(m => { m.net = m.sales - m.expenses; });
+
+      if (monthlyChart) monthlyChart.destroy();
+      monthlyChart = new Chart(el('monthlyChart'), {
+        type: 'bar',
+        data: {
+          labels: months6.map(m => m.lbl),
+          datasets: [
+            { label: 'Sales', data: months6.map(m => m.sales), backgroundColor: 'rgba(30,132,73,.8)', borderRadius: 5 },
+            { label: 'Kharche+Advance', data: months6.map(m => m.expenses), backgroundColor: 'rgba(192,57,43,.8)', borderRadius: 5 },
+            { label: 'Net', data: months6.map(m => m.net), type: 'line', borderColor: '#2980b9', backgroundColor: 'transparent', tension: 0.4, pointRadius: 4, borderWidth: 2 }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom' } },
+          scales: { y: { beginAtZero: true, ticks: { callback: v => 'Rs.' + (v / 1000).toFixed(0) + 'k' } } }
+        }
+      });
+
+      // Expense pie
+      const cats = {};
+      txns.filter(t => t.transaction_type === 'Expense').forEach(t => {
+        const cat = t.expense_type || 'Other';
+        cats[cat] = (cats[cat] || 0) + (parseFloat(t.charges) || 0);
+      });
+      const expE   = Object.entries(cats).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      const colors = ['#e74c3c', '#f39c12', '#3498db', '#2ecc71', '#9b59b6', '#1abc9c'];
+
+      if (expenseChart) expenseChart.destroy();
+
+      if (expE.length) {
+        expenseChart = new Chart(el('expenseChart'), {
+          type: 'doughnut',
+          data: {
+            labels: expE.map(([k]) => k),
+            datasets: [{ data: expE.map(([, v]) => v), backgroundColor: colors, borderWidth: 2 }]
+          },
+          options: { responsive: true, plugins: { legend: { display: false } }, cutout: '60%' }
+        });
+        el('expense-legend').innerHTML = expE.map(([cat, amt], i) =>
+          `<div class="d-flex justify-content-between py-1" style="font-size:11px;">
+            <span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${colors[i]};margin-right:5px;"></span>${cat}</span>
+            <span class="fw-bold">Rs.${fmt(amt)}</span>
+          </div>`).join('');
+      } else {
+        el('expenseChart').parentElement.innerHTML = '<div class="text-center text-muted py-4 small">Koi expense data nahi</div>';
+      }
+    }
+
+    // ── Export CSV ────────────────────────────────────────────────
+    window.exportCSV = function () {
+      if (!_allTxns.length) { alert('Koi data nahi export karne ke liye'); return; }
+      const rows = [['Date', 'Customer', 'Type', 'Amount', 'Expense Type', 'Description']];
+      _allTxns.forEach(t => rows.push([
+        fmtDate(t.created_at),
+        t.customers?.name || 'N/A',
+        t.transaction_type,
+        t.charges || 0,
+        t.expense_type || '',
+        (t.description || '').replace(/,/g, ' ')
+      ]));
+      const csv  = rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url;
+      a.download = `profit-loss-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+    };
+
+    // Expose for HTML buttons
+    window.runReport = loadReport;
+
+  })();
+  </script>
+</body>
+</html>
