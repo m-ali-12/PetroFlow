@@ -1,5 +1,5 @@
 // Employee Salary Management JavaScript
-import { supabase } from './supabase-client.js';
+const supabase = window.supabaseClient;
 
 // Global state
 let currentUser = null;
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function checkAuth() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-        window.location.href = '../login.html';
+        window.location.href = 'login.html';
         return;
     }
     currentUser = session.user;
@@ -337,6 +337,47 @@ window.paySalary = async function(event) {
     data.paid_by = currentUser.id;
 
     try {
+        // If payment method is bank transfer, deduct from bank balance
+        if (data.payment_method === 'bank_transfer' && data.bank_id) {
+            const { data: bank, error: bankFetchError } = await supabase
+                .from('banks')
+                .select('balance, name')
+                .eq('id', data.bank_id)
+                .single();
+
+            if (bankFetchError) throw bankFetchError;
+
+            const netSalary = parseFloat(data.net_salary || 0);
+            if (parseFloat(bank.balance || 0) < netSalary) {
+                alert(`Error: Insufficient balance in ${bank.name}. Current balance is Rs. ${parseFloat(bank.balance || 0).toLocaleString()}`);
+                return;
+            }
+
+            const newBalance = parseFloat(bank.balance || 0) - netSalary;
+
+            // Update bank balance
+            const { error: updateError } = await supabase
+                .from('banks')
+                .update({ balance: newBalance })
+                .eq('id', data.bank_id);
+
+            if (updateError) throw updateError;
+
+            // Record transaction in bank ledger
+            const employee = employees.find(e => e.id == data.employee_id);
+            const employeeName = employee ? employee.full_name : '';
+            await supabase.from('bank_transactions').insert([{
+                bank_id: data.bank_id,
+                transaction_date: data.payment_date,
+                transaction_type: 'salary_payment',
+                amount: netSalary,
+                description: `Salary Payment to ${employeeName} for ${data.salary_month}`,
+                balance_before: bank.balance,
+                balance_after: newBalance,
+                created_by: currentUser.id
+            }]);
+        }
+
         const { error } = await supabase
             .from('employee_salary_payments')
             .insert([data]);
@@ -347,6 +388,7 @@ window.paySalary = async function(event) {
         closeModal('pay-salary-modal');
         event.target.reset();
         await loadSalaryPayments();
+        await updateStats();
     } catch (error) {
         console.error('Error paying salary:', error);
         alert('Error: ' + error.message);

@@ -1,5 +1,5 @@
 // Bank Management JavaScript
-import { supabase } from './supabase-client.js';
+const supabase = window.supabaseClient;
 
 // Global state
 let currentUser = null;
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function checkAuth() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-        window.location.href = '../login.html';
+        window.location.href = 'login.html';
         return;
     }
     currentUser = session.user;

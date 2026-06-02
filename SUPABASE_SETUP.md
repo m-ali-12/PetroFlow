@@ -285,6 +285,41 @@ localStorage.setItem('current_pump_id', 'pump_1');
 ✅ Scalable to unlimited users
 ✅ Works on Vercel
 
+### ⚠️ CRITICAL: Database Schema Updates and Data Preservation Guidelines
+
+When updating your Supabase database schema or migrating tables, follow these guidelines to ensure that **no existing data is deleted or hidden**:
+
+#### 1. Safe Schema Updates (Preserve Existing Data)
+* **NEVER** use `DROP TABLE` when applying updates to an active database. It will permanently delete all records.
+* **ALWAYS** use `ALTER TABLE` to add new columns, modify datatypes, or add constraints:
+  ```sql
+  -- Example: Adding a new column with a default value safely
+  ALTER TABLE transactions ADD COLUMN IF NOT EXISTS payment_mode VARCHAR(100) DEFAULT 'Cash';
+  ```
+
+#### 2. Row Level Security (RLS) & Legacy Data Visibility
+* By default, when you enable RLS on a table:
+  ```sql
+  ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
+  ```
+  all existing rows that have `user_id` as `NULL` (legacy data created before auth was enabled) will become **hidden/invisible** to logged-in users. This makes it look like data was deleted, even though it still exists in the database.
+* **To fix this, update legacy records** to map to your active user ID:
+  ```sql
+  -- Run this in Supabase SQL Editor to map all legacy records to a specific user
+  UPDATE customers SET user_id = 'YOUR_USER_UUID' WHERE user_id IS NULL;
+  UPDATE transactions SET user_id = 'YOUR_USER_UUID' WHERE user_id IS NULL;
+  UPDATE tanks SET user_id = 'YOUR_USER_UUID' WHERE user_id IS NULL;
+  ```
+* **Alternatively**, you can use RLS policies that allow authenticated users to view both their own records and legacy records where `user_id` is null:
+  ```sql
+  CREATE POLICY "Users can view own and legacy customers"
+    ON customers FOR SELECT
+    USING (auth.uid() = user_id OR user_id IS NULL);
+  ```
+
+#### 3. Database Backups before Updates
+* **ALWAYS** create a fresh SQL backup before executing any DDL or migration scripts using the **Database Backup** page (`/database-backup.html`). This allows you to restore your database in case of any accidental mistakes.
+
 ### 📞 Support
 
 For any issues:
