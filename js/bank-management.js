@@ -526,3 +526,197 @@ window.updateTransferDisplay = function() {
 window.loadDeposits = loadDeposits;
 window.loadTransfers = loadTransfers;
 window.loadBankTransactions = loadBankTransactions;
+
+// Edit bank account
+window.editBank = async function(bankId) {
+    const bank = banks.find(b => b.id === bankId);
+    if (!bank) { alert('Bank not found'); return; }
+
+    const newName = prompt('Bank Name:', bank.name);
+    if (newName === null) return;
+    const newAccount = prompt('Account Number:', bank.account_number || '');
+    if (newAccount === null) return;
+    const newBranch = prompt('Branch:', bank.branch || '');
+    if (newBranch === null) return;
+
+    try {
+        const { error } = await supabase
+            .from('banks')
+            .update({ name: newName, account_number: newAccount, branch: newBranch })
+            .eq('id', bankId);
+
+        if (error) throw error;
+        alert('Bank updated successfully!');
+        await loadBanks();
+        populateBankDropdowns();
+    } catch (error) {
+        console.error('Error updating bank:', error);
+        alert('Error: ' + error.message);
+    }
+};
+
+// View bank statement
+window.viewBankStatement = async function(bankId) {
+    const bank = banks.find(b => b.id === bankId);
+    if (!bank) { alert('Bank not found'); return; }
+
+    try {
+        const { data, error } = await supabase
+            .from('bank_transactions')
+            .select('*')
+            .eq('bank_id', bankId)
+            .order('transaction_date', { ascending: false })
+            .limit(50);
+
+        if (error) throw error;
+
+        let statement = `=== Bank Statement: ${bank.name} ===\n`;
+        statement += `Account: ${bank.account_number || 'N/A'}\n`;
+        statement += `Current Balance: Rs. ${parseFloat(bank.balance || 0).toLocaleString()}\n`;
+        statement += `${'='.repeat(50)}\n\n`;
+
+        if (data && data.length > 0) {
+            data.forEach(txn => {
+                const date = new Date(txn.transaction_date).toLocaleDateString();
+                const type = txn.transaction_type.toUpperCase();
+                const amt = parseFloat(txn.amount).toLocaleString();
+                statement += `${date} | ${type} | Rs. ${amt} | ${txn.description || '-'}\n`;
+            });
+        } else {
+            statement += 'No transactions found.\n';
+        }
+
+        alert(statement);
+    } catch (error) {
+        console.error('Error loading statement:', error);
+        alert('Error: ' + error.message);
+    }
+};
+
+// Adjust bank balance manually
+window.adjustBalance = async function(bankId) {
+    const bank = banks.find(b => b.id === bankId);
+    if (!bank) { alert('Bank not found'); return; }
+
+    const currentBalance = parseFloat(bank.balance || 0);
+    const newBalanceStr = prompt(
+        `Current balance: Rs. ${currentBalance.toLocaleString()}\nEnter new correct balance:`,
+        currentBalance
+    );
+    if (newBalanceStr === null) return;
+
+    const newBalance = parseFloat(newBalanceStr);
+    if (isNaN(newBalance)) { alert('Invalid amount'); return; }
+
+    const reason = prompt('Reason for adjustment:', 'Manual balance correction');
+    if (reason === null) return;
+
+    try {
+        const { error: updateError } = await supabase
+            .from('banks')
+            .update({ balance: newBalance })
+            .eq('id', bankId);
+
+        if (updateError) throw updateError;
+
+        // Record the adjustment as a transaction
+        const adjustmentAmount = newBalance - currentBalance;
+        await supabase.from('bank_transactions').insert([{
+            bank_id: bankId,
+            transaction_date: new Date().toISOString().split('T')[0],
+            transaction_type: adjustmentAmount >= 0 ? 'adjustment_credit' : 'adjustment_debit',
+            amount: Math.abs(adjustmentAmount),
+            description: `Balance adjustment: ${reason}`,
+            balance_before: currentBalance,
+            balance_after: newBalance,
+            created_by: currentUser.id
+        }]);
+
+        alert('Balance adjusted successfully!');
+        await loadBanks();
+        await loadBankTransactions();
+    } catch (error) {
+        console.error('Error adjusting balance:', error);
+        alert('Error: ' + error.message);
+    }
+};
+
+// Delete deposit
+window.deleteDeposit = async function(depositId) {
+    if (!confirm('Are you sure you want to delete this deposit? The bank balance will be adjusted accordingly.')) return;
+
+    try {
+        const deposit = deposits.find(d => d.id === depositId);
+        if (!deposit) throw new Error('Deposit not found');
+
+        // Reverse the bank balance
+        const bank = banks.find(b => b.id === deposit.bank_id);
+        if (bank) {
+            const newBalance = parseFloat(bank.balance || 0) - parseFloat(deposit.amount);
+            await supabase
+                .from('banks')
+                .update({ balance: newBalance })
+                .eq('id', deposit.bank_id);
+        }
+
+        const { error } = await supabase
+            .from('cash_deposits')
+            .delete()
+            .eq('id', depositId);
+
+        if (error) throw error;
+
+        alert('Deposit deleted successfully!');
+        await loadBanks();
+        await loadDeposits();
+        await loadBankTransactions();
+    } catch (error) {
+        console.error('Error deleting deposit:', error);
+        alert('Error: ' + error.message);
+    }
+};
+
+// Delete transfer
+window.deleteTransfer = async function(transferId) {
+    if (!confirm('Are you sure you want to delete this transfer? Bank balances will be reversed.')) return;
+
+    try {
+        const transfer = transfers.find(t => t.id === transferId);
+        if (!transfer) throw new Error('Transfer not found');
+
+        // Reverse from-bank balance (add back)
+        const fromBank = banks.find(b => b.id === transfer.from_bank_id);
+        if (fromBank) {
+            const newFromBalance = parseFloat(fromBank.balance || 0) + parseFloat(transfer.amount);
+            await supabase
+                .from('banks')
+                .update({ balance: newFromBalance })
+                .eq('id', transfer.from_bank_id);
+        }
+
+        // Reverse to-bank balance (subtract)
+        const toBank = banks.find(b => b.id === transfer.to_bank_id);
+        if (toBank) {
+            const newToBalance = parseFloat(toBank.balance || 0) - parseFloat(transfer.amount);
+            await supabase
+                .from('banks')
+                .update({ balance: newToBalance })
+                .eq('id', transfer.to_bank_id);
+        }
+
+        const { error } = await supabase
+            .from('bank_transfers')
+            .delete()
+            .eq('id', transferId);
+
+        if (error) throw error;
+
+        alert('Transfer deleted successfully!');
+        await loadBanks();
+        await loadTransfers();
+        await loadBankTransactions();
+    } catch (error) {
+        console.error('Error deleting transfer:', error);
+        alert('Error: ' + error.message);
+    }
+};
