@@ -1512,12 +1512,15 @@
       <div class="spinner-border spinner-border-sm me-2"></div>Loading...</td></tr>`;
     try {
       const {data,error}=await supabase.from('rent_payments')
-        .select('*, shop:shops(id,shop_name,tenant_name,phone,monthly_rent)')
+        .select('*')
         .eq('rent_month',state.selectedMonth).eq('rent_year',state.selectedYear)
         .order('due_date');
       if(error) throw error;
       const now=new Date();
       for(const p of (data||[])){
+        if(p.shop_id) {
+          p.shop = state.shops.find(s => s.id === p.shop_id) || {};
+        }
         if(p.status==='Pending'&&new Date(p.due_date)<now){
           await supabase.from('rent_payments').update({status:'Overdue'}).eq('id',p.id);
           p.status='Overdue';
@@ -1851,9 +1854,14 @@ ${unpaidRows?`
     safeShowModal('historyModal');
     try {
       const {data,error}=await supabase.from('rent_payments')
-        .select('*, shop:shops(shop_name,tenant_name)')
+        .select('*')
         .eq('rent_year',state.selectedYear).order('rent_month').order('shop_id');
       if(error) throw error;
+      if(data) {
+        data.forEach(p => {
+          if(p.shop_id) p.shop = state.shops.find(s => s.id === p.shop_id) || {};
+        });
+      }
       if(!data?.length){if(hb) hb.innerHTML=`<div class="alert alert-info">No history for ${state.selectedYear}</div>`;return;}
       const byMonth={};
       data.forEach(p=>{if(!byMonth[p.rent_month]) byMonth[p.rent_month]=[];byMonth[p.rent_month].push(p);});

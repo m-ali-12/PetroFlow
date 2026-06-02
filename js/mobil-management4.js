@@ -1044,9 +1044,11 @@
     try {
       var s = await getSettings();
       if (!s || !Array.isArray(s.mobil_history) || !s.mobil_history.length) return null;
-      return s.mobil_history.slice().sort(function(a,b){
-        return new Date(b.date) - new Date(a.date);
-      })[0];
+      var today = new Date();
+      var list = s.mobil_history.slice().map(function(h){ h._start = h.start_date || h.date; h._end = h.end_date || ''; return h; })
+        .filter(function(h){ return h._start; })
+        .sort(function(a,b){ return new Date(b._start) - new Date(a._start); });
+      return list.find(function(h){ return new Date(h._start) <= today && (!h._end || today <= new Date(h._end + 'T23:59:59')); }) || list[0];
     } catch(e) { return null; }
   }
 

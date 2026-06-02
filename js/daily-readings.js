@@ -97,11 +97,14 @@
 
       // price_history JSONB array se latest price nikalo (settings-page.js ka exact logic)
       if (data.price_history && data.price_history.length > 0) {
-        const sorted = [...data.price_history].sort((a, b) => new Date(b.date) - new Date(a.date));
-        const latest = sorted[0];
+        const today = new Date();
+        const sorted = [...data.price_history].map(h => ({...h, start: h.start_date || h.date, end: h.end_date || ''}))
+          .filter(h => h.start)
+          .sort((a, b) => new Date(b.start) - new Date(a.start));
+        const latest = sorted.find(h => new Date(h.start) <= today && (!h.end || today <= new Date(h.end + 'T23:59:59'))) || sorted[0];
         petrolPrice = parseFloat(latest.petrol) || 0;
         dieselPrice = parseFloat(latest.diesel) || 0;
-        console.log('Prices from price_history:', latest.date, '→ Petrol:', petrolPrice, 'Diesel:', dieselPrice);
+        console.log('Prices from price_history:', latest.start, latest.end ? ('to '+latest.end) : 'current', '→ Petrol:', petrolPrice, 'Diesel:', dieselPrice);
       }
       // Fallback: direct columns (purani entries ke liye)
       else if (data.petrol_price || data.diesel_price) {
@@ -148,6 +151,10 @@
       }
       case 'this_year':
         from = ds(Y, 0, 1); to = ds(Y, M, D); break;
+      case 'since_april':
+        from = `${Y}-04-01`; to = ds(Y, M, D); break;
+      case 'all_time':
+        from = '2020-01-01'; to = ds(Y, M, D); break;
       case 'custom':
         from = el('date-from')?.value || ds(Y, M, 1);
         to   = el('date-to')?.value   || ds(Y, M, D); break;
@@ -161,8 +168,10 @@
     const map = {
       today: 'Aaj ki readings',
       this_week: 'Is hafte ki readings',
-      this_month: 'Is mahine ki readings',
-      last_month: 'Pichle mahine ki readings',
+      this_month:   'Is mahine ki readings',
+      last_month:   'Pichle mahine ki readings',
+      since_april:  'April 2026 se ab tak ki readings',
+      all_time:     'Tamam entries',
       this_year: 'Is saal ki readings',
       custom: 'Custom range'
     };
@@ -190,32 +199,27 @@
         </div>
         <div class="mc-body">
           <div class="row g-3">
-            <div class="col-md-3">
-              <label class="form-label small fw-semibold">Opening Reading</label>
-              <input type="number" id="${prefix}-op-${num}" class="form-control"
-                step="0.001" placeholder="0.000" oninput="DR.calcMachine('${fuel}',${num})">
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Liters Bika (24 Hours) <span class="text-danger">*</span></label>
+              <input type="number" id="${prefix}-li-${num}" class="form-control"
+                step="0.001" placeholder="Total liters sold" oninput="DR.calcMachine('${fuel}',${num})" 
+                style="border:2px solid ${fuel==='Petrol'?'#198754':'#f1c40f'};">
             </div>
-            <div class="col-md-3">
-              <label class="form-label small fw-semibold">Closing Reading</label>
-              <input type="number" id="${prefix}-cl-${num}" class="form-control"
-                step="0.001" placeholder="0.000" oninput="DR.calcMachine('${fuel}',${num})">
-            </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
               <label class="form-label small fw-semibold">
                 Udhaar Sale (Rs)
-                <span class="text-muted fw-normal small">credit customers ka</span>
               </label>
               <input type="number" id="${prefix}-ud-${num}" class="form-control"
                 step="0.01" placeholder="0.00" oninput="DR.calcMachine('${fuel}',${num})">
             </div>
-            <div class="col-md-3">
-              <label class="form-label small fw-semibold">Testing / Pump Test (L)</label>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Testing (L)</label>
               <input type="number" id="${prefix}-te-${num}" class="form-control"
                 step="0.001" placeholder="0.000" oninput="DR.calcMachine('${fuel}',${num})">
             </div>
           </div>
           <div class="live-calc" id="calc-${cls}-${num}">
-            <span class="text-muted">Reading enter karein — result yahan dikhega</span>
+            <span class="text-muted">Total liters enter karein — result yahan dikhega</span>
           </div>
         </div>
       </div>`;
@@ -252,13 +256,12 @@
     const p   = fuel === 'Petrol' ? 'p' : 'd';
     const cls = fuel.toLowerCase();
 
-    const op = parseFloat(el(`${p}-op-${num}`)?.value) || 0;
-    const cl = parseFloat(el(`${p}-cl-${num}`)?.value) || 0;
+    const litersInput = parseFloat(el(`${p}-li-${num}`)?.value) || 0;
     const ud = parseFloat(el(`${p}-ud-${num}`)?.value) || 0;
     const te = parseFloat(el(`${p}-te-${num}`)?.value) || 0;
     const pr = parseFloat(el(fuel === 'Petrol' ? 'add-petrol-price' : 'add-diesel-price')?.value) || 0;
 
-    const liters = Math.max(0, cl - op - te);
+    const liters = Math.max(0, litersInput - te);
     const gross  = liters * pr;
     const cash   = gross - ud;
 
@@ -268,7 +271,7 @@
     badge.innerHTML = `
       <div class="row text-center g-0">
         <div class="col-3">
-          <div class="small text-muted">Liters Bika</div>
+          <div class="small text-muted">Liters (Net)</div>
           <div class="fw-bold text-primary">${fmtL(liters)} L</div>
         </div>
         <div class="col-3">
@@ -297,23 +300,21 @@
     let totL = 0, totG = 0, totC = 0;
 
     for (let i = 1; i <= _petrolCount; i++) {
-      if (!el(`p-op-${i}`)) continue;
-      const op = parseFloat(el(`p-op-${i}`)?.value) || 0;
-      const cl = parseFloat(el(`p-cl-${i}`)?.value) || 0;
+      if (!el(`p-li-${i}`)) continue;
+      const liInput = parseFloat(el(`p-li-${i}`)?.value) || 0;
       const ud = parseFloat(el(`p-ud-${i}`)?.value) || 0;
       const te = parseFloat(el(`p-te-${i}`)?.value) || 0;
       const pr = parseFloat(el('add-petrol-price')?.value) || 0;
-      const li = Math.max(0, cl - op - te);
+      const li = Math.max(0, liInput - te);
       totL += li; totG += li * pr; totC += (li * pr) - ud;
     }
     for (let i = 1; i <= _dieselCount; i++) {
-      if (!el(`d-op-${i}`)) continue;
-      const op = parseFloat(el(`d-op-${i}`)?.value) || 0;
-      const cl = parseFloat(el(`d-cl-${i}`)?.value) || 0;
+      if (!el(`d-li-${i}`)) continue;
+      const liInput = parseFloat(el(`d-li-${i}`)?.value) || 0;
       const ud = parseFloat(el(`d-ud-${i}`)?.value) || 0;
       const te = parseFloat(el(`d-te-${i}`)?.value) || 0;
       const pr = parseFloat(el('add-diesel-price')?.value) || 0;
-      const li = Math.max(0, cl - op - te);
+      const li = Math.max(0, liInput - te);
       totL += li; totG += li * pr; totC += (li * pr) - ud;
     }
 
@@ -359,18 +360,14 @@
 
     /* ── Petrol machines ── */
     for (let i = 1; i <= _petrolCount; i++) {
-      const opEl = el(`p-op-${i}`);
-      if (!opEl || opEl.value === '') continue;
-      const op = parseFloat(opEl.value);
-      const cl = parseFloat(el(`p-cl-${i}`)?.value);
-      if (isNaN(op) || isNaN(cl)) continue;
-      if (cl < op) {
-        showToast('warning', 'Reading Error', `Petrol Machine ${i}: Closing reading opening se kam nahi ho sakti`);
-        return;
-      }
+      const liEl = el(`p-li-${i}`);
+      if (!liEl || liEl.value === '') continue;
+      const litersRaw = parseFloat(liEl.value);
+      if (isNaN(litersRaw) || litersRaw <= 0) continue;
+
       const te    = parseFloat(el(`p-te-${i}`)?.value) || 0;
       const ud    = parseFloat(el(`p-ud-${i}`)?.value) || 0;
-      const liters = parseFloat(Math.max(0, cl - op - te).toFixed(3));
+      const liters = parseFloat(Math.max(0, litersRaw - te).toFixed(3));
       const gross  = parseFloat((liters * petrolRate).toFixed(2));
       const cash   = parseFloat((gross - ud).toFixed(2));
 
@@ -378,15 +375,13 @@
         transaction_type: 'CashSale',
         fuel_type:        'Petrol',
         entry_method:     'machine_reading',
-        // Both charges AND amount — transactions table requires both NOT NULL
         charges:          cash,
         amount:           cash,
         liters:           liters,
         unit_price:       petrolRate,
         description:      JSON.stringify({
           machine: i,
-          opening: op,
-          closing: cl,
+          liters_input: litersRaw,
           liters,
           rate:    petrolRate,
           gross,
@@ -402,18 +397,14 @@
 
     /* ── Diesel machines ── */
     for (let i = 1; i <= _dieselCount; i++) {
-      const opEl = el(`d-op-${i}`);
-      if (!opEl || opEl.value === '') continue;
-      const op = parseFloat(opEl.value);
-      const cl = parseFloat(el(`d-cl-${i}`)?.value);
-      if (isNaN(op) || isNaN(cl)) continue;
-      if (cl < op) {
-        showToast('warning', 'Reading Error', `Diesel Machine ${i}: Closing reading opening se kam nahi ho sakti`);
-        return;
-      }
+      const liEl = el(`d-li-${i}`);
+      if (!liEl || liEl.value === '') continue;
+      const litersRaw = parseFloat(liEl.value);
+      if (isNaN(litersRaw) || litersRaw <= 0) continue;
+
       const te    = parseFloat(el(`d-te-${i}`)?.value) || 0;
       const ud    = parseFloat(el(`d-ud-${i}`)?.value) || 0;
-      const liters = parseFloat(Math.max(0, cl - op - te).toFixed(3));
+      const liters = parseFloat(Math.max(0, litersRaw - te).toFixed(3));
       const gross  = parseFloat((liters * dieselRate).toFixed(2));
       const cash   = parseFloat((gross - ud).toFixed(2));
 
@@ -427,8 +418,7 @@
         unit_price:       dieselRate,
         description:      JSON.stringify({
           machine: i,
-          opening: op,
-          closing: cl,
+          liters_input: litersRaw,
           liters,
           rate:    dieselRate,
           gross,
@@ -563,21 +553,24 @@
         ? '<span class="badge" style="background:#d4edda;color:#155724;padding:4px 10px;">⛽ Petrol</span>'
         : '<span class="badge" style="background:#fff3cd;color:#856404;padding:4px 10px;">🛢 Diesel</span>';
 
+      const hasOpenClose = (m.opening || m.closing);
+      const openCloseInfo = hasOpenClose 
+        ? `<div class="small text-muted" style="font-size:10px;">O: ${fmtL(m.opening)} | C: ${fmtL(m.closing)}</div>`
+        : '';
+
       return `<tr>
         <td><strong>${fmtD(dateStr)}</strong></td>
         <td>${fBadge}</td>
         <td class="text-center">M#${m.machine || 1}</td>
-        <td class="text-end">${fmtL(m.opening || 0)}</td>
-        <td class="text-end">${fmtL(m.closing || 0)}</td>
-        <td class="text-end text-primary fw-semibold">${fmtL(liters)} L</td>
+        <td class="text-end">
+          <div class="text-primary fw-bold">${fmtL(liters)} L</div>
+          ${openCloseInfo}
+        </td>
         <td class="text-end">Rs.${fmt(rate)}</td>
         <td class="text-end">Rs.${fmt(gross)}</td>
         <td class="text-end text-danger">Rs.${fmt(udhaar)}</td>
         <td class="text-end fw-bold ${cash >= 0 ? 'profit-pos' : 'profit-neg'}">Rs.${fmt(cash)}</td>
         <td class="text-center no-print">
-          <button class="btn btn-sm btn-outline-warning me-1" onclick="DR.openEdit(${r.id})" title="Edit">
-            <i class="bi bi-pencil"></i>
-          </button>
           <button class="btn btn-sm btn-outline-danger" onclick="DR.del(${r.id})" title="Delete">
             <i class="bi bi-trash"></i>
           </button>
@@ -699,8 +692,7 @@
     el('edit-txn-id').value  = id;
     el('edit-date').value    = r.created_at ? r.created_at.split('T')[0] : '';
     el('edit-rate').value    = parseFloat(r.unit_price) || m.rate    || 0;
-    el('edit-opening').value = m.opening || 0;
-    el('edit-closing').value = m.closing || 0;
+    el('edit-liters').value  = m.liters_input || m.liters || 0;
     el('edit-udhaar').value  = m.udhaar  || 0;
     el('edit-testing').value = m.testing || 0;
 
@@ -709,13 +701,12 @@
   };
 
   DR.calcEditBadge = function() {
-    const op = parseFloat(el('edit-opening')?.value) || 0;
-    const cl = parseFloat(el('edit-closing')?.value) || 0;
+    const liInput = parseFloat(el('edit-liters')?.value) || 0;
     const ud = parseFloat(el('edit-udhaar')?.value)  || 0;
     const te = parseFloat(el('edit-testing')?.value) || 0;
     const pr = parseFloat(el('edit-rate')?.value)    || 0;
 
-    const li = Math.max(0, cl - op - te);
+    const li = Math.max(0, liInput - te);
     const gr = li * pr;
     const ca = gr - ud;
 
@@ -732,16 +723,13 @@
     const id = parseInt(el('edit-txn-id')?.value);
     if (!sb || !id) return;
 
-    const op = parseFloat(el('edit-opening')?.value) || 0;
-    const cl = parseFloat(el('edit-closing')?.value) || 0;
+    const liInput = parseFloat(el('edit-liters')?.value) || 0;
     const ud = parseFloat(el('edit-udhaar')?.value)  || 0;
     const te = parseFloat(el('edit-testing')?.value) || 0;
     const pr = parseFloat(el('edit-rate')?.value)    || 0;
     const date = el('edit-date')?.value;
 
-    if (cl < op) { showToast('warning', 'Error', 'Closing reading opening se kam nahi ho sakti'); return; }
-
-    const li   = parseFloat(Math.max(0, cl - op - te).toFixed(3));
+    const li   = parseFloat(Math.max(0, liInput - te).toFixed(3));
     const gr   = parseFloat((li * pr).toFixed(2));
     const cash = parseFloat((gr - ud).toFixed(2));
 
@@ -750,7 +738,7 @@
 
     const newMeta = {
       ...origMeta,
-      opening: op, closing: cl,
+      liters_input: liInput,
       liters: li, rate: pr,
       gross: gr, udhaar: ud, testing: te
     };

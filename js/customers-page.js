@@ -613,6 +613,39 @@ function fmt(n) {
 }
 function getSupabase() { return window.supabaseClient; }
 
+function findMissingColumn(message){
+  const m = String(message || '').match(/'([^']+)' column|column ['"]?([a-zA-Z0-9_]+)['"]?/i);
+  return m ? (m[1] || m[2]) : null;
+}
+
+async function safeCustomerInsert(row){
+  let payload = { ...row };
+  const optional = ['is_company','company_id','user_id','phone','category'];
+  for(let i=0;i<8;i++){
+    const { error } = await getSupabase().from('customers').insert([payload]);
+    if(!error) return;
+    const col = findMissingColumn(error.message || error.details || '');
+    if(col && Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; continue; }
+    const rm = optional.find(k => Object.prototype.hasOwnProperty.call(payload,k) && /schema cache|column|could not find/i.test(error.message || error.details || ''));
+    if(rm){ delete payload[rm]; continue; }
+    throw error;
+  }
+}
+
+async function safeCustomerUpdate(id,row){
+  let payload = { ...row };
+  const optional = ['is_company','company_id','user_id','phone','category'];
+  for(let i=0;i<8;i++){
+    const { error } = await getSupabase().from('customers').update(payload).eq('id', id);
+    if(!error) return;
+    const col = findMissingColumn(error.message || error.details || '');
+    if(col && Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; continue; }
+    const rm = optional.find(k => Object.prototype.hasOwnProperty.call(payload,k) && /schema cache|column|could not find/i.test(error.message || error.details || ''));
+    if(rm){ delete payload[rm]; continue; }
+    throw error;
+  }
+}
+
 // ════════════════════════════════════════════
 // AUTH
 // ════════════════════════════════════════════
@@ -700,9 +733,9 @@ function display(list) {
                    c.balance < 0 ? 'text-success fw-bold' : 'text-muted';
     const balTxt = c.balance > 0 ? `Rs. ${fmt(c.balance)} (Udhaar)` :
                    c.balance < 0 ? `Rs. ${fmt(Math.abs(c.balance))} (Advance)` : 'Rs. 0.00';
-    const catCls = c.category === 'Member'  ? 'bg-primary' :
-                   c.category === 'Company' ? 'bg-info text-dark' :
-                   c.category === 'Owner'   ? 'bg-success' : 'bg-secondary';
+    const catCls = c.category === 'Member'  ? 'text-bg-primary' :
+                   c.category === 'Company' ? 'text-bg-warning' :
+                   c.category === 'Owner'   ? 'text-bg-success' : 'text-bg-secondary';
     return `<tr>
       <td>${c.sr_no}</td>
       <td>${c.name}</td>
@@ -790,8 +823,9 @@ function renderPagination(total, totalPages) {
 // SUMMARY CARDS
 // ════════════════════════════════════════════
 function updateSummary() {
+  const list = getCurrentFilteredList();
   let udhaar = 0, advance = 0, companies = 0;
-  allCustomers.forEach(c => {
+  list.forEach(c => {
     if (c.balance > 0) udhaar += c.balance;
     else if (c.balance < 0) advance += Math.abs(c.balance);
     if (c.category === 'Company') companies++;
@@ -802,16 +836,82 @@ function updateSummary() {
   set('total-advance',   'Rs. ' + fmt(advance));
   set('total-companies', companies);
 }
+function ensureSummaryModal(){
+  let modal=$('customerSummaryModal');
+  if(modal) return modal;
+  const wrap=document.createElement('div');
+  wrap.innerHTML=`<div class="modal fade" id="customerSummaryModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="customerSummaryTitle">Customer Details</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="customerSummaryBody"></div>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(wrap.firstElementChild);
+  return $('customerSummaryModal');
+}
+
+function showCustomerSummary(kind){
+  let list=getCurrentFilteredList();
+  const titleMap={all:'All Customers',udhaar:'Udhaar Customers',advance:'Advance Customers',companies:'Company Customers'};
+  if(kind==='udhaar') list=list.filter(c=>(parseFloat(c.balance)||0)>0);
+  else if(kind==='advance') list=list.filter(c=>(parseFloat(c.balance)||0)<0);
+  else if(kind==='companies') list=list.filter(c=>c.category==='Company');
+  const total=list.reduce((s,c)=>s+Math.abs(parseFloat(c.balance)||0),0);
+  const modal=ensureSummaryModal();
+  $('customerSummaryTitle').textContent=titleMap[kind]||'Customer Details';
+  const body=$('customerSummaryBody');
+  if(!list.length){
+    body.innerHTML='<div class="text-center text-muted py-5"><i class="bi bi-inbox fs-1 d-block mb-2"></i>Koi record nahi mila</div>';
+  } else {
+    body.innerHTML=`<div class="alert alert-light border d-flex justify-content-between flex-wrap gap-2">
+      <strong>Total Customers: ${list.length}</strong><strong>Total Balance: Rs. ${fmt(total)}</strong>
+    </div>
+    <div class="table-responsive"><table class="table table-sm table-hover align-middle">
+      <thead class="table-dark"><tr><th>SR#</th><th>Name</th><th>Phone</th><th>Category</th><th>Balance</th><th>Action</th></tr></thead>
+      <tbody>${list.map(c=>{
+        const bal=parseFloat(c.balance)||0;
+        const cls=bal>0?'text-danger':bal<0?'text-success':'text-muted';
+        const txt=bal>0?`Udhaar Rs. ${fmt(bal)}`:bal<0?`Advance Rs. ${fmt(Math.abs(bal))}`:'Rs. 0.00';
+        return `<tr><td><strong>#${c.sr_no||'-'}</strong></td><td>${c.name||'-'}</td><td>${c.phone||'-'}</td><td>${c.category||'-'}</td><td class="fw-bold ${cls}">${txt}</td><td><button class="btn btn-sm btn-outline-primary" onclick="window.viewLedger(${Number(c.id)})"><i class="bi bi-eye me-1"></i>Ledger</button></td></tr>`;
+      }).join('')}</tbody></table></div>`;
+  }
+  new bootstrap.Modal(modal).show();
+}
+
+function bindSummaryCards(){
+  const map={
+    'customer-card-total':'all',
+    'customer-card-udhaar':'udhaar',
+    'customer-card-advance':'advance',
+    'customer-card-companies':'companies'
+  };
+  Object.entries(map).forEach(([id,kind])=>{
+    const card=$(id);
+    if(card && !card.dataset.bound){ card.dataset.bound='1'; card.addEventListener('click',()=>showCustomerSummary(kind)); }
+  });
+}
+
 
 // ════════════════════════════════════════════
 // SEARCH / FILTER
 // ════════════════════════════════════════════
-function filter() { currentPage = 1; display(getCurrentFilteredList()); }
+function filter() { 
+  currentPage = 1; 
+  display(getCurrentFilteredList()); 
+  updateSummary(); 
+}
+
 function clearFilter() {
   const s=$('search-input');    if(s) s.value='';
   const c=$('filter-category'); if(c) c.value='';
   currentPage = 1;
   display(allCustomers);
+  updateSummary();
 }
 
 // ════════════════════════════════════════════
@@ -827,11 +927,19 @@ async function addCustomer() {
   const bl = parseFloat($('customer-balance')?.value) || 0;
   if (!sr || !nm || !ct) { alert('Fill SR No, Name, Category'); return; }
   if (allCustomers.find(c => c.sr_no === sr)) { alert(`SR No. ${sr} already exists`); return; }
+  
   try {
-    const row = { sr_no:sr, name:nm, phone:ph||null, category:ct, balance:bl };
+    const row = { 
+        sr_no: sr, 
+        name: nm, 
+        phone: ph || null, 
+        category: ct, 
+        balance: bl,
+        is_company: (ct === 'Company')
+    };
     if (currentUserId) row.user_id = currentUserId;
-    const { error } = await sb.from('customers').insert([row]);
-    if (error) throw error;
+    if (window.currentUserProfile?.company_id) row.company_id = window.currentUserProfile.company_id;
+    await safeCustomerInsert(row);
     toast('Customer added!', 'success');
     closeModal('addCustomerModal');
     await loadCustomers();
@@ -865,10 +973,17 @@ async function updateCustomer() {
   const bl = parseFloat($('edit-balance').value) || 0;
   if (!sr || !nm || !ct) { alert('Fill all required fields'); return; }
   try {
-    const { error } = await sb.from('customers')
-      .update({ sr_no:sr, name:nm, phone:ph||null, category:ct, balance:bl })
-      .eq('id', id);
-    if (error) throw error;
+    const updateData = { 
+        sr_no: sr, 
+        name: nm, 
+        phone: ph || null, 
+        category: ct, 
+        balance: bl,
+        is_company: (ct === 'Company')
+    };
+    
+    if (window.currentUserProfile?.company_id) updateData.company_id = window.currentUserProfile.company_id;
+    await safeCustomerUpdate(id, updateData);
     toast('Customer updated!', 'success');
     closeModal('editCustomerModal');
     await loadCustomers();
@@ -943,6 +1058,7 @@ function bind() {
   $('search-input')?.addEventListener('input', filter);
   $('filter-category')?.addEventListener('change', filter);
   $('clear-filters')?.addEventListener('click', clearFilter);
+  bindSummaryCards();
 }
 
 // ════════════════════════════════════════════

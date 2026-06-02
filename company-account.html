@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Go Company Account | Khalid & Sons Petroleum</title>
-  <link rel="icon" type="image/png" href="assets/logo.jfif">
+  <link rel="icon" type="image/png" href="/assets/logo.jfif">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="assets/styles.css">
+  <link rel="stylesheet" href="/assets/styles.css">
   <style>
     :root {
       --ink:    #0f1923;
@@ -119,10 +119,16 @@
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
       <div>
-        <h3 class="mb-0"><i class="bi bi-building me-2 text-danger"></i>Go Company cc — Account No. 9</h3>
-        <small class="text-muted" id="sum-company-name">Company Credit Account — Stock Supplier</small>
+        <h3 class="mb-0"><i class="bi bi-building me-2 text-danger"></i>GO Company cc — Account No. 10</h3>
+        <small class="text-muted" id="sum-company-name">GO Pump Company Credit Account — Stock Supplier</small>
       </div>
       <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#initialCreditModal">
+          <i class="bi bi-bank me-1"></i>Initial Credit
+        </button>
+        <button class="btn btn-outline-dark" type="button" onclick="window.printCompanyStatement()">
+          <i class="bi bi-printer me-1"></i>Print Statement
+        </button>
         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#stockPurchaseModal">
           <i class="bi bi-truck me-1"></i>Stock Purchase
         </button>
@@ -219,6 +225,7 @@
             <label class="form-label mb-1" style="font-size:11px;font-weight:700;">Type</label>
             <select class="form-select form-select-sm" id="cfilter-type" style="min-width:160px;">
               <option value="">All Types</option>
+              <option value="initial_credit">Initial Credit</option>
               <option value="stock_purchase">Stock Purchase</option>
               <option value="member_usage">Member Card</option>
               <option value="atm_charge">ATM Charge</option>
@@ -238,8 +245,8 @@
         </div>
         <div class="ledger-wrap"><div class="table-responsive">
           <table class="ledger-tbl">
-            <thead><tr><th>#</th><th>Date</th><th>Type</th><th>Amount</th><th>Charges</th><th>Net</th><th>Member</th><th>Details</th><th></th></tr></thead>
-            <tbody id="company-txn-table"><tr><td colspan="9" class="text-center py-4 text-muted">Loading...</td></tr></tbody>
+            <thead><tr><th>Posting Date</th><th>Document Date</th><th>Document No.</th><th>Reference</th><th>Doc Type</th><th>Description</th><th>Opening / Closing</th><th>Debit</th><th>Credit</th><th>Balance</th><th></th></tr></thead>
+            <tbody id="company-txn-table"><tr><td colspan="11" class="text-center py-4 text-muted">Loading...</td></tr></tbody>
           </table>
         </div></div>
       </div>
@@ -287,6 +294,83 @@
 
     </div>
   </div><!-- /container -->
+
+
+  <!-- ══════════════════════════════════════════════
+       MODAL 0 — Initial Credit / Opening Balance
+  ══════════════════════════════════════════════ -->
+  <div class="modal fade" id="initialCreditModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="initialCreditForm">
+          <div class="modal-header modal-hdr-blue">
+            <h5 class="modal-title"><i class="bi bi-bank me-2"></i>Initial Credit / Opening Balance</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-info py-2 mb-3" style="font-size:12px;">
+              <i class="bi bi-info-circle me-1"></i>
+              Yeh GO Company Account No. 10 ka opening credit aur credit limit set karega. Existing sales/repayment entries delete ya change nahi hongi.
+            </div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Opening Date *</label>
+                <input type="date" class="form-control" id="ic-opening-date" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Closing Date</label>
+                <input type="date" class="form-control" id="ic-closing-date">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Posting Date *</label>
+                <input type="date" class="form-control" id="ic-posting-date" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Document Date *</label>
+                <input type="date" class="form-control" id="ic-document-date" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Document No.</label>
+                <input type="text" class="form-control" id="ic-document-no" placeholder="e.g. OPEN-2026">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Reference</label>
+                <input type="text" class="form-control" id="ic-reference" placeholder="e.g. GO statement ref">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Doc Type</label>
+                <select class="form-select" id="ic-doc-type">
+                  <option value="OP">OP - Opening</option>
+                  <option value="DZ">DZ - Deposit</option>
+                  <option value="JV">JV - Adjustment</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Initial Credit / Opening Balance (Rs.) *</label>
+                <input type="number" class="form-control" id="ic-current-credit" placeholder="0.00" step="0.01" min="0" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Credit Limit (Rs.)</label>
+                <input type="number" class="form-control" id="ic-credit-limit" placeholder="0.00" step="0.01" min="0">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Description</label>
+                <input type="text" class="form-control" id="ic-description" placeholder="e.g. Opening / Initial Credit from GO Company">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Notes</label>
+                <textarea class="form-control" id="ic-notes" rows="2" placeholder="Optional..."></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-info text-white"><i class="bi bi-check2 me-1"></i>Save Initial Credit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
 
   <!-- ══════════════════════════════════════════════
@@ -578,9 +662,9 @@
   <!-- Scripts — same order as customers.html -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/config.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/company-account.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/app.js"></script>
+  <script src="/js/company-account.js"></script>
 </body>
 </html>

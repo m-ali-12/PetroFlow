@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Profit & Loss | Khalid and Sons Petroleum</title>
 
-  <link rel="icon" type="image/jfif" href="assets/logo.jfif">
+  <link rel="icon" type="image/jfif" href="/assets/logo.jfif">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="assets/styles.css">
+  <link rel="stylesheet" href="/assets/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   <style>
@@ -115,8 +115,10 @@
             <option value="this_week">Is Hafte</option>
             <option value="this_month" selected>Is Mahine</option>
             <option value="last_month">Pichle Mahine</option>
+            <option value="since_april">April 2026 Se</option>
             <option value="this_year">Is Saal</option>
             <option value="last_year">Pichle Saal</option>
+            <option value="all_time">Tamam Entries</option>
             <option value="custom">Custom Range</option>
           </select>
         </div>
@@ -289,9 +291,9 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/config.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/app.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/app.js"></script>
 
   <script>
   (function () {
@@ -332,6 +334,8 @@
       else if (period === 'this_month') { fromStr=toDateStr(Y,M,1); toStr=toDateStr(Y,M,D); }
       else if (period === 'last_month') { const le=new Date(Y,M,0); fromStr=toDateStr(Y,M-1,1); toStr=toDateStr(le.getFullYear(),le.getMonth(),le.getDate()); }
       else if (period === 'this_year')  { fromStr=toDateStr(Y,0,1); toStr=toDateStr(Y,M,D); }
+      else if (period === 'since_april'){ fromStr=`${Y}-04-01`; toStr=toDateStr(Y,M,D); }
+      else if (period === 'all_time')   { fromStr='2020-01-01'; toStr=toDateStr(Y,M,D); }
       else if (period === 'last_year')  { fromStr=toDateStr(Y-1,0,1); toStr=toDateStr(Y-1,11,31); }
       else if (period === 'custom')     { fromStr=el('date-from').value||toDateStr(Y,M,1); toStr=el('date-to').value||toDateStr(Y,M,D); }
       else                              { fromStr='2020-01-01'; toStr=toDateStr(Y,M,D); }
@@ -341,7 +345,8 @@
 
     function getPeriodLabel() {
       const m = { today:'Aaj ki report', this_week:'Is hafte ki report', this_month:'Is mahine ki report',
-                  last_month:'Pichle mahine ki report', this_year:'Is saal ki report',
+                  last_month:'Pichle mahine ki report', since_april:'April 2026 se ab tak', 
+                  all_time:'Tamam entries ki report', this_year:'Is saal ki report',
                   last_year:'Pichle saal ki report', custom:'Custom range ki report' };
       return m[el('report-period').value] || 'Report';
     }
@@ -387,11 +392,11 @@
         // ── Query 1: Petrol/Diesel Transactions ──────────────────
         let txQ = sb
           .from('transactions')
-          .select('id, transaction_type, charges, description, created_at, expense_type, fuel_type, customers(name, sr_no)')
+          .select('id, transaction_type, charges, description, created_at, expense_type, fuel_type, customer_id')
           .gte('created_at', fromISO)
           .lte('created_at', toISO)
           .order('created_at', { ascending: false });
-        if (userId) txQ = txQ.eq('user_id', userId);
+        // Removed userId filter to allow multi-tenant visibility
         const { data: txns, error: txErr } = await txQ;
         console.log('Transactions:', txns?.length, 'Error:', txErr);
         if (txErr) throw txErr;
@@ -403,24 +408,49 @@
           .gte('sale_date', fromStr)
           .lte('sale_date', toStr)
           .order('sale_date', { ascending: false });
-        if (userId) mobQ = mobQ.eq('user_id', userId);
         const { data: mobilSales, error: mobErr } = await mobQ;
         console.log('Mobil Sales:', mobilSales?.length, 'Error:', mobErr);
 
         // ── Query 3: Cash Advances ───────────────────────────────
         let advQ = sb
           .from('cash_advances')
-          .select('id, amount, reason, advance_date, status, customers(name, sr_no)')
+          .select('id, amount, reason, advance_date, status, customer_id')
           .gte('advance_date', fromStr)
           .lte('advance_date', toStr)
           .order('advance_date', { ascending: false });
-        if (userId) advQ = advQ.eq('user_id', userId);
         const { data: advances, error: advErr } = await advQ;
         console.log('Advances:', advances?.length, 'Error:', advErr);
+
+        // ── Manual customer name lookup (no FK joins needed) ─────
+        const custIds = new Set();
+        (txns||[]).forEach(t => t.customer_id && custIds.add(t.customer_id));
+        (advances||[]).forEach(a => a.customer_id && custIds.add(a.customer_id));
+        let custMap = {}; // id → {name, sr_no}
+        if (custIds.size > 0) {
+          const { data: custs } = await sb.from('customers')
+            .select('id, name, sr_no')
+            .in('id', [...custIds]);
+          (custs||[]).forEach(c => { custMap[c.id] = c; });
+        }
 
         STATE.txns       = txns       || [];
         STATE.mobilSales = mobilSales || [];
         STATE.advances   = advances   || [];
+        STATE.custMap    = custMap;
+
+        // ── Fetch Owner Opening Balance ──────────────────────────
+        STATE.ownerOpeningBalance = 0;
+        try {
+          const { data: owner } = await sb.from('customers').select('id, name').eq('category', 'Owner').maybeSingle();
+          if (owner) {
+            const { data: bal, error: balErr } = await sb.rpc('get_customer_balance_at', { 
+              cust_id: owner.id, 
+              target_date: fromISO 
+            });
+            if (!balErr) STATE.ownerOpeningBalance = parseFloat(bal) || 0;
+            STATE.ownerName = owner.name;
+          }
+        } catch(e) { console.warn('Owner bal error:', e); }
 
         const totalRecs = STATE.txns.length + STATE.mobilSales.length;
 
@@ -635,6 +665,24 @@
           <span style="font-size:18px;">${isProfit ? '+' : '−'} Rs.${fmt(Math.abs(a.net))}</span>
         </div>
 
+        <!-- ── Owner Account Carryover ── -->
+        <div class="mt-4 p-3 rounded" style="background: #eff6ff; border: 1px solid #dbeafe;">
+          <h6 class="fw-bold mb-2" style="color:#1e40af; font-size:12px;"><i class="bi bi-person-badge me-1"></i>OWNER ACCOUNT (CARRYOVER)</h6>
+          <div class="d-flex justify-content-between mb-1" style="font-size:13px;">
+            <span>Opening Advance (${fmtDate(getDateRange().fromStr)}):</span>
+            <span class="fw-bold">Rs.${fmt(Math.abs(STATE.ownerOpeningBalance))} ${STATE.ownerOpeningBalance < 0 ? '(Advance)' : '(Udhaar)'}</span>
+          </div>
+          <div class="d-flex justify-content-between mb-1" style="font-size:13px;">
+            <span>Is Mahine Ka Net Munafa/Loss:</span>
+            <span class="${isProfit ? 'text-success' : 'text-danger'} fw-bold">${isProfit ? '+' : '−'} Rs.${fmt(Math.abs(a.net))}</span>
+          </div>
+          <div class="d-flex justify-content-between pt-2 border-top mt-2" style="font-size:14px; font-weight:800; color:#1e40af;">
+            <span>Next Month Closing Balance:</span>
+            <span>Rs.${fmt(Math.abs(STATE.ownerOpeningBalance - a.net))} ${ (STATE.ownerOpeningBalance - a.net) < 0 ? 'Advance' : 'Udhaar' }</span>
+          </div>
+          <small class="text-muted d-block mt-2" style="font-size:10px;">* Munafa Owner ke account mein deposit hota hai, jabke kharche aur advances wahan se nikaltay hain.</small>
+        </div>
+
         <div class="mt-3 p-3 rounded" style="background:#f8f9fa;font-size:12px;color:#666;line-height:1.7;">
           <i class="bi bi-info-circle me-1"></i>
           <strong>Note:</strong> Vasooli (Rs.${fmt(a.vasooli)}) = udhaar ki payment received — 
@@ -802,7 +850,7 @@
             date: t.created_at,
             src, srcClass,
             desc: t.description || t.expense_type || '—',
-            customer: t.customers?.name || '—',
+            customer: (STATE.custMap?.[t.customer_id]?.name) || '—',
             amount: parseFloat(t.charges) || 0,
             typeLabel, typeClass, isIncome
           });
@@ -887,7 +935,7 @@
         cleared: '<span class="badge" style="background:#d4edda;color:#155724;">Cleared</span>',
       };
       el('advance-tbody').innerHTML = STATE.advances.map(a => `<tr>
-        <td><strong>${a.customers?.name||'N/A'}</strong> <small class="text-muted">(#${a.customers?.sr_no||'-'})</small></td>
+        <td><strong>${STATE.custMap?.[a.customer_id]?.name||'N/A'}</strong> <small class="text-muted">(#${STATE.custMap?.[a.customer_id]?.sr_no||'-'})</small></td>
         <td>${fmtDate(a.advance_date)}</td>
         <td class="text-end fw-bold" style="color:#8e44ad">Rs.${fmt(a.amount)}</td>
         <td>${a.reason||'—'}</td>
@@ -998,7 +1046,7 @@
       STATE.txns.forEach(t => rows.push([
         fmtDate(t.created_at), t.transaction_type,
         (t.description||t.expense_type||'').replace(/,/g,' '),
-        t.customers?.name||'N/A', t.charges||0, t.transaction_type
+        (STATE.custMap?.[t.customer_id]?.name)||'N/A', t.charges||0, t.transaction_type
       ]));
       STATE.mobilSales.forEach(m => rows.push([
         fmtDate(m.sale_date), 'Mobil Oil',

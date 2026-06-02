@@ -716,11 +716,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 })();
-
-
-// change code here again 
-
-// Reports System
 // (function() {
 // 'use strict';
 

@@ -89,23 +89,23 @@
   // =============================
   async function loadComponent(placeholderId, url) {
     const ph = $(placeholderId);
-    if (!ph) {
-      console.warn(`Placeholder ${placeholderId} not found`);
-      return false;
-    }
+    if (!ph) return false;
+
+    // Ensure component URL is always relative to site root for subfolder support
+    const componentUrl = url.startsWith('/') ? url : '/' + url;
 
     try {
-      const res = await fetch(url, { cache: "no-store" });
+      const res = await fetch(componentUrl, { cache: "no-store" });
       if (!res.ok) {
-        console.error(`Failed to load ${url}: ${res.status} ${res.statusText}`);
+        console.error(`Failed to load ${componentUrl}: ${res.status} ${res.statusText}`);
         return false;
       }
       const html = await res.text();
       ph.innerHTML = html;
-      console.log(`✅ Loaded: ${url}`);
+      console.log(`✅ Loaded: ${componentUrl}`);
       return true;
     } catch (error) {
-      console.error(`Error loading component ${url}:`, error);
+      console.error(`Error loading component ${componentUrl}:`, error);
       return false;
     }
   }
@@ -194,6 +194,10 @@
       const sb = getSupabase();
       if (!sb) { showToast("Database not ready", "error"); return; }
 
+      // RLS requires an active auth session — verify before querying
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { console.warn('loadTanks: no session'); return; }
+
       const { data, error } = await sb.from("tanks").select("*").order("id");
       if (error) throw error;
       tanksCache = data || [];
@@ -239,16 +243,7 @@
       const sb = getSupabase();
       if (!sb) return;
 
-      const userId = await getAuthUserId();
-
       let query = sb.from("customers").select("*").order("sr_no", { ascending: true });
-
-      // Only filter by user_id if userId exists (auth enabled)
-      if (userId) {
-        query = query.eq("user_id", userId);
-      }
-      // If no userId (auth disabled), load all customers without filtering
-
       const { data, error } = await query;
       if (error) throw error;
       customersCache = data || [];
@@ -311,23 +306,36 @@
       const sb = getSupabase();
       if (!sb) return;
 
-      const userId = await getAuthUserId();
-
       let txQuery = sb
         .from("transactions")
-        .select(`*, customer:customers(name, sr_no), tank:tanks(fuel_type)`)
+        .select(`*`)
         .order("created_at", { ascending: false })
         .limit(200);
 
-      // Only filter by user_id if userId exists (auth enabled)
-      if (userId) {
-        txQuery = txQuery.eq("user_id", userId);
+      const { data, error } = await txQuery;
+      if (error) throw error;
+
+      const transactions = data || [];
+
+      // Resolve customer names manually (avoids PGRST200 FK join error)
+      const custIds = [...new Set(transactions.map(t => t.customer_id).filter(Boolean))];
+      if (custIds.length > 0) {
+        const { data: custData } = await sb.from("customers").select("id, name, sr_no").in("id", custIds);
+        const custMap = {};
+        (custData || []).forEach(c => custMap[c.id] = c);
+        transactions.forEach(t => { t.customer = custMap[t.customer_id] || null; });
       }
 
-      const { data, error } = await txQuery;
+      // Resolve tank fuel types manually
+      const tankIds = [...new Set(transactions.map(t => t.tank_id).filter(Boolean))];
+      if (tankIds.length > 0) {
+        const { data: tankData } = await sb.from("tanks").select("id, fuel_type").in("id", tankIds);
+        const tankMap = {};
+        (tankData || []).forEach(t => tankMap[t.id] = t);
+        transactions.forEach(t => { t.tank = tankMap[t.tank_id] || null; });
+      }
 
-      if (error) throw error;
-      transactionsCache = data || [];
+      transactionsCache = transactions;
       updateTransactionsTable();
       updateRecentTransactions();
     } catch (e) {

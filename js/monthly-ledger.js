@@ -171,7 +171,7 @@ window.generateMonthlyBill = function(ledgerData) {
     <div class="bill-container">
       <div class="bill-header">
         <div class="company-logo">
-          <img src="assets/logo.jfif" alt="Logo" height="60">
+          <img src="/assets/logo.jfif" alt="Logo" height="60">
           <div class="company-info">
             <h3>Khalid & Sons</h3>
             <h4>Petroleum Services</h4>

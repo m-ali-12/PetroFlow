@@ -4,13 +4,24 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Transactions | Khalid &amp; Sons Petroleum</title>
-<link href="assets/logo.jfif" rel="icon" type="image/png"/>
+<link href="/assets/logo.jfif" rel="icon" type="image/png"/>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet"/>
-<link href="assets/styles.css" rel="stylesheet"/>
+<link href="/assets/styles.css" rel="stylesheet"/>
 <style>
   /* Bulk bar hidden by default */
   #bulk-action-bar { display:none; align-items:center; gap:8px; flex-wrap:wrap; }
+
+
+  /* Smooth compact transaction layout */
+  .summary-cards .card { cursor:pointer; transition:transform .15s ease, box-shadow .15s ease; }
+  .summary-cards .card:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(0,0,0,.12)!important; }
+  #transactions-table td, #advance-list-tbody td { vertical-align:middle; }
+  #transactions-table td:nth-child(3), #advance-list-tbody td:nth-child(3) { min-width:140px; }
+  #transactions-table td:nth-child(9) { max-width:240px; white-space:normal; }
+  #advance-pagination-container { border-top:1px solid #eee; }
+  #pagination-container-top { border-top:1px solid #eef2f7; border-bottom:1px solid #eef2f7; }
+  .tx-type-badge { user-select:none; -webkit-user-select:none; }
 
   /* Print: hide everything except table */
   @media print {
@@ -57,7 +68,7 @@
   <!-- Summary Cards -->
   <div class="summary-cards row g-3 mb-4">
     <div class="col-6 col-md-3">
-      <div class="card shadow-sm border-success h-100">
+      <div class="card shadow-sm border-success h-100" id="summary-card-credit" title="Credit details dekhne ke liye click karein">
         <div class="card-body text-center py-2">
           <h6 class="text-muted mb-1">Credit (Sales)</h6>
           <h4 class="text-success mb-0" id="total-credit">Rs. 0</h4>
@@ -66,7 +77,7 @@
       </div>
     </div>
     <div class="col-6 col-md-3">
-      <div class="card shadow-sm border-primary h-100">
+      <div class="card shadow-sm border-primary h-100" id="summary-card-debit" title="Vasooli details dekhne ke liye click karein">
         <div class="card-body text-center py-2">
           <h6 class="text-muted mb-1">Debit (Vasooli)</h6>
           <h4 class="text-primary mb-0" id="total-debit">Rs. 0</h4>
@@ -75,7 +86,7 @@
       </div>
     </div>
     <div class="col-6 col-md-3">
-      <div class="card shadow-sm border-danger h-100">
+      <div class="card shadow-sm border-danger h-100" id="summary-card-expense" title="Expense details dekhne ke liye click karein">
         <div class="card-body text-center py-2">
           <h6 class="text-muted mb-1">Expenses</h6>
           <h4 class="text-danger mb-0" id="total-expense">Rs. 0</h4>
@@ -84,7 +95,7 @@
       </div>
     </div>
     <div class="col-6 col-md-3">
-      <div class="card shadow-sm border-info h-100">
+      <div class="card shadow-sm border-info h-100" id="summary-card-net" title="Net balance details dekhne ke liye click karein">
         <div class="card-body text-center py-2">
           <h6 class="text-muted mb-1">Net Balance</h6>
           <h4 class="text-info mb-0" id="net-balance">Rs. 0</h4>
@@ -93,7 +104,7 @@
       </div>
     </div>
     <div class="col-6 col-md-3">
-      <div class="card shadow-sm h-100" style="border-left:4px solid #6f42c1;">
+      <div class="card shadow-sm h-100" id="summary-card-advance" title="Advance details dekhne ke liye click karein" style="border-left:4px solid #6f42c1;">
         <div class="card-body text-center py-2">
           <h6 class="text-muted mb-1">Cash Advances</h6>
           <h4 class="mb-0" style="color:#6f42c1;" id="total-advance">Rs. 0</h4>
@@ -129,6 +140,7 @@
             <option value="Debit">Debit (Vasooli)</option>
             <option value="Expense">Expense</option>
             <option value="Advance">Cash Advance</option>
+            <option value="BankDeposit">Bank Deposit</option>
           </select>
         </div>
       </div>
@@ -169,6 +181,7 @@
       <h6 class="mb-0">Transaction History</h6>
       <span class="badge bg-secondary" id="transaction-count">0 transactions</span>
     </div>
+    <div id="pagination-container-top"></div>
     <div class="card-body p-0">
       <div class="table-responsive">
         <table class="table table-hover table-sm mb-0">
@@ -210,6 +223,11 @@
       <h6 class="mb-0" style="color:#6f42c1;"><i class="bi bi-cash-coin me-2"></i>Cash Advance List — Khata Baqi</h6>
       <div class="d-flex align-items-center gap-2">
         <span class="badge" style="background:#6f42c1;" id="advance-list-count">0 advances</span>
+        <select class="form-select form-select-sm" id="advance-page-size" style="width:95px;">
+          <option value="10" selected>10/page</option>
+          <option value="25">25/page</option>
+          <option value="50">50/page</option>
+        </select>
         <select class="form-select form-select-sm" id="advance-filter-status" style="width:140px;">
           <option value="">Sab Dikhao</option>
           <option value="pending" selected>Sirf Pending</option>
@@ -222,6 +240,9 @@
         <table class="table table-hover table-sm mb-0">
           <thead>
             <tr style="background:#f3eeff;">
+              <th style="width:42px;padding:10px 8px;color:#6f42c1;text-align:center;">
+                <input type="checkbox" id="advance-select-all-cb" style="width:16px;height:16px;cursor:pointer;accent-color:#6f42c1;vertical-align:middle;">
+              </th>
               <th style="padding:10px 12px;color:#6f42c1;">#</th>
               <th style="padding:10px 12px;color:#6f42c1;">Customer</th>
               <th style="padding:10px 12px;color:#6f42c1;">Taareekh</th>
@@ -233,7 +254,7 @@
             </tr>
           </thead>
           <tbody id="advance-list-tbody">
-            <tr><td colspan="8" class="text-center py-4 text-muted">
+            <tr><td colspan="9" class="text-center py-4 text-muted">
               <div class="spinner-border spinner-border-sm text-primary me-2"></div>Loading...
             </td></tr>
           </tbody>
@@ -242,7 +263,7 @@
       </div>
     </div>
   </div>
-
+    <div id="advance-pagination-container"></div>
 </div><!-- /container -->
 
 <!-- NEW SALE MODAL -->
@@ -329,6 +350,16 @@
               <option value="cash">Cash (Naqad)</option>
               <option value="credit">Credit - Udhaar</option>
             </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">
+              <i class="bi bi-calendar3 me-1 text-primary"></i>Taareekh (Date) *
+              <small class="fw-normal text-muted ms-1">— Purane record ke liye pichli date daalo</small>
+            </label>
+            <input class="form-control" id="sale-date" type="date" required/>
+            <small class="text-warning fw-bold" id="sale-date-warning" style="display:none;">
+              ⚠️ Aap pichle mahine ki date daal rahe hain — Purana record add ho raha hai
+            </small>
           </div>
           <div class="mb-3">
             <label class="form-label">Notes (Optional)</label>
@@ -451,6 +482,16 @@
           <div class="mb-3"><label class="form-label">Pay From Account *</label><select class="form-select" id="expense-account" required><option value="">Select Account</option><option value="Owner">Owner Account</option><option value="Cash">Cash</option><option value="Bank">Bank</option></select></div>
           <div class="mb-3"><label class="form-label">Amount *</label><div class="input-group"><span class="input-group-text">Rs.</span><input class="form-control" id="expense-amount" required step="0.01" type="number"/></div></div>
           <div class="mb-3"><label class="form-label">Description *</label><input class="form-control" id="expense-description" required type="text"/></div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">
+              <i class="bi bi-calendar3 me-1 text-warning"></i>Taareekh (Date) *
+              <small class="fw-normal text-muted ms-1">— Purane expense ke liye pichli date</small>
+            </label>
+            <input class="form-control" id="expense-date" type="date" required/>
+            <small class="text-warning fw-bold" id="expense-date-warning" style="display:none;">
+              ⚠️ Pichle mahine ka record add ho raha hai
+            </small>
+          </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
@@ -573,9 +614,10 @@
 <div id="footer-placeholder"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/app.js"></script>
-<script src="js/transactions-COMPLETE-v5.js"></script>
+<script src="/js/config.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/transactions-COMPLETE-vok.js"></script>
+<script src="/js/udhaar-reminder-final.js"></script>
 </body>
 </html>

@@ -47,21 +47,6 @@
 </head>
 
 <body data-page="index">
-  <!-- alert -->
-  <div class="modal fade" id="urgencyModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-body text-center p-5">
-        <i class="bi bi-trash3-fill text-danger mb-4" style="font-size: 4rem;"></i>
-        <h3 class="fw-bold text-dark">Data Deletion Warning!</h3>
-        <p class="text-muted">Tumhara sara kam delete ho jayega kyunke tum ne 3 din mein follow up nahi kiya.</p>
-        <button type="button" class="btn btn-danger w-100 py-3 mt-3 fw-bold" data-bs-dismiss="modal">I Understand</button>
-      </div>
-    </div>
-  </div>
-</div>
-  <!-- end alert-->
-  
   <div id="navbar-placeholder"></div>
 
   <div class="container-fluid main-wrapper pt-4">
@@ -80,39 +65,43 @@
       <!-- Fuel Stock Cards -->
       <div class="row g-4 mb-4">
         <div class="col-md-6">
-          <div class="card stat-card petrol-card shadow-sm">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center">
+          <div class="card stat-card petrol-card shadow">
+            <div class="card-body py-4">
+              <div class="d-flex justify-content-between align-items-start">
                 <div>
-                  <h6 class="text-muted mb-2">Petrol Stock</h6>
-                  <h2 class="mb-0 fw-bold" id="petrol-stock">0</h2>
-                  <small class="text-muted">Liters</small>
+                  <h6 class="text-white-50 mb-1 small fw-semibold text-uppercase tracking-wide">Petrol Stock</h6>
+                  <h2 class="mb-1 fw-bold" id="petrol-stock">0</h2>
+                  <small style="color:rgba(255,255,255,0.55)">Liters Available</small>
                 </div>
-                <div class="stat-icon petrol-icon"><i class="bi bi-droplet-fill"></i></div>
+                <div class="stat-card-icon"><i class="bi bi-droplet-fill"></i></div>
               </div>
-              <div class="progress mt-3" style="height:8px;">
-                <div id="petrol-progress" class="progress-bar bg-success" style="width:0%"></div>
+              <div class="progress mt-3" style="height:6px;">
+                <div id="petrol-progress" class="progress-bar" style="width:0%;border-radius:3px;"></div>
               </div>
-              <small class="text-muted mt-2 d-block">Capacity: <span id="petrol-capacity">0</span> L</small>
+              <small style="color:rgba(255,255,255,0.45)" class="mt-2 d-block">
+                Tank Capacity: <span id="petrol-capacity">25,000</span> L
+              </small>
             </div>
           </div>
         </div>
 
         <div class="col-md-6">
-          <div class="card stat-card diesel-card shadow-sm">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center">
+          <div class="card stat-card diesel-card shadow">
+            <div class="card-body py-4">
+              <div class="d-flex justify-content-between align-items-start">
                 <div>
-                  <h6 class="text-muted mb-2">Diesel Stock</h6>
-                  <h2 class="mb-0 fw-bold" id="diesel-stock">0</h2>
-                  <small class="text-muted">Liters</small>
+                  <h6 class="text-white-50 mb-1 small fw-semibold text-uppercase tracking-wide">Diesel Stock</h6>
+                  <h2 class="mb-1 fw-bold" id="diesel-stock">0</h2>
+                  <small style="color:rgba(255,255,255,0.55)">Liters Available</small>
                 </div>
-                <div class="stat-icon diesel-icon"><i class="bi bi-droplet-fill"></i></div>
+                <div class="stat-card-icon"><i class="bi bi-droplet-fill"></i></div>
               </div>
-              <div class="progress mt-3" style="height:8px;">
-                <div id="diesel-progress" class="progress-bar bg-warning" style="width:0%"></div>
+              <div class="progress mt-3" style="height:6px;">
+                <div id="diesel-progress" class="progress-bar" style="width:0%;border-radius:3px;"></div>
               </div>
-              <small class="text-muted mt-2 d-block">Capacity: <span id="diesel-capacity">0</span> L</small>
+              <small style="color:rgba(255,255,255,0.45)" class="mt-2 d-block">
+                Tank Capacity: <span id="diesel-capacity">25,000</span> L
+              </small>
             </div>
           </div>
         </div>
@@ -121,50 +110,50 @@
       <!-- Today's Summary -->
       <div class="row g-3 mb-4">
         <div class="col-12">
-          <h5 class="mb-3"><i class="bi bi-calendar-day me-2"></i>Today's Summary</h5>
+          <h5 class="mb-3 fw-bold"><i class="bi bi-calendar-day me-2 text-primary"></i>Today's Summary</h5>
         </div>
-        
-        <div class="col-md-3">
-          <div class="card shadow-sm border-success">
-            <div class="card-body text-center">
-              <i class="bi bi-cash-stack text-success" style="font-size: 2rem;"></i>
-              <h6 class="mt-2 text-muted">Total Sales</h6>
-              <h4 id="today-sales">Rs. 0</h4>
-              <small class="text-muted" id="today-sales-count">0 transactions</small>
+
+        <div class="col-md-3 col-6">
+          <div class="metric-card green" id="dash-card-sales" title="Today sales details">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="metric-icon green"><i class="bi bi-cash-stack"></i></div>
+              <small class="text-muted fw-semibold">SALES</small>
             </div>
+            <h4 class="fw-bold mb-0 text-success" id="today-sales">Rs. 0</h4>
+            <small class="text-muted" id="today-sales-count">0 transactions</small>
           </div>
         </div>
 
-        <div class="col-md-3">
-          <div class="card shadow-sm border-primary">
-            <div class="card-body text-center">
-              <i class="bi bi-wallet2 text-primary" style="font-size: 2rem;"></i>
-              <h6 class="mt-2 text-muted">Vasooli</h6>
-              <h4 id="today-vasooli">Rs. 0</h4>
-              <small class="text-muted">Collections</small>
+        <div class="col-md-3 col-6">
+          <div class="metric-card blue" id="dash-card-vasooli" title="Today vasooli details">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="metric-icon blue"><i class="bi bi-wallet2"></i></div>
+              <small class="text-muted fw-semibold">VASOOLI</small>
             </div>
+            <h4 class="fw-bold mb-0 text-info" id="today-vasooli">Rs. 0</h4>
+            <small class="text-muted">Collections today</small>
           </div>
         </div>
 
-        <div class="col-md-3">
-          <div class="card shadow-sm border-danger">
-            <div class="card-body text-center">
-              <i class="bi bi-bag-x text-danger" style="font-size: 2rem;"></i>
-              <h6 class="mt-2 text-muted">Expenses</h6>
-              <h4 id="today-expenses">Rs. 0</h4>
-              <small class="text-muted">Today's costs</small>
+        <div class="col-md-3 col-6">
+          <div class="metric-card red" id="dash-card-expenses" title="Today expense details">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="metric-icon red"><i class="bi bi-bag-x"></i></div>
+              <small class="text-muted fw-semibold">EXPENSES</small>
             </div>
+            <h4 class="fw-bold mb-0 text-danger" id="today-expenses">Rs. 0</h4>
+            <small class="text-muted">Today's costs</small>
           </div>
         </div>
 
-        <div class="col-md-3">
-          <div class="card shadow-sm border-info">
-            <div class="card-body text-center">
-              <i class="bi bi-graph-up text-info" style="font-size: 2rem;"></i>
-              <h6 class="mt-2 text-muted">Net Cash</h6>
-              <h4 id="today-net">Rs. 0</h4>
-              <small class="text-muted">Sales + Vasooli - Expenses</small>
+        <div class="col-md-3 col-6">
+          <div class="metric-card yellow" id="dash-card-net" title="Today net details">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="metric-icon yellow"><i class="bi bi-graph-up-arrow"></i></div>
+              <small class="text-muted fw-semibold">NET CASH</small>
             </div>
+            <h4 class="fw-bold mb-0" style="color:var(--warning)" id="today-net">Rs. 0</h4>
+            <small class="text-muted">Sales + Vasooli - Exp</small>
           </div>
         </div>
       </div>
@@ -202,36 +191,47 @@
           </a>
         </div>
 
-        <!-- Other Buttons -->
+        <!-- Core Action Buttons -->
         <div class="col-md-3">
-          <a class="btn btn-primary w-100 py-3" href="transactions.html">
+          <a class="btn btn-primary w-100 py-3" href="/transactions.html">
             <i class="bi bi-plus-circle me-2"></i>New Sale
           </a>
         </div>
         <div class="col-md-3">
-          <a class="btn btn-success w-100 py-3" href="transactions.html">
+          <a class="btn btn-success w-100 py-3" href="/transactions.html">
             <i class="bi bi-cash me-2"></i>Vasooli (Debit)
           </a>
         </div>
         <div class="col-md-3">
-          <a class="btn btn-warning w-100 py-3" href="transactions.html">
+          <a class="btn btn-warning w-100 py-3" href="/transactions.html">
             <i class="bi bi-wallet2 me-2"></i>Expense
           </a>
         </div>
-        <div class="col-md-3">
-          <a class="btn btn-info w-100 py-3" href="customers.html">
+        <div class="col-md-3" data-require-role="admin,super_admin,manager">
+          <a class="btn btn-info w-100 py-3" href="/customers.html">
             <i class="bi bi-person-plus me-2"></i>Add Customer
           </a>
         </div>
 
-        <div class="col-md-6">
-          <a class="btn btn-outline-primary w-100 py-3" href="mobil.html">
+        <!-- Role Specific Actions -->
+        <div class="col-md-6" data-require-role="employee">
+          <a class="btn btn-outline-info w-100 py-3" href="/daily-readings.html">
+            <i class="bi bi-speedometer me-2"></i>Daily Machine Readings
+          </a>
+        </div>
+        <div class="col-md-6" data-require-role="employee,manager">
+          <a class="btn btn-outline-primary w-100 py-3" href="/mobil.html">
             <i class="bi bi-droplet-half me-2"></i>Mobil Oil Management
           </a>
         </div>
-        <div class="col-md-6">
-          <a class="btn btn-outline-success w-100 py-3" href="rent.html">
+        <div class="col-md-6" data-require-role="admin,super_admin,manager">
+          <a class="btn btn-outline-success w-100 py-3" href="/rent.html">
             <i class="bi bi-shop me-2"></i>Shop Rent Management
+          </a>
+        </div>
+        <div class="col-md-6" data-require-role="admin,super_admin">
+          <a class="btn btn-outline-danger w-100 py-3" href="/admin-panel.html">
+            <i class="bi bi-shield-lock me-2"></i>Admin Control Panel
           </a>
         </div>
       </div>
@@ -507,32 +507,45 @@
 
   <script>
     // Quick stock levels for dashboard card
+    // Must wait for auth session before querying (RLS requires authenticated user)
     async function loadQuickStock() {
-      function tryLoad() {
-        if (!window.supabaseClient) { setTimeout(tryLoad, 200); return; }
-        window.supabaseClient
+      async function tryLoad(attempts) {
+        if (attempts <= 0) return; // give up after timeout
+
+        // Wait for supabaseClient
+        if (!window.supabaseClient) {
+          setTimeout(() => tryLoad(attempts - 1), 200);
+          return;
+        }
+
+        // Wait for valid auth session (RLS blocks unauthenticated queries)
+        try {
+          const { data: { session } } = await window.supabaseClient.auth.getSession();
+          if (!session) {
+            setTimeout(() => tryLoad(attempts - 1), 300);
+            return;
+          }
+        } catch (e) {
+          setTimeout(() => tryLoad(attempts - 1), 300);
+          return;
+        }
+
+        // Now safe to query with RLS
+        const { data } = await window.supabaseClient
           .from('tanks')
-          .select('fuel_type, current_stock')
-          .then(({ data }) => {
-            if (!data) return;
-            const petrol = data.find(t => t.fuel_type === 'Petrol');
-            const diesel = data.find(t => t.fuel_type === 'Diesel');
-            const pEl = document.getElementById('quick-petrol');
-            const dEl = document.getElementById('quick-diesel');
-            if (pEl && petrol) pEl.textContent = parseInt(petrol.current_stock).toLocaleString() + ' L';
-            if (dEl && diesel) dEl.textContent = parseInt(diesel.current_stock).toLocaleString() + ' L';
-          });
+          .select('fuel_type, current_stock');
+
+        if (!data) return;
+        const petrol = data.find(t => t.fuel_type === 'Petrol');
+        const diesel = data.find(t => t.fuel_type === 'Diesel');
+        const pEl = document.getElementById('quick-petrol');
+        const dEl = document.getElementById('quick-diesel');
+        if (pEl && petrol) pEl.textContent = parseInt(petrol.current_stock).toLocaleString() + ' L';
+        if (dEl && diesel) dEl.textContent = parseInt(diesel.current_stock).toLocaleString() + ' L';
       }
-      tryLoad();
+      tryLoad(30); // 30 attempts × ~300ms = up to 9 seconds wait
     }
     document.addEventListener('DOMContentLoaded', loadQuickStock);
-
-    // alert script 
-    // Page load hote hi modal dikhane ke liye
-  document.addEventListener('DOMContentLoaded', function() {
-    var myModal = new bootstrap.Modal(document.getElementById('urgencyModal'));
-    myModal.show();
-  });
   </script>
 </body>
 </html>
